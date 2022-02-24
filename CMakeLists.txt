@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(Template_SDL2_OpenGL LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(THIRDPARTY_DIR ThirdParty)
+set(LIBS mingw32 opengl32 glu32 Imm32)
+
+set(SDL2_DIR ${THIRDPARTY_DIR}/SDL2_mingw/x64)
+link_directories(${SDL2_DIR}/lib)
+include_directories(${SDL2_DIR}/include/SDL2)
+set(LIBS ${LIBS} SDL2main SDL2)
+set(BINARIES ${SDL2_DIR}/bin)
+
+add_library(imgui
+    # Main Imgui files
+    ${THIRDPARTY_DIR}/ImGui/imgui.cpp ${THIRDPARTY_DIR}/ImGui/imgui_draw.cpp
+    ${THIRDPARTY_DIR}/ImGui/imgui_tables.cpp ${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
+    # SDL2+OpenGL-specific files
+    ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_sdl.cpp
+    ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp)
+target_include_directories(imgui PUBLIC ${THIRDPARTY_DIR}/ImGui/ ${THIRDPARTY_DIR}/ImGui/backends/)
+set(LIBS ${LIBS} imgui)
+
+file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h src/*.hpp)
+
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
+target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+foreach(BINARY ${BINARIES})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        ${CMAKE_SOURCE_DIR}/${BINARY} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endforeach()
