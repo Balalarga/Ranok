@@ -5,8 +5,3 @@ GuiItem::GuiItem(const std::function<void()>& func):
 {
 
 }
-
-void GuiItem::Render()
-{
-    _renderFunc();
-}

@@ -32,8 +32,7 @@ public:
     void Open();
     void Close();
 
-    void AddRenderableObject(Renderable* object);
-    void AddGuiItem(GuiItem* object);
+    void AddItem(GuiItem* object);
 
 
 protected:
@@ -55,7 +54,6 @@ private:
 
     ImVec4 _windowColor;
 
-    std::vector<Renderable*> _renderableObjects;
     std::vector<GuiItem*> _guiItems;
 };
 

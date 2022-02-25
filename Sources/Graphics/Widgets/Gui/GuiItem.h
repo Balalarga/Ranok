@@ -4,11 +4,13 @@
 #include "imgui.h"
 #include <functional>
 
+
 class GuiItem
 {
 public:
     GuiItem(const std::function<void()>& func);
-    void Render();
+    inline void Render() { _renderFunc(); }
+
 
 private:
     std::function<void()> _renderFunc;

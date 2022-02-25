@@ -78,13 +78,13 @@ Window::Window(const WindowParams &params):
     ImGui::StyleColorsDark();
     ImGui_ImplSDL2_InitForOpenGL(_sdlWindow, _glContext);
     ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
 }
 
 Window::~Window()
 {
-    for(auto& i: _renderableObjects)
-        delete i;
-
     for(auto& i: _guiItems)
         delete i;
 
@@ -141,10 +141,6 @@ void Window::Render()
     glClearColor(_windowColor.x, _windowColor.y, _windowColor.z, _windowColor.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Render opengl objects
-    for(auto& i: _renderableObjects)
-        i->Render();
-
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(_sdlWindow);
 }
@@ -172,13 +168,7 @@ void Window::PollEvents()
     }
 }
 
-void Window::AddRenderableObject(Renderable *object)
-{
-    if (object)
-        _renderableObjects.push_back(object);
-}
-
-void Window::AddGuiItem(GuiItem *object)
+void Window::AddItem(GuiItem *object)
 {
     if (object)
         _guiItems.push_back(object);

@@ -1,16 +1,21 @@
 #include <iostream>
 #include "Graphics/Window.h"
+#include "Graphics/Scene.h"
 
 using namespace std;
 
 
 void MakeLayout(Window& window)
 {
-    window.AddGuiItem(new GuiItem([](){
+    window.AddItem(new GuiItem([](){
         ImGui::Begin("Window");
         ImGui::Button("Hello!");
         ImGui::End();
     }));
+
+
+    Scene* scene = new Scene();
+
 
     struct Vertex
     {
@@ -26,7 +31,9 @@ void MakeLayout(Window& window)
     };
     unsigned vertexCount = sizeof(data)/sizeof(data[0]);
     BufferInfo bufferInfo(data, vertexCount);
-    window.AddRenderableObject(new Renderable(bufferInfo));
+    scene->AddObject(new Renderable(bufferInfo));
+
+    window.AddItem(scene);
 }
 
 int main(int argc, char **argv)
