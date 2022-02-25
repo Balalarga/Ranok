@@ -7,10 +7,10 @@
 using namespace std;
 
 
-std::string FileSystem::AssetFolder = "../Assets";
+string FileSystem::AssetFolder = "../Assets";
 
 
-void FileSystem::SetAssetFolder(const std::string& newAssetFolder)
+void FileSystem::SetAssetFolder(const string& newAssetFolder)
 {
     if (newAssetFolder.back() == '\\' ||
             newAssetFolder.back() == '/')
@@ -28,20 +28,20 @@ string FileSystem::GetAssetFolder()
     return AssetFolder;
 }
 
-std::string FileSystem::ReadSomeFile(const std::string &path)
+CheckedResult<string> FileSystem::ReadSomeFile(const string &path)
 {
     ifstream file(path);
     if (!file)
     {
         cout<<"File "<< path <<" opening error\n";
-        return "";
+        return false;
     }
     stringstream stream;
     stream << file.rdbuf();
     return stream.str();
 }
 
-std::string FileSystem::ReadAssetFile(const std::string &path)
+CheckedResult<string> FileSystem::ReadAssetFile(const string &path)
 {
     return ReadSomeFile(AssetFolder + "/" + path);
 }

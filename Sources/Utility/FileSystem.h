@@ -1,6 +1,8 @@
-#include <string>
-
 #pragma once
+
+#include "Checks.h"
+
+#include <string>
 
 
 class FileSystem
@@ -15,10 +17,10 @@ public:
     static std::string GetAssetFolder();
 
     /// Read file with some relative or absolute path
-    static std::string ReadSomeFile(const std::string& path);
+    static CheckedResult<std::string> ReadSomeFile(const std::string& path);
 
     /// Read file relative to AssetFolder
-    static std::string ReadAssetFile(const std::string& path);
+    static CheckedResult<std::string> ReadAssetFile(const std::string& path);
 
 
 private:
