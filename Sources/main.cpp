@@ -6,20 +6,27 @@ using namespace std;
 
 void MakeLayout(Window& window)
 {
-//    window.AddGuiItem(new GuiItem([](){
-//        ImGui::Begin("Window");
-//        ImGui::Button("Hello!");
-//        ImGui::End();
-//    }));
+    window.AddGuiItem(new GuiItem([](){
+        ImGui::Begin("Window");
+        ImGui::Button("Hello!");
+        ImGui::End();
+    }));
 
-    float data[]
+    struct Vertex
     {
-        0, 0, 0, 1, 1, 1, 1,
-        0, 1, 0, 1, 1, 1, 1,
-        1, 1, 0, 1, 1, 1, 1,
+        float x, y, z;
+        float r, g, b, a;
     };
 
-    window.AddRenderableObject(new Renderable(BufferInfo(data, 3)));
+    Vertex data[]
+    {
+        {0, 0, 0, 1, 1, 1, 1},
+        {0, 1, 0, 1, 1, 1, 1},
+        {1, 1, 0, 1, 1, 1, 1},
+    };
+    unsigned vertexCount = sizeof(data)/sizeof(data[0]);
+    BufferInfo bufferInfo(data, vertexCount);
+    window.AddRenderableObject(new Renderable(bufferInfo));
 }
 
 int main(int argc, char **argv)
