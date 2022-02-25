@@ -37,7 +37,7 @@ target_link_libraries(ImGui ${LIBS})
 set(LIBS ${LIBS} ImGui)
 
 # Find all source files
-file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h src/*.hpp)
+file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp)
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
