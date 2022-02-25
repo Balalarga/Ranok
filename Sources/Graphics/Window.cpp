@@ -1,5 +1,10 @@
 #include "Window.h"
+
 #include <iostream>
+
+#include <SDL_opengl.h>
+#include <imgui_impl_sdl.h>
+#include <imgui_impl_opengl3.h>
 
 
 Window* Window::_self = nullptr;
