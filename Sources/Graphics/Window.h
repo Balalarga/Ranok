@@ -20,7 +20,9 @@ struct WindowParams
     SDL_Point size = {1280, 720};
     std::string glsl_version = "#version 330";
     SDL_Point openglVersion = {3, 3};
-    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL |
+                                              SDL_WINDOW_RESIZABLE |
+                                              SDL_WINDOW_ALLOW_HIGHDPI);
 };
 
 class Window
