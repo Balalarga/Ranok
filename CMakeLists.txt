@@ -16,18 +16,25 @@ include_directories(${SDL2_DIR}/include/SDL2)
 set(LIBS ${LIBS} SDL2main SDL2 SDL2_image SDL2_ttf)
 set(BINARIES ${SDL2_DIR}/bin)
 
+# Glew setup
+set(GLEW_DIR ${THIRDPARTY_DIR}/GLEW)
+link_directories(${GLEW_DIR}/lib)
+include_directories(${GLEW_DIR}/include)
+set(LIBS ${LIBS} glew32)
+set(BINARIES ${GLEW_DIR}/bin)
+
 
 # ImGui setup
-add_library(imgui
+add_library(ImGui
     # Main Imgui files
     ${THIRDPARTY_DIR}/ImGui/imgui.cpp ${THIRDPARTY_DIR}/ImGui/imgui_draw.cpp
     ${THIRDPARTY_DIR}/ImGui/imgui_tables.cpp ${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
     # SDL2+OpenGL-specific files
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_sdl.cpp
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp)
-target_include_directories(imgui PUBLIC ${THIRDPARTY_DIR}/ImGui/ ${THIRDPARTY_DIR}/ImGui/backends/)
-target_link_libraries(imgui ${LIBS})
-set(LIBS ${LIBS} imgui)
+target_include_directories(ImGui PUBLIC ${THIRDPARTY_DIR}/ImGui/ ${THIRDPARTY_DIR}/ImGui/backends/)
+target_link_libraries(ImGui ${LIBS})
+set(LIBS ${LIBS} ImGui)
 
 # Find all source files
 file(GLOB_RECURSE PROJECT_SOURCES src/*.cpp src/*.h src/*.hpp)
