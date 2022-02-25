@@ -1,6 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <imgui.h>
@@ -9,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "Renderable.h"
-#include "GuiItem.h"
+#include "Widgets/Opengl.h"
+#include "Widgets/Gui.h"
 
 
 struct WindowParams
@@ -36,6 +37,9 @@ public:
     void Update();
     void PollEvents();
 
+    void AddRenderableObject(Renderable* object);
+    void AddGuiItem(GuiItem* object);
+
 
 private:
     Window(const WindowParams& params);
@@ -49,7 +53,7 @@ private:
     ImVec4 _windowColor;
 
     std::vector<Renderable*> _renderableObjects;
-    std::vector<GuiItem> _guiItems;
+    std::vector<GuiItem*> _guiItems;
 };
 
 #endif // WINDOW_H

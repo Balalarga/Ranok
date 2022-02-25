@@ -70,7 +70,7 @@ void Window::Render()
 
     // Render gui
     for(auto& i: _guiItems)
-        i.Render();
+        i->Render();
 
     ImGui::Render();
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
@@ -108,8 +108,20 @@ void Window::PollEvents()
     }
 }
 
+void Window::AddRenderableObject(Renderable *object)
+{
+    if (object)
+        _renderableObjects.push_back(object);
+}
+
+void Window::AddGuiItem(GuiItem *object)
+{
+    if (object)
+        _guiItems.push_back(object);
+}
+
 Window::Window(const WindowParams &params):
-    _windowColor(0.45f, 0.55f, 0.60f, 1.00f)
+    _windowColor(0.2f, 0.2f, 0.2f, 1.00f)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
@@ -142,6 +154,12 @@ Window::Window(const WindowParams &params):
 
 Window::~Window()
 {
+    for(auto& i: _renderableObjects)
+        delete i;
+
+    for(auto& i: _guiItems)
+        delete i;
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
