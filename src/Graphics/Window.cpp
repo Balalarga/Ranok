@@ -4,7 +4,6 @@
 
 Window* Window::_self = nullptr;
 
-
 Window *Window::Create(const WindowParams &params)
 {
     if (!_self)
@@ -31,6 +30,66 @@ void Window::Destroy()
         delete _self;
         _self = nullptr;
     }
+}
+
+
+Window::Window(const WindowParams &params):
+    _windowColor(0.2f, 0.2f, 0.2f, 1.00f)
+{
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
+    {
+        std::cout << "Error: " << SDL_GetError() << std::endl;
+        return;
+    }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, params.openglVersion.x);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, params.openglVersion.y);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+    _sdlWindow = SDL_CreateWindow(params.title.c_str(),
+                                  SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED,
+                                  params.size.x,
+                                  params.size.y,
+                                  params.flags);
+    _glContext = SDL_GL_CreateContext(_sdlWindow);
+    SDL_GL_MakeCurrent(_sdlWindow, _glContext);
+    SDL_GL_SetSwapInterval(1);
+    auto err = glewInit();
+    if (err != GLEW_OK)
+    {
+        std::cout << "Error: " << glewGetErrorString(err) << std::endl;
+        SDL_GL_DeleteContext(_glContext);
+        SDL_DestroyWindow(_sdlWindow);
+        SDL_Quit();
+        _sdlWindow = nullptr;
+        return;
+    }
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplSDL2_InitForOpenGL(_sdlWindow, _glContext);
+    ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
+}
+
+Window::~Window()
+{
+    for(auto& i: _renderableObjects)
+        delete i;
+
+    for(auto& i: _guiItems)
+        delete i;
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
+    SDL_GL_DeleteContext(_glContext);
+    SDL_DestroyWindow(_sdlWindow);
+    SDL_Quit();
 }
 
 void Window::Open()
@@ -118,53 +177,4 @@ void Window::AddGuiItem(GuiItem *object)
 {
     if (object)
         _guiItems.push_back(object);
-}
-
-Window::Window(const WindowParams &params):
-    _windowColor(0.2f, 0.2f, 0.2f, 1.00f)
-{
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        std::cout << "Error: " << SDL_GetError() << std::endl;
-        return;
-    }
-
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, params.openglVersion.x);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, params.openglVersion.y);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-    _sdlWindow = SDL_CreateWindow(params.title.c_str(),
-                                  SDL_WINDOWPOS_CENTERED,
-                                  SDL_WINDOWPOS_CENTERED,
-                                  params.size.x,
-                                  params.size.y,
-                                  params.flags);
-    _glContext = SDL_GL_CreateContext(_sdlWindow);
-    SDL_GL_MakeCurrent(_sdlWindow, _glContext);
-    SDL_GL_SetSwapInterval(1);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForOpenGL(_sdlWindow, _glContext);
-    ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
-}
-
-Window::~Window()
-{
-    for(auto& i: _renderableObjects)
-        delete i;
-
-    for(auto& i: _guiItems)
-        delete i;
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
-    SDL_GL_DeleteContext(_glContext);
-    SDL_DestroyWindow(_sdlWindow);
-    SDL_Quit();
 }

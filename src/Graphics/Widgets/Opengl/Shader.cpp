@@ -10,7 +10,7 @@ const std::string Shader::DefaultVertex = R"(
 layout(location = 0) in vec3 iPosition;
 layout(location = 1) in vec4 iColor;
 
-uniform mat4 MVP;
+uniform mat4 MVP = mat4(1.0);
 
 
 out vec4 vColor;
@@ -45,9 +45,9 @@ Shader::Shader(const std::string &vertexCode,
     _vertexCode(vertexCode),
     _fragmentCode(fragmentCode),
     _geometryCode(geomertyCode),
-    _handler(-1)
+    _handler(0)
 {
-    static std::vector<std::pair<unsigned, const std::string&>> shaders
+    std::vector<std::pair<unsigned, const std::string&>> shaders
     {
         {GL_VERTEX_SHADER, _vertexCode},
         {GL_FRAGMENT_SHADER, _fragmentCode},
@@ -98,14 +98,14 @@ Shader::Shader(const std::string &vertexCode,
 bool Shader::HasErrors(unsigned shaderId)
 {
     GLint isCompiled = 0;
-    glGetShaderiv(_handler, GL_COMPILE_STATUS, &isCompiled);
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &isCompiled);
     if(isCompiled == GL_FALSE)
     {
         GLint maxLength = 0;
-        glGetShaderiv(_handler, GL_INFO_LOG_LENGTH, &maxLength);
+        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
 
         std::vector<GLchar> errorLog(maxLength);
-        glGetShaderInfoLog(_handler, maxLength, &maxLength, &errorLog[0]);
+        glGetShaderInfoLog(shaderId, maxLength, &maxLength, &errorLog[0]);
         for(auto i: errorLog)
         {
             std::cout<<i;

@@ -33,9 +33,8 @@ struct BufferInfo
 class Renderable
 {
 public:
-
     Renderable(const BufferInfo& vbo,
-               Shader* shader = new Shader(),
+               Shader* shader = nullptr,
                const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
     ~Renderable();
 

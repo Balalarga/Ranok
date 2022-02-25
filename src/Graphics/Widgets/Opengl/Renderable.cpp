@@ -50,6 +50,9 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
     _ibo(ibo),
     _shader(shader)
 {
+    if (!_shader)
+        _shader = new Shader();
+
     int layoutSize = 0;
     for (auto& i: _vbo.layout)
         layoutSize += i.size * i.count;
@@ -82,6 +85,7 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
 Renderable::~Renderable()
 {
     glDeleteVertexArrays(1, &_handler);
+    delete _shader;
 }
 
 void Renderable::Render()

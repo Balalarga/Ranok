@@ -6,16 +6,17 @@ using namespace std;
 
 void MakeLayout(Window& window)
 {
-    window.AddGuiItem(new GuiItem([](){
-        ImGui::Begin("Window");
-        ImGui::Button("Hello!");
-        ImGui::End();
-    }));
+//    window.AddGuiItem(new GuiItem([](){
+//        ImGui::Begin("Window");
+//        ImGui::Button("Hello!");
+//        ImGui::End();
+//    }));
 
-    float data[]{
+    float data[]
+    {
         0, 0, 0, 1, 1, 1, 1,
-        0, 0, 1, 1, 1, 1, 1,
-        0, 1, 1, 1, 1, 1, 1,
+        0, 1, 0, 1, 1, 1, 1,
+        1, 1, 0, 1, 1, 1, 1,
     };
 
     window.AddRenderableObject(new Renderable(BufferInfo(data, 3)));
