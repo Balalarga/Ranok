@@ -135,6 +135,8 @@ void Window::Render()
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
     // Render gui
     for(auto& i: _guiItems)
         i->Render();

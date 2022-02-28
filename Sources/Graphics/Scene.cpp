@@ -63,8 +63,8 @@ void Scene::Render()
 
     ImGui::Begin(_title.c_str());
     auto imageSize = ImGui::GetWindowSize();
-    imageSize.x -= 40;
-    imageSize.y -= 40;
+    imageSize.x -= 20;
+    imageSize.y -= 20;
     ImGui::Image((void*)(intptr_t)_texture, imageSize, ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
 }

@@ -29,6 +29,7 @@ add_library(ImGui
     # Main Imgui files
     ${THIRDPARTY_DIR}/ImGui/imgui.cpp ${THIRDPARTY_DIR}/ImGui/imgui_draw.cpp
     ${THIRDPARTY_DIR}/ImGui/imgui_tables.cpp ${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
+    ${THIRDPARTY_DIR}/ImGui/imgui_demo.cpp
     # SDL2+OpenGL-specific files
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_sdl.cpp
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp)
