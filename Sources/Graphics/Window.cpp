@@ -135,6 +135,7 @@ void Window::Render()
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
+    // Make all screen dockable
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
     // Render gui

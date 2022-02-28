@@ -61,12 +61,14 @@ void Scene::Render()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    ImGui::Begin(_title.c_str());
-    auto imageSize = ImGui::GetWindowSize();
-    imageSize.x -= 20;
-    imageSize.y -= 20;
-    ImGui::Image((void*)(intptr_t)_texture, imageSize, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoTitleBar);
+    ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
+
+    ImGui::ShowDemoWindow();
+    ImGui::PopStyleVar();
 }
 
 void Scene::AddObject(Renderable *object)
