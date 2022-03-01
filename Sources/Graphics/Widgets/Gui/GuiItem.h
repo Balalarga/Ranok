@@ -9,6 +9,8 @@ class GuiItem
 {
 public:
     GuiItem(const std::function<void()>& func);
+    virtual ~GuiItem() = default;
+
     inline void Render() { _renderFunc(); }
 
 

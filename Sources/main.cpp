@@ -7,11 +7,7 @@ using namespace std;
 
 void MakeLayout(Window& window)
 {
-    window.AddItem(new GuiItem([](){
-        ImGui::Begin("Window");
-        ImGui::Button("Hello!");
-        ImGui::End();
-    }));
+    window.AddItem(new RanokTextEditor());
 
 
     Scene* scene = new Scene();

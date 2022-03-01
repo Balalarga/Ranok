@@ -23,6 +23,10 @@ include_directories(${GLEW_DIR}/include)
 set(LIBS ${LIBS} glew32)
 set(BINARIES ${GLEW_DIR}/bin)
 
+# RanokCore setup
+add_subdirectory(ThirdParty/RanokCore/RanokCoreLib)
+set(LIBS ${LIBS} RanokCore)
+
 
 # ImGui setup
 add_library(ImGui
