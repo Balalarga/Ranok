@@ -1,17 +1,30 @@
 #include <iostream>
+
 #include "Graphics/Window.h"
-#include "Graphics/Scene.h"
+#include "Graphics/Gui/Gui.h"
+#include "Graphics/Opengl/Opengl.h"
+#include "Utility/FileSystem.h"
 
 using namespace std;
 
-
 void MakeLayout(Window& window)
 {
-    window.AddItem(new RanokTextEditor());
+    auto* editor = new RanokTextEditor();
 
+    window.AddItem(new GuiItem([editor](){
+        ImGui::Begin("Tools");
+        if (ImGui::Button("Open"))
+        {
+            string file = FileDialog::GetFilepath("Text (*.TXT)\0");
+            if (!file.empty())
+                editor->SetText(FileSystem::ReadSomeFile(file));
+        }
+        ImGui::End();
+    }));
+
+    window.AddItem(editor);
 
     Scene* scene = new Scene();
-
 
     struct Vertex
     {

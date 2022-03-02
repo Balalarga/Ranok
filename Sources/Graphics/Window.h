@@ -7,8 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "Widgets/Opengl.h"
-#include "Widgets/Gui.h"
+class GuiItem;
 
 
 struct WindowParams

@@ -1,4 +1,6 @@
 #include "Scene.h"
+#include "Graphics/Opengl/Base/Renderable.h"
+
 #include <functional>
 
 
@@ -67,7 +69,6 @@ void Scene::Render()
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
     ImGui::End();
 
-    ImGui::ShowDemoWindow();
     ImGui::PopStyleVar();
 }
 

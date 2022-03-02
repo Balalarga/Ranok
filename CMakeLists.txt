@@ -27,7 +27,6 @@ set(BINARIES ${GLEW_DIR}/bin)
 add_subdirectory(ThirdParty/RanokCore/RanokCoreLib)
 set(LIBS ${LIBS} RanokCore)
 
-
 # ImGui setup
 add_library(ImGui
     # Main Imgui files
@@ -43,6 +42,7 @@ set(LIBS ${LIBS} ImGui)
 
 # Find all source files
 file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp)
+include_directories(Sources)
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 

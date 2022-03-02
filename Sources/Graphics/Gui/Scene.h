@@ -1,8 +1,10 @@
 #pragma once
 
 #include <GL/glew.h>
-#include "Widgets/Gui/GuiItem.h"
-#include "Widgets/Opengl/Renderable.h"
+
+#include "Base/GuiItem.h"
+
+class Renderable;
 
 
 class Scene: public GuiItem

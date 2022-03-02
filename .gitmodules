@@ -4,3 +4,6 @@
 [submodule "ThirdParty\\RanokCore"]
 	path = ThirdParty\\RanokCore
 	url = https://github.com/Balalarga/RanokCore.git
+[submodule "ThirdParty\\ImGuiFileDialog"]
+	path = ThirdParty\\ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog.git
