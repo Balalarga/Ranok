@@ -35,9 +35,10 @@ LayoutItemData::LayoutItemData(unsigned openglType, unsigned count):
     }
 }
 
-BufferInfo::BufferInfo(void *data, unsigned count, const BufferLayout &layout):
+BufferInfo::BufferInfo(void *data, unsigned count, unsigned drawType, const BufferLayout &layout):
     data(data),
     count(count),
+    drawType(drawType),
     layout(layout)
 {
 
@@ -93,5 +94,5 @@ void Renderable::Render()
     _shader->Bind();
     glBindVertexArray(_handler);
     if (_ibo.data == nullptr)
-        glDrawArrays(GL_TRIANGLES, 0, _vbo.count);
+        glDrawArrays(_vbo.drawType, 0, _vbo.count);
 }

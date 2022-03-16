@@ -2217,9 +2217,8 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 				{
 					id.assign(token_begin, token_end);
 
-					// todo : allmost all language definitions use lower case to specify keywords, so shouldn't this use ::tolower ?
 					if (!mLanguageDefinition.mCaseSensitive)
-						std::transform(id.begin(), id.end(), id.begin(), ::toupper);
+                        std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
 					if (!line[first - bufferBegin].mPreprocessor)
 					{

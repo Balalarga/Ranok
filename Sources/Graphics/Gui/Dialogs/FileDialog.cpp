@@ -3,7 +3,7 @@
 #include <windows.h>
 
 
-std::string FileDialog::GetFilepath(const std::string filter)
+std::string FileDialog::GetFilepath(FileMode mode, const std::string filter)
 {
     OPENFILENAME ofn;
     char fileName[MAX_PATH] = "";
@@ -22,7 +22,8 @@ std::string FileDialog::GetFilepath(const std::string filter)
 
     std::string fileNameStr;
 
-    if ( GetOpenFileName(&ofn) )
+    if ( (mode == FileMode::Open && GetOpenFileName(&ofn)) ||
+         (mode == FileMode::Save && GetSaveFileName(&ofn)) )
         fileNameStr = fileName;
 
     return fileNameStr;

@@ -3,44 +3,53 @@
 #include "Graphics/Window.h"
 #include "Graphics/Gui/Gui.h"
 #include "Graphics/Opengl/Opengl.h"
+#include "Graphics/Opengl/RayMarchingView.h"
 #include "Utility/FileSystem.h"
+
+#include <Ranok/LanguageCore/Parser.h>
 
 using namespace std;
 
+
 void MakeLayout(Window& window)
 {
-    auto* editor = new RanokTextEditor();
+    Scene* scene = new Scene();
+    RanokTextEditor* editor = new RanokTextEditor();
+    RayMarchingView* rayMarchView = new RayMarchingView(scene);
 
-    window.AddItem(new GuiItem([editor](){
+    window.AddItem(new GuiItem([editor, rayMarchView](){
         ImGui::Begin("Tools");
         if (ImGui::Button("Open"))
         {
-            string file = FileDialog::GetFilepath("Text (*.TXT)\0");
+            string file = FileDialog::GetFilepath(FileDialog::FileMode::Open, "Text (*.TXT)\0");
             if (!file.empty())
-                editor->SetText(FileSystem::ReadSomeFile(file));
+            {
+                CheckedResult<std::string> chackedFile = FileSystem::ReadSomeFile(file);
+                editor->SetText(chackedFile.Get());
+            }
+        }
+        if (ImGui::Button("Save as"))
+        {
+            string file = FileDialog::GetFilepath(FileDialog::FileMode::Save, "Text (*.TXT)\0");
+            if (!file.empty())
+            {
+                CheckedResult<std::string> chackedFile = FileSystem::ReadSomeFile(file);
+                editor->SetText(chackedFile.Get());
+            }
+        }
+        if (ImGui::Button("Compile"))
+        {
+            Parser parser;
+            Program program = parser.Parse(Lexer::CreateFrom(editor->Text()));
+            rayMarchView->SetModel(program);
         }
         ImGui::End();
     }));
 
     window.AddItem(editor);
 
-    Scene* scene = new Scene();
-
-    struct Vertex
-    {
-        float x, y, z;
-        float r, g, b, a;
-    };
-
-    Vertex data[]
-    {
-        {0, 0, 0, 1, 1, 1, 1},
-        {0, 1, 0, 1, 1, 1, 1},
-        {1, 1, 0, 1, 1, 1, 1},
-    };
-    unsigned vertexCount = sizeof(data)/sizeof(data[0]);
-    BufferInfo bufferInfo(data, vertexCount);
-    scene->AddObject(new Renderable(bufferInfo));
+    scene->AddObject(rayMarchView);
+    scene->SetBackgroundColor(ImVec4(0.1, 0.1, 0.1, 1));
 
     window.AddItem(scene);
 }

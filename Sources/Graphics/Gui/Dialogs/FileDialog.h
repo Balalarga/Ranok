@@ -7,8 +7,9 @@ class FileDialog
 {
 public:
     FileDialog() = delete;
-
-    static std::string GetFilepath(const std::string filter = "All Files(*.*)");
+    enum class FileMode
+    { Open, Save };
+    static std::string GetFilepath(FileMode mode, const std::string filter = "All Files(*.*)");
 
 
 };

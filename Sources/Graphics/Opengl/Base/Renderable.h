@@ -22,10 +22,14 @@ struct BufferInfo
 {
     static const BufferLayout DefaultLayout;
 
-    BufferInfo(void* data, unsigned count, const BufferLayout& layout = DefaultLayout);
+    BufferInfo(void* data,
+               unsigned count,
+               unsigned drawType = GL_TRIANGLES,
+               const BufferLayout& layout = DefaultLayout);
 
     void* data;
     unsigned count;
+    unsigned drawType;
     BufferLayout layout;
 };
 
@@ -38,7 +42,11 @@ public:
                const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
     ~Renderable();
 
-    void Render();
+    virtual void Render();
+
+
+protected:
+    inline Shader* GetShader() { return _shader; }
 
 
 private:

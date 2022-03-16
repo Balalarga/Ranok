@@ -1,6 +1,10 @@
 #include "RanokTextEditor.h"
-#include "Language/LangFunctions.h"
-#include "Language/GeneratedFunctions.h"
+
+#include <Ranok/LanguageCore/Functions.h>
+
+#include "imgui_internal.h"
+#include "Graphics/Gui/Dialogs/FileDialog.h"
+#include "Utility/FileSystem.h"
 
 
 RanokTextEditor::RanokTextEditor():
@@ -25,6 +29,29 @@ void RanokTextEditor::Render()
 {
     ImGui::Begin("Editor");
     _editor->Render("Editor");
+
+//    ImGui::BeginMenuBar();
+//    ImGui::BeginMenu("File");
+//    if (ImGui::MenuItem("Open", "CTRL+O"))
+//    {
+//        std::string file = FileDialog::GetFilepath(FileDialog::FileMode::Open, "Text (*.TXT)\0");
+//        if (!file.empty())
+//        {
+//            CheckedResult<std::string> chackedFile = FileSystem::ReadSomeFile(file);
+//            SetText(chackedFile.Get());
+//        }
+//    }
+//    if (ImGui::MenuItem("Save as", "CTRL+SHIFT+S"))
+//    {
+//        std::string file = FileDialog::GetFilepath(FileDialog::FileMode::Save, "Text (*.TXT)\0");
+//        if (!file.empty())
+//        {
+//            CheckedResult<std::string> chackedFile = FileSystem::ReadSomeFile(file);
+//            SetText(chackedFile.Get());
+//        }
+//    }
+//    ImGui::EndMenu();
+//    ImGui::EndMenuBar();
     ImGui::End();
 }
 
@@ -38,56 +65,40 @@ void RanokTextEditor::SetText(const std::string &text)
     _editor->SetText(text);
 }
 
+std::string RanokTextEditor::Text()
+{
+    return _editor->GetText();
+}
+
 void RanokTextEditor::CreateLangDef()
 {
-    TextEditor::LanguageDefinition langDef;
+    TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::CPlusPlus();
 
-    static const char* const cppKeywords[] = {
-        "var", "arg", "variable", "argument", "arguments", "return", "constant", "const"
+    static const char* const keywords[] = {
+        "var", "arg", "variable", "argument", "arguments", "return"
     };
-    for (auto& k : cppKeywords)
+    for (auto& k : keywords)
         langDef.mKeywords.insert(k);
 
-    for (auto& k : LangFunctions::functions)
+    // {declaration, name}
+    std::vector<std::pair<std::string, std::string>> identifiers;
+
+    for (auto& f: Functions::GetAll())
+        identifiers.push_back({"Build-in function", f.name});
+
+    for (auto& f: Functions::GetAllCustoms())
+        identifiers.push_back({"User-define function", f->Info().name});
+
+
+    for (auto& k : identifiers)
     {
         TextEditor::Identifier id;
-        id.mDeclaration = "Built-in function";
-        langDef.mIdentifiers.insert(std::make_pair(k.first, id));
+        id.mDeclaration = k.first;
+        langDef.mIdentifiers.insert(std::make_pair(k.second, id));
     }
 
-    for (auto& k : GeneratedFunctions::OneArgFunctions)
-    {
-        TextEditor::Identifier id;
-        id.mDeclaration = "Built-in function";
-        langDef.mIdentifiers.insert(std::make_pair(k.first, id));
-    }
-    for (auto& k : GeneratedFunctions::TwoArgFunctions)
-    {
-        TextEditor::Identifier id;
-        id.mDeclaration = "Built-in function";
-        langDef.mIdentifiers.insert(std::make_pair(k.first, id));
-    }
-    for (auto& k : GeneratedFunctions::VoidFunctions)
-    {
-        TextEditor::Identifier id;
-        id.mDeclaration = "Built-in function";
-        langDef.mIdentifiers.insert(std::make_pair(k.first, id));
-    }
-
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("[ \\t]*#[ \\t]*[a-zA-Z_]+", TextEditor::PaletteIndex::Preprocessor));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("L?\\\"(\\\\.|[^\\\"])*\\\"", TextEditor::PaletteIndex::String));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("\\'\\\\?[^\\']\\'", TextEditor::PaletteIndex::CharLiteral));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?[fF]?", TextEditor::PaletteIndex::Number));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("[+-]?[0-9]+[Uu]?[lL]?[lL]?", TextEditor::PaletteIndex::Number));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("0[0-7]+[Uu]?[lL]?[lL]?", TextEditor::PaletteIndex::Number));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("0[xX][0-9a-fA-F]+[uU]?[lL]?[lL]?", TextEditor::PaletteIndex::Number));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("[a-zA-Z_][a-zA-Z0-9_]*", TextEditor::PaletteIndex::Identifier));
-    langDef.mTokenRegexStrings.push_back(std::make_pair<std::string, TextEditor::PaletteIndex>("[\\[\\]\\{\\}\\!\\%\\^\\&\\*\\(\\)\\-\\+\\=\\~\\|\\<\\>\\?\\/\\;\\,\\.]", TextEditor::PaletteIndex::Punctuation));
-
-    langDef.mSingleLineComment = "//";
-
-    langDef.mCaseSensitive = true;
-    langDef.mAutoIndentation = true;
+    langDef.mCaseSensitive = false;
+//    langDef.mAutoIndentation = true;
 
     langDef.mName = "Ranok";
 

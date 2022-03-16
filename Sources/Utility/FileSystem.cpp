@@ -34,7 +34,7 @@ CheckedResult<string> FileSystem::ReadSomeFile(const string &path)
     if (!file)
     {
         cout<<"File "<< path <<" opening error\n";
-        return false;
+        return CheckedResult<std::string>();
     }
     stringstream stream;
     stream << file.rdbuf();

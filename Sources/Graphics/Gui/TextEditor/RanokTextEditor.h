@@ -13,6 +13,7 @@ public:
     void Render();
     void OpenFile(const std::string& path);
     void SetText(const std::string& text);
+    std::string Text();
 
 
 protected:

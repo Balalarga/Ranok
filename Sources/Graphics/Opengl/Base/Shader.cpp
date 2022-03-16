@@ -47,6 +47,110 @@ Shader::Shader(const std::string &vertexCode,
     _geometryCode(geomertyCode),
     _handler(0)
 {
+    Compile();
+}
+
+bool Shader::HasErrors(unsigned shaderId)
+{
+    GLint isCompiled = 0;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &isCompiled);
+    if(isCompiled == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
+
+        std::vector<GLchar> errorLog(maxLength);
+        glGetShaderInfoLog(shaderId, maxLength, &maxLength, &errorLog[0]);
+        for(auto i: errorLog)
+        {
+            std::cout<<i;
+        }
+        std::cout<<std::endl;
+
+        return true;
+    }
+    return false;
+}
+
+void Shader::Destroy()
+{
+    Unbind();
+    glDeleteProgram(_handler);
+}
+
+Shader::~Shader()
+{
+    Destroy();
+}
+
+bool Shader::AddUniform(const std::string &name)
+{
+    Bind();
+    int loc = glGetUniformLocation(_handler, name.c_str());
+    if (loc < 0)
+    {
+        Unbind();
+        return false;
+    }
+
+    _uniforms[name] = loc;
+
+    Unbind();
+    return true;
+}
+
+bool Shader::AddUniforms(const std::vector<std::string> &names)
+{
+    Bind();
+    bool allOk = true;
+    for (auto& name : names)
+    {
+        int loc = glGetUniformLocation(_handler, name.c_str());
+
+        if (loc < 0)
+        {
+            std::cout << "Couldn't find "<< name << " uniform\n";
+            allOk = false;
+        }
+        else
+        {
+            _uniforms[name] = loc;
+        }
+    }
+
+    Unbind();
+    if (!allOk)
+    {
+        std::cout << _vertexCode << "\n";
+        std::cout << _fragmentCode << "\n";
+        std::cout << _geometryCode << "\n";
+    }
+    return allOk;
+}
+
+bool Shader::UpdateVertexShader(const std::string& code)
+{
+    Destroy();
+    _vertexCode = code;
+    return Compile();
+}
+
+bool Shader::UpdateFragmentShader(const std::string& code)
+{
+    Destroy();
+    _fragmentCode = code;
+    return Compile();
+}
+
+bool Shader::UpdateGeomertyShader(const std::string& code)
+{
+    Destroy();
+    _geometryCode = code;
+    return Compile();
+}
+
+bool Shader::Compile()
+{
     std::vector<std::pair<unsigned, const std::string&>> shaders
     {
         {GL_VERTEX_SHADER, _vertexCode},
@@ -79,7 +183,7 @@ Shader::Shader(const std::string &vertexCode,
             }
 
             Destroy();
-            return;
+            return false;
         }
 
         attachedShaders.push_back(_handler);
@@ -93,38 +197,7 @@ Shader::Shader(const std::string &vertexCode,
         glDetachShader(_handler, i);
         glDeleteShader(i);
     }
-}
-
-bool Shader::HasErrors(unsigned shaderId)
-{
-    GLint isCompiled = 0;
-    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &isCompiled);
-    if(isCompiled == GL_FALSE)
-    {
-        GLint maxLength = 0;
-        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
-
-        std::vector<GLchar> errorLog(maxLength);
-        glGetShaderInfoLog(shaderId, maxLength, &maxLength, &errorLog[0]);
-        for(auto i: errorLog)
-        {
-            std::cout<<i;
-        }
-        std::cout<<std::endl;
-
-        return true;
-    }
-    return false;
-}
-
-void Shader::Destroy()
-{
-    glDeleteProgram(_handler);
-}
-
-Shader::~Shader()
-{
-    Destroy();
+    return true;
 }
 
 void Shader::Bind() const
@@ -135,4 +208,10 @@ void Shader::Bind() const
 void Shader::Unbind() const
 {
     glUseProgram(0);
+}
+
+int Shader::GetUniformLoc(const std::string& name)
+{
+    auto it = _uniforms.find(name);
+    return it != _uniforms.end() ? it->second : -1;
 }

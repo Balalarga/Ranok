@@ -19,6 +19,8 @@ public:
 
     void SetBackgroundColor(const ImVec4& color);
 
+    inline const ImVec2& GetSize() { return _size; }
+
 
 private:
     unsigned _fbo;
