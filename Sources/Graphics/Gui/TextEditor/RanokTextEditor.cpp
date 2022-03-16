@@ -75,7 +75,7 @@ void RanokTextEditor::CreateLangDef()
     TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::CPlusPlus();
 
     static const char* const keywords[] = {
-        "var", "arg", "variable", "argument", "arguments", "return"
+        "var", "args", "variable", "argument", "arguments", "return"
     };
     for (auto& k : keywords)
         langDef.mKeywords.insert(k);
