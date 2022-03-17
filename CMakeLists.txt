@@ -46,7 +46,7 @@ add_subdirectory(ThirdParty/RanokLibraryCore/RanokLibraryCore)
 set(LIBS ${LIBS} RanokLibraryCore)
 
 # Find all source files
-file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp)
+file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp Assets/*)
 include_directories(Sources)
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
@@ -55,6 +55,11 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_link_directories(${PROJECT_NAME} PUBLIC ${LIBS_LOCAIONS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${LIBS_INCLUDES})
+
+# Copy assets
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${CMAKE_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/Assets)
 
 # Copy dll files
 foreach(BINARY ${BINARIES})

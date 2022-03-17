@@ -7,27 +7,28 @@
 class Renderable;
 
 
-class Scene: public GuiItem
+class Scene: public GuiChildWindow
 {
 public:
-    Scene(ImVec2 size = {800, 600}, const std::string &title = "Scene");
+    Scene(ImVec2 renderSize = {800, 600}, const std::string &title = "Scene");
     ~Scene();
 
-    void Render();
+    void PreRender() override;
+    void OnRender() override;
+    void PostRender() override;
 
     void AddObject(Renderable* object);
 
     void SetBackgroundColor(const ImVec4& color);
 
-    inline const ImVec2& GetSize() { return _size; }
+    inline const ImVec2& GetRenderSize() { return _renderSize; }
 
 
 private:
     unsigned _fbo;
     unsigned _texture;
 
-    std::string _title;
-    ImVec2 _size;
+    ImVec2 _renderSize;
     ImVec4 _backgroundColor;
 
     std::vector<Renderable*> _objects;

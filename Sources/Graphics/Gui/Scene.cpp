@@ -4,10 +4,9 @@
 #include <functional>
 
 
-Scene::Scene(ImVec2 size, const std::string& title):
-    GuiItem(std::bind(&Scene::Render, this)),
-    _title(title),
-    _size(size),
+Scene::Scene(ImVec2 renderSize, const std::string& title):
+    GuiChildWindow(title),
+    _renderSize(renderSize),
     _backgroundColor({0.5, 0.5, 0.5, 1.0})
 {
     glGenFramebuffers(1, &_fbo);
@@ -19,8 +18,8 @@ Scene::Scene(ImVec2 size, const std::string& title):
     glTexImage2D(GL_TEXTURE_2D,
                  0,
                  GL_RGB,
-                 _size.x,
-                 _size.y,
+                 _renderSize.x,
+                 _renderSize.y,
                  0,
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
@@ -48,10 +47,15 @@ Scene::~Scene()
     glDeleteFramebuffers(1, &_fbo);
 }
 
-void Scene::Render()
+void Scene::PreRender()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+}
+
+void Scene::OnRender()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
-    glViewport(0, 0, _size.x, _size.y);
+    glViewport(0, 0, _renderSize.x, _renderSize.y);
     glClearColor(_backgroundColor.x,
                  _backgroundColor.y,
                  _backgroundColor.z,
@@ -63,12 +67,11 @@ void Scene::Render()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoTitleBar);
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::End();
+}
 
+void Scene::PostRender()
+{
     ImGui::PopStyleVar();
 }
 

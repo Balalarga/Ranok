@@ -175,7 +175,7 @@ void Window::PollEvents()
     }
 }
 
-void Window::AddItem(GuiItem *object)
+void Window::AddItem(GuiBase *object)
 {
     if (object)
         _guiItems.push_back(object);

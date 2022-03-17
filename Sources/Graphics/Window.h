@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-class GuiItem;
+class GuiBase;
 
 
 struct WindowParams
@@ -31,7 +31,7 @@ public:
     void Open();
     void Close();
 
-    void AddItem(GuiItem* object);
+    void AddItem(GuiBase* object);
 
 
 protected:
@@ -53,7 +53,7 @@ private:
 
     ImVec4 _windowColor;
 
-    std::vector<GuiItem*> _guiItems;
+    std::vector<GuiBase*> _guiItems;
 };
 
 #endif // WINDOW_H

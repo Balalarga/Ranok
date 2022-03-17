@@ -259,7 +259,7 @@ bool RayMarchingView::SetModel(Program &program)
 
 void RayMarchingView::Render()
 {
-    const auto& size = _parent->GetSize();
+    const auto& size = _parent->GetRenderSize();
     GetShader()->Bind();
     GetShader()->SetUniform("resolution", glm::vec2(size.x, size.y));
     Renderable::Render();

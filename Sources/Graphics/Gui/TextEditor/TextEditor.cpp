@@ -12,6 +12,8 @@
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
 
+static int UTF8CharLength(TextEditor::Char c);
+
 template<class InputIt1, class InputIt2, class BinaryPredicate>
 bool equals(InputIt1 first1, InputIt1 last1,
 	InputIt2 first2, InputIt2 last2, BinaryPredicate p)
@@ -24,8 +26,9 @@ bool equals(InputIt1 first1, InputIt1 last1,
 	return first1 == last1 && first2 == last2;
 }
 
-TextEditor::TextEditor()
-	: mLineSpacing(1.0f)
+TextEditor::TextEditor(const std::string &title)
+    : GuiChildWindow(title)
+    , mLineSpacing(1.0f)
 	, mUndoIndex(0)
 	, mTabSize(4)
 	, mOverwrite(false)
@@ -49,6 +52,7 @@ TextEditor::TextEditor()
 	, mShowWhitespaces(true)
 	, mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 {
+    AddWindowFlags(ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove);
 	SetPalette(GetDarkPalette());
 	SetLanguageDefinition(LanguageDefinition::HLSL());
 	mLines.push_back(Line());
@@ -71,7 +75,311 @@ void TextEditor::SetLanguageDefinition(const LanguageDefinition & aLanguageDef)
 
 void TextEditor::SetPalette(const Palette & aValue)
 {
-	mPaletteBase = aValue;
+    mPaletteBase = aValue;
+}
+
+void TextEditor::PreRender()
+{
+    mWithinRender = true;
+    mTextChanged = false;
+    mCursorPositionChanged = false;
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPalette[(int)PaletteIndex::Background]));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+    if (!mIgnoreImGuiChild)
+        GuiChildWindow::PreRender();
+
+    if (mHandleKeyboardInputs)
+    {
+        HandleKeyboardInputs();
+        ImGui::PushAllowKeyboardFocus(true);
+    }
+
+    if (mHandleMouseInputs)
+        HandleMouseInputs();
+
+    ColorizeInternal();
+}
+
+void TextEditor::OnRender()
+{
+    /* Compute mCharAdvance regarding to scaled font size (Ctrl + mouse wheel)*/
+    const float fontSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, "#", nullptr, nullptr).x;
+    mCharAdvance = ImVec2(fontSize, ImGui::GetTextLineHeightWithSpacing() * mLineSpacing);
+
+    /* Update palette with the current alpha from style */
+    for (int i = 0; i < (int)PaletteIndex::Max; ++i)
+    {
+        auto color = ImGui::ColorConvertU32ToFloat4(mPaletteBase[i]);
+        color.w *= ImGui::GetStyle().Alpha;
+        mPalette[i] = ImGui::ColorConvertFloat4ToU32(color);
+    }
+
+    assert(mLineBuffer.empty());
+
+    auto contentSize = ImGui::GetWindowContentRegionMax();
+    auto drawList = ImGui::GetWindowDrawList();
+    float longest(mTextStart);
+
+    if (mScrollToTop)
+    {
+        mScrollToTop = false;
+        ImGui::SetScrollY(0.f);
+    }
+
+    ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+    auto scrollX = ImGui::GetScrollX();
+    auto scrollY = ImGui::GetScrollY();
+
+    auto lineNo = (int)floor(scrollY / mCharAdvance.y);
+    auto globalLineMax = (int)mLines.size();
+    auto lineMax = std::max(0, std::min((int)mLines.size() - 1, lineNo + (int)floor((scrollY + contentSize.y) / mCharAdvance.y)));
+
+    // Deduce mTextStart by evaluating mLines size (global lineMax) plus two spaces as text width
+    char buf[16];
+    snprintf(buf, 16, " %d ", globalLineMax);
+    mTextStart = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x + mLeftMargin;
+
+    if (!mLines.empty())
+    {
+        float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
+
+        while (lineNo <= lineMax)
+        {
+            ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + lineNo * mCharAdvance.y);
+            ImVec2 textScreenPos = ImVec2(lineStartScreenPos.x + mTextStart, lineStartScreenPos.y);
+
+            auto& line = mLines[lineNo];
+            longest = std::max(mTextStart + TextDistanceToLineStart(Coordinates(lineNo, GetLineMaxColumn(lineNo))), longest);
+            auto columnNo = 0;
+            Coordinates lineStartCoord(lineNo, 0);
+            Coordinates lineEndCoord(lineNo, GetLineMaxColumn(lineNo));
+
+            // Draw selection for the current line
+            float sstart = -1.0f;
+            float ssend = -1.0f;
+
+            assert(mState.mSelectionStart <= mState.mSelectionEnd);
+            if (mState.mSelectionStart <= lineEndCoord)
+                sstart = mState.mSelectionStart > lineStartCoord ? TextDistanceToLineStart(mState.mSelectionStart) : 0.0f;
+            if (mState.mSelectionEnd > lineStartCoord)
+                ssend = TextDistanceToLineStart(mState.mSelectionEnd < lineEndCoord ? mState.mSelectionEnd : lineEndCoord);
+
+            if (mState.mSelectionEnd.mLine > lineNo)
+                ssend += mCharAdvance.x;
+
+            if (sstart != -1 && ssend != -1 && sstart < ssend)
+            {
+                ImVec2 vstart(lineStartScreenPos.x + mTextStart + sstart, lineStartScreenPos.y);
+                ImVec2 vend(lineStartScreenPos.x + mTextStart + ssend, lineStartScreenPos.y + mCharAdvance.y);
+                drawList->AddRectFilled(vstart, vend, mPalette[(int)PaletteIndex::Selection]);
+            }
+
+            // Draw breakpoints
+            auto start = ImVec2(lineStartScreenPos.x + scrollX, lineStartScreenPos.y);
+
+            if (mBreakpoints.count(lineNo + 1) != 0)
+            {
+                auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
+                drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::Breakpoint]);
+            }
+
+            // Draw error markers
+            auto errorIt = mErrorMarkers.find(lineNo + 1);
+            if (errorIt != mErrorMarkers.end())
+            {
+                auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
+                drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::ErrorMarker]);
+
+                if (ImGui::IsMouseHoveringRect(lineStartScreenPos, end))
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+                    ImGui::Text("Error at line %d:", errorIt->first);
+                    ImGui::PopStyleColor();
+                    ImGui::Separator();
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
+                    ImGui::Text("%s", errorIt->second.c_str());
+                    ImGui::PopStyleColor();
+                    ImGui::EndTooltip();
+                }
+            }
+
+            // Draw line number (right aligned)
+            snprintf(buf, 16, "%d  ", lineNo + 1);
+
+            auto lineNoWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x;
+            drawList->AddText(ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y), mPalette[(int)PaletteIndex::LineNumber], buf);
+
+            if (mState.mCursorPosition.mLine == lineNo)
+            {
+                auto focused = ImGui::IsWindowFocused();
+
+                // Highlight the current line (where the cursor is)
+                if (!HasSelection())
+                {
+                    auto end = ImVec2(start.x + contentSize.x + scrollX, start.y + mCharAdvance.y);
+                    drawList->AddRectFilled(start, end, mPalette[(int)(focused ? PaletteIndex::CurrentLineFill : PaletteIndex::CurrentLineFillInactive)]);
+                    drawList->AddRect(start, end, mPalette[(int)PaletteIndex::CurrentLineEdge], 1.0f);
+                }
+
+                // Render the cursor
+                if (focused)
+                {
+                    auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                    auto elapsed = timeEnd - mStartTime;
+                    if (elapsed > 400)
+                    {
+                        float width = 1.0f;
+                        auto cindex = GetCharacterIndex(mState.mCursorPosition);
+                        float cx = TextDistanceToLineStart(mState.mCursorPosition);
+
+                        if (mOverwrite && cindex < (int)line.size())
+                        {
+                            auto c = line[cindex].mChar;
+                            if (c == '\t')
+                            {
+                                auto x = (1.0f + std::floor((1.0f + cx) / (float(mTabSize) * spaceSize))) * (float(mTabSize) * spaceSize);
+                                width = x - cx;
+                            }
+                            else
+                            {
+                                char buf2[2];
+                                buf2[0] = line[cindex].mChar;
+                                buf2[1] = '\0';
+                                width = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf2).x;
+                            }
+                        }
+                        ImVec2 cstart(textScreenPos.x + cx, lineStartScreenPos.y);
+                        ImVec2 cend(textScreenPos.x + cx + width, lineStartScreenPos.y + mCharAdvance.y);
+                        drawList->AddRectFilled(cstart, cend, mPalette[(int)PaletteIndex::Cursor]);
+                        if (elapsed > 800)
+                            mStartTime = timeEnd;
+                    }
+                }
+            }
+
+            // Render colorized text
+            auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[0]);
+            ImVec2 bufferOffset;
+
+            for (int i = 0; i < line.size();)
+            {
+                auto& glyph = line[i];
+                auto color = GetGlyphColor(glyph);
+
+                if ((color != prevColor || glyph.mChar == '\t' || glyph.mChar == ' ') && !mLineBuffer.empty())
+                {
+                    const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
+                    drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
+                    auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.c_str(), nullptr, nullptr);
+                    bufferOffset.x += textSize.x;
+                    mLineBuffer.clear();
+                }
+                prevColor = color;
+
+                if (glyph.mChar == '\t')
+                {
+                    auto oldX = bufferOffset.x;
+                    bufferOffset.x = (1.0f + std::floor((1.0f + bufferOffset.x) / (float(mTabSize) * spaceSize))) * (float(mTabSize) * spaceSize);
+                    ++i;
+
+                    if (mShowWhitespaces)
+                    {
+                        const auto s = ImGui::GetFontSize();
+                        const auto x1 = textScreenPos.x + oldX + 1.0f;
+                        const auto x2 = textScreenPos.x + bufferOffset.x - 1.0f;
+                        const auto y = textScreenPos.y + bufferOffset.y + s * 0.5f;
+                        const ImVec2 p1(x1, y);
+                        const ImVec2 p2(x2, y);
+                        const ImVec2 p3(x2 - s * 0.2f, y - s * 0.2f);
+                        const ImVec2 p4(x2 - s * 0.2f, y + s * 0.2f);
+                        drawList->AddLine(p1, p2, 0x90909090);
+                        drawList->AddLine(p2, p3, 0x90909090);
+                        drawList->AddLine(p2, p4, 0x90909090);
+                    }
+                }
+                else if (glyph.mChar == ' ')
+                {
+                    if (mShowWhitespaces)
+                    {
+                        const auto s = ImGui::GetFontSize();
+                        const auto x = textScreenPos.x + bufferOffset.x + spaceSize * 0.5f;
+                        const auto y = textScreenPos.y + bufferOffset.y + s * 0.5f;
+                        drawList->AddCircleFilled(ImVec2(x, y), 1.5f, 0x80808080, 4);
+                    }
+                    bufferOffset.x += spaceSize;
+                    i++;
+                }
+                else
+                {
+                    auto l = UTF8CharLength(glyph.mChar);
+                    while (l-- > 0)
+                        mLineBuffer.push_back(line[i++].mChar);
+                }
+                ++columnNo;
+            }
+
+            if (!mLineBuffer.empty())
+            {
+                const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
+                drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
+                mLineBuffer.clear();
+            }
+
+            ++lineNo;
+        }
+
+        // Draw a tooltip on known identifiers/preprocessor symbols
+        if (ImGui::IsMousePosValid())
+        {
+            auto id = GetWordAt(ScreenPosToCoordinates(ImGui::GetMousePos()));
+            if (!id.empty())
+            {
+                auto it = mLanguageDefinition.mIdentifiers.find(id);
+                if (it != mLanguageDefinition.mIdentifiers.end())
+                {
+                    ImGui::BeginTooltip();
+                    ImGui::TextUnformatted(it->second.mDeclaration.c_str());
+                    ImGui::EndTooltip();
+                }
+                else
+                {
+                    auto pi = mLanguageDefinition.mPreprocIdentifiers.find(id);
+                    if (pi != mLanguageDefinition.mPreprocIdentifiers.end())
+                    {
+                        ImGui::BeginTooltip();
+                        ImGui::TextUnformatted(pi->second.mDeclaration.c_str());
+                        ImGui::EndTooltip();
+                    }
+                }
+            }
+        }
+    }
+
+
+    ImGui::Dummy(ImVec2((longest + 2), mLines.size() * mCharAdvance.y));
+
+    if (mScrollToCursor)
+    {
+        EnsureCursorVisible();
+        ImGui::SetWindowFocus();
+        mScrollToCursor = false;
+    }
+}
+
+void TextEditor::PostRender()
+{
+    if (mHandleKeyboardInputs)
+        ImGui::PopAllowKeyboardFocus();
+
+    if (!mIgnoreImGuiChild)
+        ImGui::EndChild();
+
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+
+    mWithinRender = false;
 }
 
 std::string TextEditor::GetText(const Coordinates & aStart, const Coordinates & aEnd) const
@@ -849,308 +1157,6 @@ void TextEditor::HandleMouseInputs()
 			}
 		}
 	}
-}
-
-void TextEditor::Render()
-{
-	/* Compute mCharAdvance regarding to scaled font size (Ctrl + mouse wheel)*/
-	const float fontSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, "#", nullptr, nullptr).x;
-	mCharAdvance = ImVec2(fontSize, ImGui::GetTextLineHeightWithSpacing() * mLineSpacing);
-
-	/* Update palette with the current alpha from style */
-	for (int i = 0; i < (int)PaletteIndex::Max; ++i)
-	{
-		auto color = ImGui::ColorConvertU32ToFloat4(mPaletteBase[i]);
-		color.w *= ImGui::GetStyle().Alpha;
-		mPalette[i] = ImGui::ColorConvertFloat4ToU32(color);
-	}
-
-	assert(mLineBuffer.empty());
-
-	auto contentSize = ImGui::GetWindowContentRegionMax();
-	auto drawList = ImGui::GetWindowDrawList();
-	float longest(mTextStart);
-
-	if (mScrollToTop)
-	{
-		mScrollToTop = false;
-		ImGui::SetScrollY(0.f);
-	}
-
-	ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-	auto scrollX = ImGui::GetScrollX();
-	auto scrollY = ImGui::GetScrollY();
-
-	auto lineNo = (int)floor(scrollY / mCharAdvance.y);
-	auto globalLineMax = (int)mLines.size();
-	auto lineMax = std::max(0, std::min((int)mLines.size() - 1, lineNo + (int)floor((scrollY + contentSize.y) / mCharAdvance.y)));
-
-	// Deduce mTextStart by evaluating mLines size (global lineMax) plus two spaces as text width
-	char buf[16];
-	snprintf(buf, 16, " %d ", globalLineMax);
-	mTextStart = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x + mLeftMargin;
-
-	if (!mLines.empty())
-	{
-		float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
-
-		while (lineNo <= lineMax)
-		{
-			ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + lineNo * mCharAdvance.y);
-			ImVec2 textScreenPos = ImVec2(lineStartScreenPos.x + mTextStart, lineStartScreenPos.y);
-
-			auto& line = mLines[lineNo];
-			longest = std::max(mTextStart + TextDistanceToLineStart(Coordinates(lineNo, GetLineMaxColumn(lineNo))), longest);
-			auto columnNo = 0;
-			Coordinates lineStartCoord(lineNo, 0);
-			Coordinates lineEndCoord(lineNo, GetLineMaxColumn(lineNo));
-
-			// Draw selection for the current line
-			float sstart = -1.0f;
-			float ssend = -1.0f;
-
-			assert(mState.mSelectionStart <= mState.mSelectionEnd);
-			if (mState.mSelectionStart <= lineEndCoord)
-				sstart = mState.mSelectionStart > lineStartCoord ? TextDistanceToLineStart(mState.mSelectionStart) : 0.0f;
-			if (mState.mSelectionEnd > lineStartCoord)
-				ssend = TextDistanceToLineStart(mState.mSelectionEnd < lineEndCoord ? mState.mSelectionEnd : lineEndCoord);
-
-			if (mState.mSelectionEnd.mLine > lineNo)
-				ssend += mCharAdvance.x;
-
-			if (sstart != -1 && ssend != -1 && sstart < ssend)
-			{
-				ImVec2 vstart(lineStartScreenPos.x + mTextStart + sstart, lineStartScreenPos.y);
-				ImVec2 vend(lineStartScreenPos.x + mTextStart + ssend, lineStartScreenPos.y + mCharAdvance.y);
-				drawList->AddRectFilled(vstart, vend, mPalette[(int)PaletteIndex::Selection]);
-			}
-
-			// Draw breakpoints
-			auto start = ImVec2(lineStartScreenPos.x + scrollX, lineStartScreenPos.y);
-
-			if (mBreakpoints.count(lineNo + 1) != 0)
-			{
-				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
-				drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::Breakpoint]);
-			}
-
-			// Draw error markers
-			auto errorIt = mErrorMarkers.find(lineNo + 1);
-			if (errorIt != mErrorMarkers.end())
-			{
-				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
-				drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::ErrorMarker]);
-
-				if (ImGui::IsMouseHoveringRect(lineStartScreenPos, end))
-				{
-					ImGui::BeginTooltip();
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
-					ImGui::Text("Error at line %d:", errorIt->first);
-					ImGui::PopStyleColor();
-					ImGui::Separator();
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
-					ImGui::Text("%s", errorIt->second.c_str());
-					ImGui::PopStyleColor();
-					ImGui::EndTooltip();
-				}
-			}
-
-			// Draw line number (right aligned)
-			snprintf(buf, 16, "%d  ", lineNo + 1);
-
-			auto lineNoWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x;
-			drawList->AddText(ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y), mPalette[(int)PaletteIndex::LineNumber], buf);
-
-			if (mState.mCursorPosition.mLine == lineNo)
-			{
-				auto focused = ImGui::IsWindowFocused();
-
-				// Highlight the current line (where the cursor is)
-				if (!HasSelection())
-				{
-					auto end = ImVec2(start.x + contentSize.x + scrollX, start.y + mCharAdvance.y);
-					drawList->AddRectFilled(start, end, mPalette[(int)(focused ? PaletteIndex::CurrentLineFill : PaletteIndex::CurrentLineFillInactive)]);
-					drawList->AddRect(start, end, mPalette[(int)PaletteIndex::CurrentLineEdge], 1.0f);
-				}
-
-				// Render the cursor
-				if (focused)
-				{
-					auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					auto elapsed = timeEnd - mStartTime;
-					if (elapsed > 400)
-					{
-						float width = 1.0f;
-						auto cindex = GetCharacterIndex(mState.mCursorPosition);
-						float cx = TextDistanceToLineStart(mState.mCursorPosition);
-
-						if (mOverwrite && cindex < (int)line.size())
-						{
-							auto c = line[cindex].mChar;
-							if (c == '\t')
-							{
-								auto x = (1.0f + std::floor((1.0f + cx) / (float(mTabSize) * spaceSize))) * (float(mTabSize) * spaceSize);
-								width = x - cx;
-							}
-							else
-							{
-								char buf2[2];
-								buf2[0] = line[cindex].mChar;
-								buf2[1] = '\0';
-								width = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf2).x;
-							}
-						}
-						ImVec2 cstart(textScreenPos.x + cx, lineStartScreenPos.y);
-						ImVec2 cend(textScreenPos.x + cx + width, lineStartScreenPos.y + mCharAdvance.y);
-						drawList->AddRectFilled(cstart, cend, mPalette[(int)PaletteIndex::Cursor]);
-						if (elapsed > 800)
-							mStartTime = timeEnd;
-					}
-				}
-			}
-
-			// Render colorized text
-			auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[0]);
-			ImVec2 bufferOffset;
-
-			for (int i = 0; i < line.size();)
-			{
-				auto& glyph = line[i];
-				auto color = GetGlyphColor(glyph);
-
-				if ((color != prevColor || glyph.mChar == '\t' || glyph.mChar == ' ') && !mLineBuffer.empty())
-				{
-					const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
-					drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
-					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.c_str(), nullptr, nullptr);
-					bufferOffset.x += textSize.x;
-					mLineBuffer.clear();
-				}
-				prevColor = color;
-
-				if (glyph.mChar == '\t')
-				{
-					auto oldX = bufferOffset.x;
-					bufferOffset.x = (1.0f + std::floor((1.0f + bufferOffset.x) / (float(mTabSize) * spaceSize))) * (float(mTabSize) * spaceSize);
-					++i;
-
-					if (mShowWhitespaces)
-					{
-						const auto s = ImGui::GetFontSize();
-						const auto x1 = textScreenPos.x + oldX + 1.0f;
-						const auto x2 = textScreenPos.x + bufferOffset.x - 1.0f;
-						const auto y = textScreenPos.y + bufferOffset.y + s * 0.5f;
-						const ImVec2 p1(x1, y);
-						const ImVec2 p2(x2, y);
-						const ImVec2 p3(x2 - s * 0.2f, y - s * 0.2f);
-						const ImVec2 p4(x2 - s * 0.2f, y + s * 0.2f);
-						drawList->AddLine(p1, p2, 0x90909090);
-						drawList->AddLine(p2, p3, 0x90909090);
-						drawList->AddLine(p2, p4, 0x90909090);
-					}
-				}
-				else if (glyph.mChar == ' ')
-				{
-					if (mShowWhitespaces)
-					{
-						const auto s = ImGui::GetFontSize();
-						const auto x = textScreenPos.x + bufferOffset.x + spaceSize * 0.5f;
-						const auto y = textScreenPos.y + bufferOffset.y + s * 0.5f;
-						drawList->AddCircleFilled(ImVec2(x, y), 1.5f, 0x80808080, 4);
-					}
-					bufferOffset.x += spaceSize;
-					i++;
-				}
-				else
-				{
-					auto l = UTF8CharLength(glyph.mChar);
-					while (l-- > 0)
-						mLineBuffer.push_back(line[i++].mChar);
-				}
-				++columnNo;
-			}
-
-			if (!mLineBuffer.empty())
-			{
-				const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
-				drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
-				mLineBuffer.clear();
-			}
-
-			++lineNo;
-		}
-
-		// Draw a tooltip on known identifiers/preprocessor symbols
-		if (ImGui::IsMousePosValid())
-		{
-			auto id = GetWordAt(ScreenPosToCoordinates(ImGui::GetMousePos()));
-			if (!id.empty())
-			{
-				auto it = mLanguageDefinition.mIdentifiers.find(id);
-				if (it != mLanguageDefinition.mIdentifiers.end())
-				{
-					ImGui::BeginTooltip();
-					ImGui::TextUnformatted(it->second.mDeclaration.c_str());
-					ImGui::EndTooltip();
-				}
-				else
-				{
-					auto pi = mLanguageDefinition.mPreprocIdentifiers.find(id);
-					if (pi != mLanguageDefinition.mPreprocIdentifiers.end())
-					{
-						ImGui::BeginTooltip();
-						ImGui::TextUnformatted(pi->second.mDeclaration.c_str());
-						ImGui::EndTooltip();
-					}
-				}
-			}
-		}
-	}
-
-
-	ImGui::Dummy(ImVec2((longest + 2), mLines.size() * mCharAdvance.y));
-
-	if (mScrollToCursor)
-	{
-		EnsureCursorVisible();
-		ImGui::SetWindowFocus();
-		mScrollToCursor = false;
-	}
-}
-
-void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
-{
-	mWithinRender = true;
-	mTextChanged = false;
-	mCursorPositionChanged = false;
-
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPalette[(int)PaletteIndex::Background]));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-	if (!mIgnoreImGuiChild)
-		ImGui::BeginChild(aTitle, aSize, aBorder, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove);
-
-	if (mHandleKeyboardInputs)
-	{
-		HandleKeyboardInputs();
-		ImGui::PushAllowKeyboardFocus(true);
-	}
-
-	if (mHandleMouseInputs)
-		HandleMouseInputs();
-
-	ColorizeInternal();
-	Render();
-
-	if (mHandleKeyboardInputs)
-		ImGui::PopAllowKeyboardFocus();
-
-	if (!mIgnoreImGuiChild)
-		ImGui::EndChild();
-
-	ImGui::PopStyleVar();
-	ImGui::PopStyleColor();
-
-	mWithinRender = false;
 }
 
 void TextEditor::SetText(const std::string & aText)

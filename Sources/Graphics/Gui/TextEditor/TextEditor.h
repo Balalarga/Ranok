@@ -8,9 +8,12 @@
 #include <unordered_map>
 #include <map>
 #include <regex>
+
+#include <Graphics/Gui/Base/GuiItem.h>
+
 #include "imgui.h"
 
-class TextEditor
+class TextEditor: public GuiChildWindow
 {
 public:
 	enum class PaletteIndex
@@ -182,7 +185,7 @@ public:
 		static const LanguageDefinition& Lua();
 	};
 
-	TextEditor();
+    TextEditor(const std::string& title);
 	~TextEditor();
 
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
@@ -194,7 +197,10 @@ public:
 	void SetErrorMarkers(const ErrorMarkers& aMarkers) { mErrorMarkers = aMarkers; }
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
 
-	void Render(const char* aTitle, const ImVec2& aSize = ImVec2(), bool aBorder = false);
+    void PreRender() override;
+    void OnRender() override;
+    void PostRender() override;
+
 	void SetText(const std::string& aText);
 	std::string GetText() const;
 
@@ -345,8 +351,7 @@ private:
 	ImU32 GetGlyphColor(const Glyph& aGlyph) const;
 
 	void HandleKeyboardInputs();
-	void HandleMouseInputs();
-	void Render();
+    void HandleMouseInputs();
 
 	float mLineSpacing;
 	Lines mLines;
