@@ -13,7 +13,7 @@
 
 #include "imgui.h"
 
-class TextEditor: public GuiChildWindow
+class TextEditor: public GuiBase
 {
 public:
 	enum class PaletteIndex
@@ -197,9 +197,7 @@ public:
 	void SetErrorMarkers(const ErrorMarkers& aMarkers) { mErrorMarkers = aMarkers; }
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
 
-    void PreRender() override;
-    void OnRender() override;
-    void PostRender() override;
+    void Render() override;
 
 	void SetText(const std::string& aText);
 	std::string GetText() const;
@@ -352,6 +350,8 @@ private:
 
 	void HandleKeyboardInputs();
     void HandleMouseInputs();
+
+    int mWindowFlags;
 
 	float mLineSpacing;
 	Lines mLines;

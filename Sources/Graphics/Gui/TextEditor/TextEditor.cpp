@@ -27,7 +27,7 @@ bool equals(InputIt1 first1, InputIt1 last1,
 }
 
 TextEditor::TextEditor(const std::string &title)
-    : GuiChildWindow(title)
+    : GuiBase(title)
     , mLineSpacing(1.0f)
 	, mUndoIndex(0)
 	, mTabSize(4)
@@ -52,7 +52,7 @@ TextEditor::TextEditor(const std::string &title)
 	, mShowWhitespaces(true)
 	, mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 {
-    AddWindowFlags(ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove);
+    mWindowFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_NoMove;
 	SetPalette(GetDarkPalette());
 	SetLanguageDefinition(LanguageDefinition::HLSL());
 	mLines.push_back(Line());
@@ -78,8 +78,9 @@ void TextEditor::SetPalette(const Palette & aValue)
     mPaletteBase = aValue;
 }
 
-void TextEditor::PreRender()
+void TextEditor::Render()
 {
+
     mWithinRender = true;
     mTextChanged = false;
     mCursorPositionChanged = false;
@@ -87,7 +88,7 @@ void TextEditor::PreRender()
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPalette[(int)PaletteIndex::Background]));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
     if (!mIgnoreImGuiChild)
-        GuiChildWindow::PreRender();
+        ImGui::BeginChild(Name().c_str(), Size(), false, mWindowFlags);
 
     if (mHandleKeyboardInputs)
     {
@@ -99,10 +100,7 @@ void TextEditor::PreRender()
         HandleMouseInputs();
 
     ColorizeInternal();
-}
 
-void TextEditor::OnRender()
-{
     /* Compute mCharAdvance regarding to scaled font size (Ctrl + mouse wheel)*/
     const float fontSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, "#", nullptr, nullptr).x;
     mCharAdvance = ImVec2(fontSize, ImGui::GetTextLineHeightWithSpacing() * mLineSpacing);
@@ -366,10 +364,7 @@ void TextEditor::OnRender()
         ImGui::SetWindowFocus();
         mScrollToCursor = false;
     }
-}
 
-void TextEditor::PostRender()
-{
     if (mHandleKeyboardInputs)
         ImGui::PopAllowKeyboardFocus();
 
