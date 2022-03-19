@@ -18,6 +18,9 @@ public:
     /// Read file with some relative or absolute path
     static CheckedResult<std::string> ReadSomeFile(const std::string& path);
 
+    /// Write to file with some relative or absolute path
+    static bool WriteSomeFile(const std::string &path, const std::string& text);
+
     /// Read file relative to AssetFolder
     static CheckedResult<std::string> ReadAssetFile(const std::string& path);
 

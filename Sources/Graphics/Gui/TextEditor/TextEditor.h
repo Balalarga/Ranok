@@ -183,9 +183,10 @@ public:
 		static const LanguageDefinition& SQL();
 		static const LanguageDefinition& AngelScript();
 		static const LanguageDefinition& Lua();
+        static const LanguageDefinition& Ranok();
 	};
 
-    TextEditor(const std::string& title);
+    TextEditor(const std::string& title = "");
 	~TextEditor();
 
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);

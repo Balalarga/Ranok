@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Graphics/Gui/Base/GuiItem.h>
+#include <Graphics/Gui/Gui.h>
+
 #include <memory>
 
 class Scene;
-class RanokTextEditor;
 class RayMarchingView;
 
 
@@ -13,7 +13,7 @@ class Editor: public GuiBase
 public:
     struct TextEditorTab
     {
-        std::unique_ptr<RanokTextEditor> tab;
+        TextEditor tab;
         std::string name = "Unknown";
     };
 
@@ -24,6 +24,7 @@ public:
 
     void AddTab(const std::string& text = "");
     void EraseTab(size_t id);
+    void AddFuncWindow();
 
 
 private:

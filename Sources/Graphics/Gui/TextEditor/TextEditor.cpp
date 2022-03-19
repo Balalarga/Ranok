@@ -3156,5 +3156,46 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::Lua()
 
 		inited = true;
 	}
-	return langDef;
+    return langDef;
+}
+
+#include <Ranok/LanguageCore/Functions.h>
+const TextEditor::LanguageDefinition &TextEditor::LanguageDefinition::Ranok()
+{
+
+    static bool inited = false;
+    static TextEditor::LanguageDefinition langDef = TextEditor::LanguageDefinition::CPlusPlus();
+    if (!inited)
+    {
+        static const char* const keywords[] = {
+            "var", "args", "variable", "argument", "arguments", "return"
+        };
+        langDef.mKeywords.clear();
+        for (auto& k : keywords)
+            langDef.mKeywords.insert(k);
+
+        // {declaration, name}
+        std::vector<std::pair<std::string, std::string>> identifiers;
+
+        for (auto& f: Functions::GetAll())
+            identifiers.push_back({"Build-in function", f.name});
+
+        for (auto& f: Functions::GetAllCustoms())
+            identifiers.push_back({"User-define function", f.Info().name});
+
+
+        for (auto& k : identifiers)
+        {
+            TextEditor::Identifier id;
+            id.mDeclaration = k.first;
+            langDef.mIdentifiers.insert(std::make_pair(k.second, id));
+        }
+
+        langDef.mCaseSensitive = false;
+
+        langDef.mName = "Ranok";
+
+        inited = true;
+    }
+    return langDef;
 }

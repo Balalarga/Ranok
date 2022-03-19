@@ -251,7 +251,9 @@ bool RayMarchingView::SetModel(Program &program)
 {
     std::stringstream stream;
     stream << shaderHeader;
-    stream << _codeGenerator.Generate(program);
+    std::string code = _codeGenerator.Generate(program);
+    std::cout << code << std::endl;
+    stream << code;
     stream << shaderFooter;
 
     return GetShader()->UpdateFragmentShader(stream.str());
@@ -262,5 +264,11 @@ void RayMarchingView::Render()
     const auto& size = _parent->GetRenderSize();
     GetShader()->Bind();
     GetShader()->SetUniform("resolution", glm::vec2(size.x, size.y));
+    GetShader()->SetUniform("cameraRotation", _cameraRotation);
     Renderable::Render();
+}
+
+void RayMarchingView::Rotate(glm::vec2 rotation)
+{
+    _cameraRotation += rotation;
 }

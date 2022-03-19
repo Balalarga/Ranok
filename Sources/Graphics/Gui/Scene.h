@@ -24,6 +24,7 @@ public:
     }
 
     void SetBackgroundColor(const ImVec4& color);
+    inline void NeedUpdate() { _needUpdate = true; }
 
     inline const ImVec2& GetRenderSize() { return _renderSize; }
 

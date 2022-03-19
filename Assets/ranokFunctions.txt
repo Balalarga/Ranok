@@ -1,0 +1,17 @@
+symetryAxis
+{
+args o, p;
+
+return abs(o - p) + p;
+}
+
+cut
+{
+args f, o, s, e;
+
+var p1 = -(o - s);
+var p2 = o + e;
+
+return f & p1 & p2;
+
+}

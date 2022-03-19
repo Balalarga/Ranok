@@ -15,10 +15,12 @@ public:
 
     void Render() override;
 
+    void Rotate(glm::vec2 rotation);
+
 
 protected:
     Scene* _parent;
-
+    glm::vec2 _cameraRotation;
 
 private:
     static glm::fvec2 vertices[6];

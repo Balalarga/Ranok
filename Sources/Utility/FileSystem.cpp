@@ -41,6 +41,18 @@ CheckedResult<string> FileSystem::ReadSomeFile(const string &path)
     return stream.str();
 }
 
+bool FileSystem::WriteSomeFile(const std::string &path, const std::string& text)
+{
+    ofstream file(path);
+    if (!file)
+    {
+        cout<<"File "<< path <<" opening error\n";
+        return false;
+    }
+    file << text;
+    file.close();
+}
+
 CheckedResult<string> FileSystem::ReadAssetFile(const string &path)
 {
     return ReadSomeFile(AssetFolder + "/" + path);
