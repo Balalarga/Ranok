@@ -81,7 +81,6 @@ Window::Window(const WindowParams &params):
     ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
 
     ImGuiIO& io = ImGui::GetIO();
-//    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
@@ -89,9 +88,6 @@ Window::Window(const WindowParams &params):
 
 Window::~Window()
 {
-    for(auto& i: _guiItems)
-        delete i;
-
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
@@ -131,13 +127,11 @@ void Window::Close()
 void Window::Render()
 {
     ImGuiIO& io = ImGui::GetIO();
+    io.WantSaveIniSettings = false;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-
-    // Make all screen dockable
-    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
     // Render gui
     for(auto& i: _guiItems)
@@ -175,8 +169,7 @@ void Window::PollEvents()
     }
 }
 
-void Window::AddItem(GuiBase *object)
+void Window::AddItem(GuiBase* object)
 {
-    if (object)
-        _guiItems.push_back(object);
+    _guiItems.push_back(object);
 }

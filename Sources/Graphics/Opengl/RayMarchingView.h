@@ -3,7 +3,7 @@
 #include <glm.hpp>
 #include <Ranok/LanguageCore/CodeGenerator.h>
 
-#include "Base/Renderable.h"
+#include "Renderable.h"
 
 class Scene;
 

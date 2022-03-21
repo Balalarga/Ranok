@@ -1,5 +1,5 @@
 #include "Scene.h"
-#include "Graphics/Opengl/Base/Renderable.h"
+#include "Graphics/Opengl/Renderable.h"
 
 #include <functional>
 
@@ -42,6 +42,7 @@ Scene::Scene(ImVec2 renderSize, const std::string& title):
 
 Scene::~Scene()
 {
+    glDeleteTextures(1, &_texture);
     glDeleteFramebuffers(1, &_fbo);
 }
 
@@ -81,4 +82,34 @@ void Scene::Render()
 void Scene::SetBackgroundColor(const ImVec4 &color)
 {
     _backgroundColor = color;
+}
+
+void Scene::SetRenderSize(unsigned x, unsigned y)
+{
+    if (_renderSize.x != x ||
+        _renderSize.y != y)
+    {
+        _renderSize.x = x;
+        _renderSize.y = y;
+        UpdateTexture();
+    }
+}
+
+void Scene::UpdateTexture()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+    glBindTexture(GL_TEXTURE_2D, _texture);
+
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGB,
+                 _renderSize.x,
+                 _renderSize.y,
+                 0,
+                 GL_RGB,
+                 GL_UNSIGNED_BYTE,
+                 NULL);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

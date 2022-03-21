@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Graphics/Window.h"
+#include "Graphics/Gui/Gui.h"
 #include "Editor/Editor.h"
 
 using namespace std;
@@ -14,7 +15,10 @@ int main(int argc, char **argv)
         cout << "Window creation error\n";
         return -1;
     }
-    window->AddItem(new Editor);
+
+    Editor editor;
+
+    window->AddItem(&editor);
 
     window->Open();
 

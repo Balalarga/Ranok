@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <memory>
 
-#include "Base/GuiItem.h"
+#include "GuiItem.h"
 
 class Renderable;
 
@@ -27,6 +27,11 @@ public:
     inline void NeedUpdate() { _needUpdate = true; }
 
     inline const ImVec2& GetRenderSize() { return _renderSize; }
+    void SetRenderSize(unsigned x, unsigned y);
+
+
+protected:
+    void UpdateTexture();
 
 
 private:

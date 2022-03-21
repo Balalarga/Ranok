@@ -46,7 +46,6 @@ private:
 
     static Window* _self;
 
-
     SDL_Window* _sdlWindow = nullptr;
     SDL_GLContext _glContext;
     bool _isOpened = false;
