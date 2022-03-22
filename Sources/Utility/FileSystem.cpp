@@ -51,6 +51,7 @@ bool FileSystem::WriteSomeFile(const std::string &path, const std::string& text)
     }
     file << text;
     file.close();
+    return true;
 }
 
 CheckedResult<string> FileSystem::ReadAssetFile(const string &path)

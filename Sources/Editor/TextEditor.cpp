@@ -17,35 +17,33 @@ TextEditor::TextEditor():
 
 void TextEditor::Render()
 {
-    if (ImGui::BeginChild(Name().c_str(), Size()))
+    ImGui::BeginChild(Name().c_str(), Size());
+    if (ImGui::BeginTabBar("##TextEditorTabBar", ImGuiTabBarFlags_AutoSelectNewTabs))
     {
-        if (ImGui::BeginTabBar("##TextEditorTabBar", ImGuiTabBarFlags_AutoSelectNewTabs))
+        if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip))
+            AddTab(Tab("New"));
+
+        for (size_t i = 0; i < _tabs.size();)
         {
-            if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip))
-                AddTab(Tab("New"));
+            auto& tab = _tabs[i];
 
-            for (size_t i = 0; i < _tabs.size();)
+            bool opened = true;
+            if (ImGui::BeginTabItem(tab.id.c_str(), &opened))
             {
-                auto& tab = _tabs[i];
-
-                bool opened = true;
-                if (ImGui::BeginTabItem(tab.id.c_str(), &opened))
-                {
-                    _activeTab = i;
-                    tab.window.Render(tab.title.c_str());
-                    ImGui::EndTabItem();
-                }
-
-                if (!opened)
-                    RemoveTab(i);
-                else
-                    ++i;
+                _activeTab = i;
+                tab.window.Render(tab.title.c_str());
+                ImGui::EndTabItem();
             }
 
-            ImGui::EndTabBar();
+            if (!opened)
+                RemoveTab(i);
+            else
+                ++i;
         }
-        ImGui::EndChild();
+
+        ImGui::EndTabBar();
     }
+    ImGui::EndChild();
 }
 
 void TextEditor::AddTab(const Tab& tab)
@@ -72,6 +70,7 @@ void TextEditor::AddTab(const Tab& tab)
 
     auto& last = _tabs.back();
     last.id = tabId;
+    last.window.SetLanguageDefinition(RanokLanguageDefinition());
 }
 
 void TextEditor::RemoveTab(unsigned id)
@@ -101,7 +100,7 @@ std::string TextEditor::GetActiveTabText()
 const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition()
 {
     static bool inited = false;
-    static TextEditWindow::LanguageDefinition langDef = TextEditWindow::LanguageDefinition::CPlusPlus();
+    static TextEditWindow::LanguageDefinition langDef = TextEditWindow::LanguageDefinition::GLSL();
     if (!inited)
     {
         auto funcsFile = FileSystem::ReadAssetFile("ranokFunctions.txt");
@@ -116,9 +115,15 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition()
             }
         }
 
-        static const char* const keywords[] = {
-            "var", "args", "variable", "argument", "arguments", "return"
+        static std::string keywords[] = {
+            "var", "args", "arg", "variable", "argument", "arguments", "return", "const", "constant"
         };
+        static std::string baseIds[] =
+        {
+            "abs", "sqrt", "sin", "cos", "tan", "arctan", "arcsin", "arccos", "cosh", "sinh",
+            "tanh", "exp", "ln", "log", "log10", "log2", "ceil", "floor"
+        };
+
         langDef.mKeywords.clear();
         for (auto& k : keywords)
             langDef.mKeywords.insert(k);
@@ -126,11 +131,23 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition()
         // {description, name}
         std::vector<std::pair<std::string, std::string>> identifiers;
 
+        langDef.mIdentifiers.clear();
+        for (auto& k : baseIds)
+        {
+            identifiers.push_back({"Build-in function", k});
+        }
+
         for (auto& f: Functions::GetAll())
+        {
+            std::string name = f.name;
             identifiers.push_back({"Build-in function", f.name});
+        }
 
         for (auto& f: Functions::GetAllCustoms())
-            identifiers.push_back({"User-define function", f.Info().name});
+        {
+            std::string name = f.Info().name;
+            identifiers.push_back({"User-define function", name});
+        }
 
 
         for (auto& k : identifiers)
@@ -140,7 +157,10 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition()
             langDef.mIdentifiers.insert(std::make_pair(k.second, id));
         }
 
+        langDef.mSingleLineComment = "//";
+
         langDef.mCaseSensitive = false;
+        langDef.mAutoIndentation = true;
 
         langDef.mName = "Ranok";
 

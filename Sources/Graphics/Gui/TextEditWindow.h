@@ -180,6 +180,8 @@ public:
         static const LanguageDefinition& SQL();
         static const LanguageDefinition& AngelScript();
         static const LanguageDefinition& Lua();
+
+        static TokenizeCallback CPlusPlusTokenizer;
     };
 
     TextEditWindow();

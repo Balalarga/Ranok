@@ -2219,7 +2219,7 @@ void TextEditWindow::ColorizeRange(int aFromLine, int aToLine)
 
                     // todo : allmost all language definitions use lower case to specify keywords, so shouldn't this use ::tolower ?
                     if (!mLanguageDefinition.mCaseSensitive)
-                        std::transform(id.begin(), id.end(), id.begin(), ::toupper);
+                        std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
                     if (!line[first - bufferBegin].mPreprocessor)
                     {
@@ -2735,6 +2735,33 @@ static bool TokenizeCStylePunctuation(const char * in_begin, const char * in_end
     return false;
 }
 
+TextEditWindow::LanguageDefinition::TokenizeCallback TextEditWindow::LanguageDefinition::CPlusPlusTokenizer = [](const char * in_begin, const char * in_end, const char *& out_begin, const char *& out_end, PaletteIndex & paletteIndex) -> bool
+{
+    paletteIndex = PaletteIndex::Max;
+
+    while (in_begin < in_end && isascii(*in_begin) && isblank(*in_begin))
+        in_begin++;
+
+    if (in_begin == in_end)
+    {
+        out_begin = in_end;
+        out_end = in_end;
+        paletteIndex = PaletteIndex::Default;
+    }
+    else if (TokenizeCStyleString(in_begin, in_end, out_begin, out_end))
+        paletteIndex = PaletteIndex::String;
+    else if (TokenizeCStyleCharacterLiteral(in_begin, in_end, out_begin, out_end))
+        paletteIndex = PaletteIndex::CharLiteral;
+    else if (TokenizeCStyleIdentifier(in_begin, in_end, out_begin, out_end))
+        paletteIndex = PaletteIndex::Identifier;
+    else if (TokenizeCStyleNumber(in_begin, in_end, out_begin, out_end))
+        paletteIndex = PaletteIndex::Number;
+    else if (TokenizeCStylePunctuation(in_begin, in_end, out_begin, out_end))
+        paletteIndex = PaletteIndex::Punctuation;
+
+    return paletteIndex != PaletteIndex::Max;
+};
+
 const TextEditWindow::LanguageDefinition& TextEditWindow::LanguageDefinition::CPlusPlus()
 {
     static bool inited = false;
@@ -2763,32 +2790,7 @@ const TextEditWindow::LanguageDefinition& TextEditWindow::LanguageDefinition::CP
             langDef.mIdentifiers.insert(std::make_pair(std::string(k), id));
         }
 
-        langDef.mTokenize = [](const char * in_begin, const char * in_end, const char *& out_begin, const char *& out_end, PaletteIndex & paletteIndex) -> bool
-        {
-            paletteIndex = PaletteIndex::Max;
-
-            while (in_begin < in_end && isascii(*in_begin) && isblank(*in_begin))
-                in_begin++;
-
-            if (in_begin == in_end)
-            {
-                out_begin = in_end;
-                out_end = in_end;
-                paletteIndex = PaletteIndex::Default;
-            }
-            else if (TokenizeCStyleString(in_begin, in_end, out_begin, out_end))
-                paletteIndex = PaletteIndex::String;
-            else if (TokenizeCStyleCharacterLiteral(in_begin, in_end, out_begin, out_end))
-                paletteIndex = PaletteIndex::CharLiteral;
-            else if (TokenizeCStyleIdentifier(in_begin, in_end, out_begin, out_end))
-                paletteIndex = PaletteIndex::Identifier;
-            else if (TokenizeCStyleNumber(in_begin, in_end, out_begin, out_end))
-                paletteIndex = PaletteIndex::Number;
-            else if (TokenizeCStylePunctuation(in_begin, in_end, out_begin, out_end))
-                paletteIndex = PaletteIndex::Punctuation;
-
-            return paletteIndex != PaletteIndex::Max;
-        };
+        langDef.mTokenize = CPlusPlusTokenizer;
 
         langDef.mCommentStart = "/*";
         langDef.mCommentEnd = "*/";

@@ -12,9 +12,24 @@
 
 Editor::Editor():
     GuiBase("Editor##editor1"),
-    _scene(new Scene()),
-    _rayMarchView(_scene->AddObject<RayMarchingView>(_scene.get()))
+    _rayMarchView(_scene.AddObject<RayMarchingView>(&_scene)),
+    _tabButtons(2),
+    _activeTab(0)
 {
+    TabButton& textEditorBtn = _tabButtons.at(0);
+    textEditorBtn.imageData = ImageStorage::Get().Load("editIcon", "Images/editIcon.png");
+    textEditorBtn.pressed = [this](){
+        ActivateTab(0);
+    };
+    textEditorBtn.render = std::bind(&Editor::EditorTab, this);
+
+    TabButton& viewBtn = _tabButtons.at(1);
+    viewBtn.imageData = ImageStorage::Get().Load("cameraIcon", "Images/cameraIcon.png");
+    viewBtn.pressed = [this](){
+        ActivateTab(1);
+    };
+    viewBtn.render = std::bind(&Editor::ViewerTab, this);
+
 
     auto funcsFile = FileSystem::ReadAssetFile("ranokFunctions.txt");
     if (funcsFile.Ok())
@@ -36,13 +51,25 @@ void Editor::Render()
     ImGui::SetNextWindowSize(io.DisplaySize);
 
     static int mainWindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     if (ImGui::Begin(Name().c_str(), NULL, mainWindowFlags))
     {
-        EditorTab();
+        constexpr int tabButtonsWidth = 32;
+        ImGui::BeginChild("EditorWindowsTabs", {tabButtonsWidth, 0}, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        for (auto& i: _tabButtons)
+        {
+            if (ImGui::ImageButton((ImTextureID)i.imageData.id, {tabButtonsWidth, tabButtonsWidth}))
+                i.pressed();
+        }
+        ImGui::PopStyleVar(1);
+        ImGui::EndChild();
+        ImGui::SameLine();
+
+        _tabButtons.at(_activeTab).render();
         ImGui::End();
     }
-
-    ImGui::ShowDemoWindow();
+    ImGui::PopStyleVar(1);
 }
 
 void Editor::EditorTab()
@@ -86,31 +113,140 @@ void Editor::EditorTab()
     }
 
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
-    constexpr float widthCoef = 0.4;
-    static ImVec2 childSize = {parentWidth * widthCoef, 0};
-    if (ImGui::BeginChild("EditorFrame", childSize))
+    constexpr float widthCoef = 0.34;
+    ImVec2 childSize = {parentWidth * widthCoef, 0};
+
+    static std::string compileError;
+
+    ImGui::BeginChild("EditorFrameChild", childSize);
+    if (ImGui::Button("Compile"))
     {
-        if (ImGui::Button("Compile"))
+        Lexer lexer = Lexer::CreateFrom(_textEditor.GetActiveTabText());
+        Parser parser;
+        if (_textEditor.GetActiveTabText().empty())
         {
-            Parser parser;
-            Program program = parser.Parse(Lexer::CreateFrom(_textEditor.GetActiveTabText()));
-            _rayMarchView.SetModel(program);
-            _scene->NeedUpdate();
+            compileError = "Text is empty";
+            ImGui::OpenPopup("Compile error");
         }
-
-
-        _textEditor.SetSize(childSize);
-        _textEditor.Render();
-
-        ImGui::EndChild();
-        ImGui::SameLine();
+//        else if (!lexer.Error().empty())
+//        {
+//            compileError = lexer.Error();
+//            ImGui::OpenPopup("Compile error");
+//        }
+        else
+        {
+            Program program = parser.Parse(lexer);
+            if (!program.Root())
+            {
+                compileError = "Program created with error\nCheck your's code";
+                ImGui::OpenPopup("Compile error");
+            }
+//            else if (!parser.Error().empty())
+//            {
+//                compileError = parser.Error();
+//                ImGui::OpenPopup("Compile error");
+//            }
+            else
+            {
+                _rayMarchView.SetModel(program);
+                _scene.NeedUpdate();
+            }
+        }
     }
 
-    _scene->SetSize({parentWidth * (0.994f - widthCoef), 0});
-    _scene->Render();
+    ImGui::SameLine();
+    if (ImGui::Button("Build"))
+    {
+    }
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+    bool unused_open = true;
+    if (ImGui::BeginPopupModal("Compile error", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("%s", compileError.c_str());
+
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar();
+
+
+    _textEditor.SetSize(childSize);
+    _textEditor.Render();
+
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    _scene.Render();
+
+    ImGui::ShowDemoWindow();
 }
 
 void Editor::ViewerTab()
 {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3, 3));
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Open"))
+            {
+            }
 
+            if (ImGui::MenuItem("Save image"))
+            {
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
+
+    const auto parentWidth = ImGui::GetWindowContentRegionWidth();
+    constexpr float widthCoef = 0.34;
+    ImVec2 childSize = {parentWidth * widthCoef, 0};
+
+    ImGui::BeginChild("ViewsTabControls", childSize);
+
+    static float xMin, xMax;
+    static float yMin, yMax;
+    static float zMin, zMax;
+    if (ImGui::DragFloatRange2("Ox", &xMin, &xMax, .001f, -1, 1))
+    {
+        // update scene
+    }
+    if (ImGui::DragFloatRange2("Oy", &yMin, &yMax, .001f, -1, 1))
+    {
+        // update scene
+    }
+    if (ImGui::DragFloatRange2("Oz", &zMin, &zMax, .001f, -1, 1))
+    {
+        // update scene
+    }
+
+
+    static int selectedImage = 0;
+    constexpr int imageSize = 3 + 2;
+    if (ImGui::BeginCombo("Image", ("C"+std::to_string(selectedImage)).c_str()))
+    {
+        for (int i = 0; i < imageSize; ++i)
+        {
+            if (ImGui::Selectable(("C"+std::to_string(i)).c_str()))
+                selectedImage = i;
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::EndChild();
+    ImGui::PopStyleVar(2);
+
+    ImGui::SameLine();
+
+    _imageScene.Render();
+}
+
+void Editor::ActivateTab(unsigned n)
+{
+    _activeTab = n;
 }

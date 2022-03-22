@@ -3,6 +3,7 @@
 #include "Graphics/Gui/Gui.h"
 
 #include <iostream>
+#include <SDL_image.h>
 #include <SDL_opengl.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
@@ -45,6 +46,12 @@ Window::Window(const WindowParams &params):
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
         std::cout << "Error: " << SDL_GetError() << std::endl;
+        return;
+    }
+
+    if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0)
+    {
+        std::cout << "Error: " << IMG_GetError() << std::endl;
         return;
     }
 
@@ -91,6 +98,9 @@ Window::~Window()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+
+
+    IMG_Quit();
 
     SDL_GL_DeleteContext(_glContext);
     SDL_DestroyWindow(_sdlWindow);
