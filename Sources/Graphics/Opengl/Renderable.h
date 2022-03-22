@@ -30,6 +30,7 @@ struct BufferInfo
     void* data;
     unsigned count;
     unsigned drawType;
+    unsigned layoutSize;
     BufferLayout layout;
 };
 
@@ -42,11 +43,14 @@ public:
                const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
     ~Renderable();
 
+    virtual void Render(unsigned count);
     virtual void Render();
 
 
 protected:
     inline Shader* GetShader() { return _shader; }
+    inline const unsigned& GetVao() { return _handler; }
+    inline const BufferInfo& GetVbo() { return _vbo; }
 
 
 private:

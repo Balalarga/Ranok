@@ -69,6 +69,24 @@ public:
         }
     }
 
+    void SetUniform(const std::string& name, const glm::mat4& value)
+    {
+        int loc = GetUniformLoc(name);
+        if (loc >= 0)
+        {
+            glUniformMatrix4fv(loc, 1, GL_FALSE, &value[0][0]);
+        }
+    }
+
+    void SetUniform(const std::string& name, const glm::mat3& value)
+    {
+        int loc = GetUniformLoc(name);
+        if (loc >= 0)
+        {
+            glUniformMatrix3fv(loc, 1, GL_FALSE, &value[0][0]);
+        }
+    }
+
 
 protected:
     bool HasErrors(unsigned shaderId);

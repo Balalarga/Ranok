@@ -22,6 +22,7 @@ protected:
     Scene* _parent;
     glm::vec2 _cameraRotation;
 
+
 private:
     static glm::fvec2 vertices[6];
     static BufferInfo bufferInfo;
