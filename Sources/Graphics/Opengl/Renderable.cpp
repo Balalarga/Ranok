@@ -39,9 +39,11 @@ BufferInfo::BufferInfo(void *data, unsigned count, unsigned drawType, const Buff
     data(data),
     count(count),
     drawType(drawType),
-    layout(layout)
+    layout(layout),
+    layoutSize(0)
 {
-
+    for (auto& i: layout)
+        layoutSize += i.size * i.count;
 }
 
 
@@ -54,10 +56,6 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
     if (!_shader)
         _shader = new Shader();
 
-    int layoutSize = 0;
-    for (auto& i: _vbo.layout)
-        layoutSize += i.size * i.count;
-
     constexpr int buffersCount = 2;
     unsigned buffers[buffersCount];
 
@@ -66,7 +64,7 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
 
     glGenBuffers(buffersCount, buffers);
     glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, _vbo.count * layoutSize, _vbo.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _vbo.count * _vbo.layoutSize, _vbo.data, GL_STATIC_DRAW);
 
     long long offset = 0;
     for (int i = 0; i < _vbo.layout.size(); ++i)
@@ -77,7 +75,7 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
                               item.count,
                               item.openglType,
                               GL_FALSE,
-                              layoutSize,
+                              _vbo.layoutSize,
                               (void*)offset);
         offset += item.count * item.size;
     }
@@ -87,6 +85,14 @@ Renderable::~Renderable()
 {
     glDeleteVertexArrays(1, &_handler);
     delete _shader;
+}
+
+void Renderable::Render(unsigned count)
+{
+    _shader->Bind();
+    glBindVertexArray(_handler);
+    if (_ibo.data == nullptr)
+        glDrawArrays(_vbo.drawType, 0, count);
 }
 
 void Renderable::Render()

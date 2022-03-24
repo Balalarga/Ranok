@@ -30,7 +30,6 @@ Editor::Editor():
     };
     viewBtn.render = std::bind(&Editor::ViewerTab, this);
 
-
     auto funcsFile = FileSystem::ReadAssetFile("ranokFunctions.txt");
     if (funcsFile.Ok())
     {
@@ -140,11 +139,11 @@ void Editor::EditorTab()
             compileError = "Text is empty";
             ImGui::OpenPopup("Compile error");
         }
-//        else if (!lexer.Error().empty())
-//        {
-//            compileError = lexer.Error();
-//            ImGui::OpenPopup("Compile error");
-//        }
+        else if (!lexer.Error().empty())
+        {
+            compileError = lexer.Error();
+            ImGui::OpenPopup("Compile error");
+        }
         else
         {
             Program program = parser.Parse(lexer);
@@ -153,11 +152,11 @@ void Editor::EditorTab()
                 compileError = "Program created with error\nCheck your's code";
                 ImGui::OpenPopup("Compile error");
             }
-//            else if (!parser.Error().empty())
-//            {
-//                compileError = parser.Error();
-//                ImGui::OpenPopup("Compile error");
-//            }
+            else if (!parser.Error().empty())
+            {
+                compileError = parser.Error();
+                ImGui::OpenPopup("Compile error");
+            }
             else
             {
                 _rayMarchView.SetModel(program);
@@ -310,8 +309,10 @@ void Editor::EditorTab()
 
 void Editor::ViewerTab()
 {
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3, 3));
+
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))

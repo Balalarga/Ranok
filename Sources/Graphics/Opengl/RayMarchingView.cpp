@@ -203,7 +203,7 @@ void main()
     float depth = clip_far;
     vec3 n = vec3( 0.0 );
     if ( !ray_marching( eye, dir, depth, n ) ) {
-        color = vec4(0.1, 0.1, 0.2, 1.0);
+        color = vec4(0.8, 0.8, 0.8, 1.0);
         return;
     }
 

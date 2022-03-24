@@ -45,7 +45,7 @@ Scene::~Scene()
     glDeleteTextures(1, &_texture);
     glDeleteFramebuffers(1, &_fbo);
 }
-
+#include <iostream>
 void Scene::Render()
 {
     if (_needUpdate)
@@ -74,6 +74,7 @@ void Scene::Render()
     ImGui::BeginChild(Name().c_str(), Size());
 
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Text("MouseX: %f, MouseY: %f", ImGui::GetCursorPosX(), ImGui::GetCursorPosY());
 
     ImGui::EndChild();
     ImGui::PopStyleVar(4);
@@ -93,6 +94,21 @@ void Scene::SetRenderSize(unsigned x, unsigned y)
         _renderSize.y = y;
         UpdateTexture();
     }
+}
+
+void Scene::HandleMouse(const ImVec2 &mouseDelta)
+{
+    _camera.ProcessMouseMovement(mouseDelta.x, mouseDelta.y);
+}
+
+void Scene::HandleKeyboard(Camera::Camera_Movement dir, float deltaTime)
+{
+    _camera.ProcessKeyboard(dir, deltaTime);
+}
+
+void Scene::HandleScroll(float delta)
+{
+    _camera.ProcessMouseScroll(delta);
 }
 
 void Scene::UpdateTexture()

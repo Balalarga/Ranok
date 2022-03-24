@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "GuiItem.h"
+#include "Graphics/Opengl/Camera.h"
 
 class Renderable;
 
@@ -29,6 +30,12 @@ public:
     inline const ImVec2& GetRenderSize() { return _renderSize; }
     void SetRenderSize(unsigned x, unsigned y);
 
+    const glm::mat4& GetCameraViewProject() { return _camera.GetViewMatrix(); }
+
+    void HandleMouse(const ImVec2& mouseDelta);
+    void HandleKeyboard(Camera::Camera_Movement dir, float deltaTime);
+    void HandleScroll(float delta);
+
 
 protected:
     void UpdateTexture();
@@ -41,6 +48,8 @@ private:
 
     ImVec2 _renderSize;
     ImVec4 _backgroundColor;
+
+    Camera _camera;
 
     std::vector<std::unique_ptr<Renderable>> _objects;
 };
