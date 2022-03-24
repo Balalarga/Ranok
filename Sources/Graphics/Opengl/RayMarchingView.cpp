@@ -234,8 +234,9 @@ float __resultFunc(float x, float y, float z)
 
 
 CodeGenerator::LanguageDefinition RayMarchingView::_languageDefenition =
-        CodeGenerator::LanguageDefinition().MainFuncName("__resultFunc").
-        NumberType("float");
+        CodeGenerator::LanguageDefinition().MainFuncName("__resultFunc")
+        .Functions({{"abs", "abs"}})
+        .NumberType("float");
 
 CodeGenerator RayMarchingView::_codeGenerator(_languageDefenition);
 
