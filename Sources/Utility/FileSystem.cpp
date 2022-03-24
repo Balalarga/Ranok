@@ -58,3 +58,10 @@ CheckedResult<string> FileSystem::ReadAssetFile(const string &path)
 {
     return ReadSomeFile(AssetFolder + "/" + path);
 }
+
+bool FileSystem::HasFile(const std::string &path)
+{
+    ifstream file(path);
+    return file.good();
+}
+

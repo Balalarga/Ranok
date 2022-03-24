@@ -24,6 +24,8 @@ public:
     /// Read file relative to AssetFolder
     static CheckedResult<std::string> ReadAssetFile(const std::string& path);
 
+    static bool HasFile(const std::string& path);
+
 
 private:
     static std::string AssetFolder;

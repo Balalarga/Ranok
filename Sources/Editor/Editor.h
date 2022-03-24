@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <Ranok/Core/OpenclCalculator.h>
+
 #include "TextEditor.h"
 #include "Utility/ImageStorage.h"
 
@@ -36,6 +38,8 @@ private:
 
     Scene _scene;
     Scene _imageScene;
+    Space _space;
     RayMarchingView& _rayMarchView;
     TextEditor _textEditor;
+    OpenclCalculator _openclCalculator;
 };

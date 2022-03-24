@@ -252,7 +252,6 @@ bool RayMarchingView::SetModel(Program &program)
     std::stringstream stream;
     stream << shaderHeader;
     std::string code = _codeGenerator.Generate(program);
-    std::cout << code << std::endl;
     stream << code;
     stream << shaderFooter;
 

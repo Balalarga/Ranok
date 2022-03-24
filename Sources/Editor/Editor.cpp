@@ -42,6 +42,18 @@ Editor::Editor():
             Functions::AddCustom(CustomFunction::FromString(cutted, startId));
         }
     }
+    TextEditor::Tab tab("New");
+    tab.window.SetText(R"(args x, y, z;
+
+x0 = 0;
+y0 = 0;
+z0 = 0;
+
+r = 1;
+s = r ^ 2 - (x - x0) ^ 2 -(y - y0) ^ 2 - (z - z0) ^ 2;
+
+return s;)");
+    _textEditor.AddTab(tab);
 }
 
 void Editor::Render()
@@ -157,10 +169,125 @@ void Editor::EditorTab()
     ImGui::SameLine();
     if (ImGui::Button("Build"))
     {
+        ImGui::OpenPopup("Build model data");
     }
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+
     bool unused_open = true;
+    if (ImGui::BeginPopupModal("Build model data", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::BeginChild("PathContainer", ImVec2(0, 40));
+        static std::string pathToSave(512, ' ');
+        ImGui::InputText("##resPath1", &pathToSave[0], 512, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+        ImGui::SameLine();
+        if (ImGui::Button("Open"))
+        {
+            std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save, "*.");
+            if (!filepath.empty())
+                pathToSave = filepath;
+        }
+        ImGui::EndChild();
+
+        static int modeId = 0;
+        static std::string selectedText = "Model";
+        if (ImGui::BeginCombo("Compute type", selectedText.c_str()))
+        {
+            if (ImGui::Selectable("Model"))
+            {
+                selectedText = "Model";
+                modeId = 0;
+            }
+            if (ImGui::Selectable("M-Image"))
+            {
+                selectedText = "M-Image";
+                modeId = 1;
+            }
+
+            ImGui::EndCombo();
+        }
+        constexpr int minDepth = 5; // Opencl local group size
+        constexpr int maxDepth = 15;
+        static int recursionDepth = minDepth;
+        std::string depthLabel = std::to_string((int)pow(2, recursionDepth)) + " voxels/axis";
+        if (ImGui::InputInt(depthLabel.c_str(), &recursionDepth, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+        {
+            if (recursionDepth > maxDepth)
+                recursionDepth = maxDepth;
+            else if(recursionDepth < minDepth)
+                recursionDepth = minDepth;
+        }
+
+        static bool enableBatching = false;
+        ImGui::Checkbox("Enable batching", &enableBatching);
+
+        constexpr int batchMin = 10;
+        static int batchSize = batchMin;
+        if (enableBatching)
+        {
+            std::string batchLabel = std::to_string((pow(2, batchSize) * (modeId == 0 ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
+            if (ImGui::InputInt(batchLabel.c_str(), &batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+            {
+                if (batchSize < batchMin)
+                    batchSize = batchMin;
+            }
+        }
+
+
+        if (ImGui::Button("Start"))
+        {
+            ImGui::CloseCurrentPopup();
+            Parser parser;
+            Program program = parser.Parse(Lexer::CreateFrom(_textEditor.GetActiveTabText()));
+            auto args = program.GetAllOf<ArgumentExpression>();
+            if (args.size() == 3)
+            {
+                std::vector<ArgumentExpression::Range> ranges{args[0]->range, args[1]->range, args[2]->range};
+                std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
+                std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
+                _space.SetStartPoint(startPoint);
+                _space.SetSize(spaceSize);
+                _space.SetPartition(pow(2, recursionDepth));
+                int modeIdCopy = modeId;
+                auto calculateCallback = [this, modeIdCopy](size_t start, size_t count)
+                {
+                    std::ios_base::openmode mode = std::ios_base::openmode::_S_out;
+                    if (start != 0)
+                        mode = std::ios_base::app;
+
+                    std::ofstream file(pathToSave, mode);
+                    if (file)
+                    {
+                        if (start == 0)
+                            file << _space;
+                        bool ok;
+                        if (modeIdCopy == 0)
+                            ok = _openclCalculator.GetModel().WritePart(file, count);
+                        else
+                            ok = _openclCalculator.GetImage().WritePart(file, count);
+
+                        if (!ok)
+                            std::cout << "Write error\n";
+
+                        file.close();
+                    }
+                };
+
+                if (!_openclCalculator.Calculate(modeId == 0 ? CalculateTarget::Model : CalculateTarget::Image,
+                                                 program,
+                                                 _space,
+                                                 enableBatching ? pow(2, batchSize) : 0,
+                                                 calculateCallback))
+                {
+                    std::cout << "Some calculate error\n";
+                }
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+
+    unused_open = true;
     if (ImGui::BeginPopupModal("Compile error", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("%s", compileError.c_str());
@@ -191,6 +318,16 @@ void Editor::ViewerTab()
         {
             if (ImGui::MenuItem("Open"))
             {
+                std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open, "*.mbin");
+                if (!filepath.empty())
+                {
+                    if (FileSystem::HasFile(filepath))
+                    {
+                        std::ifstream file(filepath);
+                        file >> _space;
+                        file.close();
+                    }
+                }
             }
 
             if (ImGui::MenuItem("Save image"))
