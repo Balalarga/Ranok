@@ -10,6 +10,7 @@ const BufferLayout BufferInfo::DefaultLayout = {
     /// Color
     LayoutItemData(GL_FLOAT, 4),
 };
+static const size_t DefaultLayoutSize = 7;
 
 
 LayoutItemData::LayoutItemData(unsigned openglType, unsigned count):

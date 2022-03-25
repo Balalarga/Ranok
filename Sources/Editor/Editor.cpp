@@ -10,6 +10,33 @@
 #include "Utility/StringUtility.h"
 
 
+static struct
+{
+    std::string vertex = R"(
+#version 330
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec4 color;
+
+out vec4 gridColor;
+
+uniform mat4 worldToView;
+
+void main()
+{
+    gridColor = color;
+    gl_Position = worldToView * vec4(position.x, position.y, position.z, 1.0);
+}
+
+
+)";
+    std::string fragment = R"(
+)";
+} gridShaders;
+
+
+
+
 Editor::Editor():
     GuiBase("Editor##editor1"),
     _rayMarchView(_scene.AddObject<RayMarchingView>(&_scene)),
@@ -70,7 +97,7 @@ void Editor::Render()
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         for (auto& i: _tabButtons)
         {
-            if (ImGui::ImageButton((ImTextureID)i.imageData.id, {tabButtonsWidth, tabButtonsWidth}))
+            if (ImGui::ImageButton((ImTextureID)i.imageData.id, {tabButtonsWidth, tabButtonsWidth}, {}, {1,1}, -1, ImVec4(0.2, 0.2, 0.2, 1.0)))
                 i.pressed();
         }
         ImGui::PopStyleVar(1);

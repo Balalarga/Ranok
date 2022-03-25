@@ -21,6 +21,7 @@ using BufferLayout = std::vector<LayoutItemData>;
 struct BufferInfo
 {
     static const BufferLayout DefaultLayout;
+    static const size_t DefaultLayoutSize;
 
     BufferInfo(void* data,
                unsigned count,
