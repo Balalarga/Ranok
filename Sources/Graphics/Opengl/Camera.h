@@ -9,10 +9,10 @@
 class Camera
 {
     // Default camera values
-    static constexpr float YAW         = -90.0f;
+    static constexpr float YAW         =  0.0f;
     static constexpr float PITCH       =  0.0f;
-    static constexpr float SPEED       =  2.5f;
-    static constexpr float SENSITIVITY =  0.1f;
+    static constexpr float SPEED       =  1.5f;
+    static constexpr float SENSITIVITY =  0.01f;
     static constexpr float ZOOM        =  45.0f;
 public:
     enum class Camera_Movement

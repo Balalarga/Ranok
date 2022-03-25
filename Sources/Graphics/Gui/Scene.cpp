@@ -45,7 +45,7 @@ Scene::~Scene()
     glDeleteTextures(1, &_texture);
     glDeleteFramebuffers(1, &_fbo);
 }
-#include <iostream>
+
 void Scene::Render()
 {
     if (_needUpdate)
@@ -67,14 +67,25 @@ void Scene::Render()
     }
 
 
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::BeginChild(Name().c_str(), Size());
 
+    ImVec2 mousePosAbs = ImGui::GetMousePos();
+    ImVec2 windowPosAbs = ImGui::GetItemRectMin();
+    ImVec2 mousePosRel = ImVec2(mousePosAbs.x - windowPosAbs.x,
+                                mousePosAbs.y - windowPosAbs.y);
+    ImVec2 windowSize = ImGui::GetWindowSize();
+
+    bool isMouseInside = mousePosRel.x > 0 && mousePosRel.y > 0 &&
+            mousePosRel.x < windowSize.x && mousePosRel.y < windowSize.y;
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Right) && (isMouseInside || io.MouseDownDuration[ImGuiMouseButton_Right] > 0.f))
+        HandleMouse(io.MouseDelta);
+
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
-    ImGui::Text("MouseX: %f, MouseY: %f", ImGui::GetCursorPosX(), ImGui::GetCursorPosY());
 
     ImGui::EndChild();
     ImGui::PopStyleVar(4);
@@ -98,7 +109,11 @@ void Scene::SetRenderSize(unsigned x, unsigned y)
 
 void Scene::HandleMouse(const ImVec2 &mouseDelta)
 {
-    _camera.ProcessMouseMovement(mouseDelta.x, mouseDelta.y);
+    if (mouseDelta.x != 0 && mouseDelta.y != 0)
+    {
+        _camera.ProcessMouseMovement(mouseDelta.x, mouseDelta.y);
+        _needUpdate = true;
+    }
 }
 
 void Scene::HandleKeyboard(Camera::Camera_Movement dir, float deltaTime)
@@ -108,7 +123,11 @@ void Scene::HandleKeyboard(Camera::Camera_Movement dir, float deltaTime)
 
 void Scene::HandleScroll(float delta)
 {
-    _camera.ProcessMouseScroll(delta);
+    if (delta != 0)
+    {
+        _camera.ProcessMouseScroll(delta);
+        _needUpdate = true;
+    }
 }
 
 void Scene::UpdateTexture()

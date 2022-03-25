@@ -36,6 +36,8 @@ public:
     void HandleKeyboard(Camera::Camera_Movement dir, float deltaTime);
     void HandleScroll(float delta);
 
+    inline Camera& GetCamera() { return _camera; }
+
 
 protected:
     void UpdateTexture();

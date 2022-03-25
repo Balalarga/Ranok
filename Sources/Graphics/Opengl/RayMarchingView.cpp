@@ -264,11 +264,6 @@ void RayMarchingView::Render()
     const auto& size = _parent->GetRenderSize();
     GetShader()->Bind();
     GetShader()->SetUniform("resolution", glm::vec2(size.x, size.y));
-    GetShader()->SetUniform("cameraRotation", _cameraRotation);
+    GetShader()->SetUniform("cameraRotation", glm::vec2(-_parent->GetCamera().Pitch, -_parent->GetCamera().Yaw));
     Renderable::Render();
-}
-
-void RayMarchingView::Rotate(glm::vec2 rotation)
-{
-    _cameraRotation += rotation;
 }
