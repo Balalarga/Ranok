@@ -1,6 +1,7 @@
 #include "Editor.h"
 
 #include <Graphics/Gui/Scene.h>
+#include <Graphics/Opengl/GridObject.h>
 #include <Graphics/Opengl/RayMarchingView.h>
 #include <Ranok/LanguageCore/Parser.h>
 #include <Ranok/LanguageCore/CustomFunction.h>
@@ -8,33 +9,6 @@
 
 #include "Utility/FileSystem.h"
 #include "Utility/StringUtility.h"
-
-
-static struct
-{
-    std::string vertex = R"(
-#version 330
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec4 color;
-
-out vec4 gridColor;
-
-uniform mat4 worldToView;
-
-void main()
-{
-    gridColor = color;
-    gl_Position = worldToView * vec4(position.x, position.y, position.z, 1.0);
-}
-
-
-)";
-    std::string fragment = R"(
-)";
-} gridShaders;
-
-
 
 
 Editor::Editor():
@@ -80,6 +54,10 @@ s = r ^ 2 - (x - x0) ^ 2 -(y - y0) ^ 2 - (z - z0) ^ 2;
 
 return s;)");
     _textEditor.AddTab(tab);
+
+
+    _imageScene.SetBackgroundColor({0.8, 0.8, 0.8, 1.0});
+    _imageScene.AddObject<GridObject>(&_imageScene);
 }
 
 void Editor::Render()

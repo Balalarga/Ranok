@@ -4,13 +4,13 @@
 #include <iostream>
 
 
-const BufferLayout BufferInfo::DefaultLayout = {
+const BufferLayout BufferInfo::DefaultLayout({
     /// Position
     LayoutItemData(GL_FLOAT, 3),
     /// Color
     LayoutItemData(GL_FLOAT, 4),
-};
-static const size_t DefaultLayoutSize = 7;
+});
+const size_t BufferInfo::DefaultLayoutSize = 7;
 
 
 LayoutItemData::LayoutItemData(unsigned openglType, unsigned count):
@@ -48,14 +48,27 @@ BufferInfo::BufferInfo(void *data, unsigned count, unsigned drawType, const Buff
 }
 
 
-Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &ibo):
+Renderable::Renderable(Scene *parent, Shader *shader, const BufferInfo &vbo, const BufferInfo &ibo):
+    _parent(parent),
     _handler(0),
-    _vbo(vbo),
-    _ibo(ibo),
     _shader(shader)
 {
-    if (!_shader)
-        _shader = new Shader();
+    if (vbo.data != nullptr)
+        SetData(vbo, ibo);
+}
+
+Renderable::~Renderable()
+{
+    glDeleteVertexArrays(1, &_handler);
+    delete _shader;
+}
+
+bool Renderable::SetData(const BufferInfo &vbo, const BufferInfo &ibo)
+{
+    if (_vbo.data != nullptr)
+        return false;
+
+    _vbo = vbo;
 
     constexpr int buffersCount = 2;
     unsigned buffers[buffersCount];
@@ -80,12 +93,8 @@ Renderable::Renderable(const BufferInfo &vbo, Shader *shader, const BufferInfo &
                               (void*)offset);
         offset += item.count * item.size;
     }
-}
 
-Renderable::~Renderable()
-{
-    glDeleteVertexArrays(1, &_handler);
-    delete _shader;
+    return true;
 }
 
 void Renderable::Render(unsigned count)

@@ -6,6 +6,8 @@
 
 #include "Shader.h"
 
+class Scene;
+
 
 struct LayoutItemData
 {
@@ -16,12 +18,22 @@ struct LayoutItemData
     unsigned count;
 };
 
-using BufferLayout = std::vector<LayoutItemData>;
+class BufferLayout: public std::vector<LayoutItemData>
+{
+public:
+    BufferLayout(const std::vector<LayoutItemData>& data):
+        std::vector<LayoutItemData>(data) {}
+    BufferLayout() = default;
+
+};
 
 struct BufferInfo
 {
     static const BufferLayout DefaultLayout;
     static const size_t DefaultLayoutSize;
+
+    BufferInfo():
+        data(nullptr) {}
 
     BufferInfo(void* data,
                unsigned count,
@@ -39,10 +51,13 @@ struct BufferInfo
 class Renderable
 {
 public:
-    Renderable(const BufferInfo& vbo,
-               Shader* shader = nullptr,
+    Renderable(Scene* parent,
+               Shader* shader,
+               const BufferInfo& vbo = BufferInfo(nullptr, 0, {}),
                const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
     ~Renderable();
+
+    bool SetData(const BufferInfo& vbo, const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
 
     virtual void Render(unsigned count);
     virtual void Render();
@@ -52,6 +67,7 @@ protected:
     inline Shader* GetShader() { return _shader; }
     inline const unsigned& GetVao() { return _handler; }
     inline const BufferInfo& GetVbo() { return _vbo; }
+    inline Scene* Parent() const { return _parent; }
 
 
 private:
@@ -60,6 +76,7 @@ private:
     Shader* _shader;
 
     unsigned _handler;
+    Scene* _parent;
 };
 
 #endif // RENDERABLE_H

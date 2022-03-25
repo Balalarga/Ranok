@@ -78,10 +78,9 @@ void main(void)
 
 
 VoxelObejct::VoxelObejct(unsigned size, void* data, Scene* parent):
-    Renderable(BufferInfo(data, size, GL_POINTS)),
+    Renderable(parent, nullptr, BufferInfo(data, size, GL_POINTS)),
     _voxelsCount(size),
     _voxelFilled(0),
-    _parent(parent),
     _model(1.f)
 {
     GetShader()->AddUniforms({"voxelSize", "MVP"});
@@ -90,14 +89,14 @@ VoxelObejct::VoxelObejct(unsigned size, void* data, Scene* parent):
 void VoxelObejct::Render()
 {
     GetShader()->Bind();
-    GetShader()->SetUniform("MVP", _model * _parent->GetCameraViewProject());
+    GetShader()->SetUniform("MVP", _model * Parent()->GetCameraViewProject());
     Renderable::Render();
 }
 
 void VoxelObejct::Render(unsigned count)
 {
     GetShader()->Bind();
-    GetShader()->SetUniform("MVP", _model * _parent->GetCameraViewProject());
+    GetShader()->SetUniform("MVP", _model * Parent()->GetCameraViewProject());
     Renderable::Render(count);
 }
 

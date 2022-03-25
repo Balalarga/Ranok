@@ -16,10 +16,6 @@ public:
     void Render() override;
 
 
-protected:
-    Scene* _parent;
-
-
 private:
     static glm::fvec2 vertices[6];
     static BufferInfo bufferInfo;

@@ -14,7 +14,7 @@ glm::fvec2 RayMarchingView::vertices[6] = {
     {-1, 1},
 };
 
-BufferInfo RayMarchingView::bufferInfo(vertices, 6, GL_TRIANGLES, {LayoutItemData(GL_FLOAT, 2)});
+BufferInfo RayMarchingView::bufferInfo(vertices, 6, GL_TRIANGLES, BufferLayout({LayoutItemData(GL_FLOAT, 2)}));
 
 std::string RayMarchingView::shaderHeader = R"(
 #version 330
@@ -242,8 +242,7 @@ CodeGenerator RayMarchingView::_codeGenerator(_languageDefenition);
 
 
 RayMarchingView::RayMarchingView(Scene *parent):
-    Renderable(bufferInfo, new Shader(defaultVertexShader, defaultFragmentShader)),
-    _parent(parent)
+    Renderable(parent, new Shader(defaultVertexShader, defaultFragmentShader), bufferInfo)
 {
     GetShader()->AddUniforms({"grad_step", "resolution", "cameraPosition", "cameraRotation"});
 }
@@ -261,10 +260,10 @@ bool RayMarchingView::SetModel(Program &program)
 
 void RayMarchingView::Render()
 {
-    const auto& size = _parent->GetRenderSize();
+    const auto& size = Parent()->GetRenderSize();
     GetShader()->Bind();
     GetShader()->SetUniform("resolution", glm::vec2(size.x, size.y));
-    GetShader()->SetUniform("cameraPosition", glm::vec3(0, 0, _parent->GetCamera().Zoom));
-    GetShader()->SetUniform("cameraRotation", glm::vec2(-_parent->GetCamera().Pitch, -_parent->GetCamera().Yaw));
+    GetShader()->SetUniform("cameraPosition", glm::vec3(0, 0, Parent()->GetCamera().Zoom));
+    GetShader()->SetUniform("cameraRotation", glm::vec2(-Parent()->GetCamera().Pitch, -Parent()->GetCamera().Yaw));
     Renderable::Render();
 }

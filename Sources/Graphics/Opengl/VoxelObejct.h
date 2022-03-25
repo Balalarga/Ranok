@@ -25,8 +25,6 @@ private:
     unsigned _voxelsCount;
     unsigned _voxelFilled;
 
-    Scene* _parent;
-
     glm::mat4 _model;
     glm::mat4 _view;
     glm::mat4 _projection;

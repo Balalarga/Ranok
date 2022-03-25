@@ -12,14 +12,13 @@ public:
 
     void Render() override;
 
+    static constexpr size_t AxisLinesCount = 1001;
 
-    static constexpr size_t LinesCount = 1000;
 
 private:
     Scene* _parent;
 
-
-    static std::array<float, BufferInfo::DefaultLayoutSize> _data;
+    static constexpr glm::vec4 Color = {0.2, 0.2, 0.2, 0.5};
 
     static std::string defaultFragmentShader;
     static std::string defaultVertexShader;
