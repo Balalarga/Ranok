@@ -264,6 +264,7 @@ void RayMarchingView::Render()
     const auto& size = _parent->GetRenderSize();
     GetShader()->Bind();
     GetShader()->SetUniform("resolution", glm::vec2(size.x, size.y));
+    GetShader()->SetUniform("cameraPosition", glm::vec3(0, 0, _parent->GetCamera().Zoom));
     GetShader()->SetUniform("cameraRotation", glm::vec2(-_parent->GetCamera().Pitch, -_parent->GetCamera().Yaw));
     Renderable::Render();
 }

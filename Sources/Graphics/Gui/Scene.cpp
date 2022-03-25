@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Graphics/Opengl/Renderable.h"
+#include "Utility/Math.h"
 
 #include <functional>
 
@@ -82,8 +83,17 @@ void Scene::Render()
 
     bool isMouseInside = mousePosRel.x > 0 && mousePosRel.y > 0 &&
             mousePosRel.x < windowSize.x && mousePosRel.y < windowSize.y;
+
     if (ImGui::IsMouseDown(ImGuiMouseButton_Right) && (isMouseInside || io.MouseDownDuration[ImGuiMouseButton_Right] > 0.f))
+    {
         HandleMouse(io.MouseDelta);
+        HandleScroll(io.MouseWheel);
+    }
+    else if (isMouseInside)
+    {
+        HandleScroll(io.MouseWheel);
+    }
+
 
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
 
@@ -109,7 +119,7 @@ void Scene::SetRenderSize(unsigned x, unsigned y)
 
 void Scene::HandleMouse(const ImVec2 &mouseDelta)
 {
-    if (mouseDelta.x != 0 && mouseDelta.y != 0)
+    if (!Math::IsZero(mouseDelta.x) && !Math::IsZero(mouseDelta.y))
     {
         _camera.ProcessMouseMovement(mouseDelta.x, mouseDelta.y);
         _needUpdate = true;
@@ -123,7 +133,7 @@ void Scene::HandleKeyboard(Camera::Camera_Movement dir, float deltaTime)
 
 void Scene::HandleScroll(float delta)
 {
-    if (delta != 0)
+    if (!Math::IsZero(delta))
     {
         _camera.ProcessMouseScroll(delta);
         _needUpdate = true;
