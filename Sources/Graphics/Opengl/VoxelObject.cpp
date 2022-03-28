@@ -1,11 +1,11 @@
-#include "VoxelObejct.h"
+#include "VoxelObject.h"
 
 #include "Graphics/Gui/Scene.h"
 
 #include <gtc/matrix_transform.hpp>
 
 
-std::string VoxelObejct::defaultVertexShader = R"(
+std::string VoxelObject::defaultVertexShader = R"(
 #version 330
 
 layout(location = 0) in vec3 position;
@@ -22,13 +22,13 @@ void main(void)
 }
 )";
 
-std::string VoxelObejct::defaultGeometryShader = R"(
+std::string VoxelObject::defaultGeometryShader = R"(
 #version 330
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
 
-uniform vec3 voxelSize;
+uniform vec3 voxelSize = vec3(0.1, 0.1, 0.1);
 uniform mat4 MVP;
 
 in vec4 vColor[];
@@ -65,7 +65,7 @@ void main()
 }
 )";
 
-std::string VoxelObejct::defaultFragmentShader = R"(
+std::string VoxelObject::defaultFragmentShader = R"(
 #version 330
 
 in vec4 gColor;
@@ -77,30 +77,23 @@ void main(void)
 )";
 
 
-VoxelObejct::VoxelObejct(unsigned size, void* data, Scene* parent):
-    Renderable(parent, nullptr, BufferInfo(data, size, GL_POINTS)),
+float VoxelObject::PointSize = 10.f;
+
+
+VoxelObject::VoxelObject(Scene* parent, void* data, size_t size):
+    Renderable(parent, new Shader(), BufferInfo(data, size, GL_POINTS)),
     _voxelsCount(size),
-    _voxelFilled(0),
-    _model(1.f)
+    _voxelFilled(0)
 {
-    GetShader()->AddUniforms({"voxelSize", "MVP"});
+    static bool init = false;
+    if(!init)
+    {
+        glEnable(GL_POINT_SIZE);
+        glPointSize(PointSize);
+    }
 }
 
-void VoxelObejct::Render()
-{
-    GetShader()->Bind();
-    GetShader()->SetUniform("MVP", _model * Parent()->GetCameraViewProject());
-    Renderable::Render();
-}
-
-void VoxelObejct::Render(unsigned count)
-{
-    GetShader()->Bind();
-    GetShader()->SetUniform("MVP", _model * Parent()->GetCameraViewProject());
-    Renderable::Render(count);
-}
-
-void VoxelObejct::SetSubData(void *begin, unsigned count)
+void VoxelObject::SetSubData(void *begin, size_t count)
 {
     glBindVertexArray(GetVao());
 
@@ -109,4 +102,9 @@ void VoxelObejct::SetSubData(void *begin, unsigned count)
 
     _voxelFilled += count;
     glBindVertexArray(0);
+}
+
+void VoxelObject::Render()
+{
+    Renderable::Render(_voxelFilled);
 }

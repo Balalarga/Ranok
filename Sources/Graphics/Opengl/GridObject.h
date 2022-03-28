@@ -1,26 +1,16 @@
 #pragma once
 
-#include "Renderable.h"
+#include <string>
+#include <glm.hpp>
 
-class Scene;
 
-
-class GridObject: public Renderable
+class GridObject
 {
 public:
-    GridObject(Scene* parent);
+    GridObject() = delete;
 
-    void Render() override;
-
-    static constexpr size_t AxisLinesCount = 1001;
-
-
-private:
-    Scene* _parent;
-
-    static constexpr glm::vec4 Color = {0.2, 0.2, 0.2, 0.5};
-
-    static std::string defaultFragmentShader;
-    static std::string defaultVertexShader;
+    static size_t LinesCount;
+    static glm::vec4 Color;
+    static std::string DefaultFragmentShader;
+    static std::string DefaultVertexShader;
 };
-

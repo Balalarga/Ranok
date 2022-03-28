@@ -18,10 +18,10 @@ public:
     void Render() override;
 
     template<class T, class ...TArgs>
-    T& AddObject(TArgs ...args)
+    T* AddObject(TArgs ...args)
     {
         _objects.push_back(std::make_unique<T>(args...));
-        return *static_cast<T*>((_objects.back().get()));
+        return static_cast<T*>((_objects.back().get()));
     }
 
     void SetBackgroundColor(const ImVec4& color);

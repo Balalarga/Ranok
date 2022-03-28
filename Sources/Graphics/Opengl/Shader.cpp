@@ -48,6 +48,7 @@ Shader::Shader(const std::string &vertexCode,
     _handler(0)
 {
     Compile();
+    AddUniforms({"MVP"});
 }
 
 bool Shader::HasErrors(unsigned shaderId)
@@ -121,9 +122,9 @@ bool Shader::AddUniforms(const std::vector<std::string> &names)
     Unbind();
     if (!allOk)
     {
-        std::cout << _vertexCode << "\n";
-        std::cout << _fragmentCode << "\n";
-        std::cout << _geometryCode << "\n";
+//        std::cout << _vertexCode << "\n";
+//        std::cout << _fragmentCode << "\n";
+//        std::cout << _geometryCode << "\n";
     }
     return allOk;
 }

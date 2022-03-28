@@ -4,6 +4,8 @@
 
 #include <Ranok/Core/OpenclCalculator.h>
 
+#include <Graphics/Opengl/VoxelObject.h>
+
 #include "TextEditor.h"
 #include "Utility/ImageStorage.h"
 
@@ -22,6 +24,7 @@ public:
 
     void EditorTab();
     void ViewerTab();
+    void SetupViewScene();
 
     void ActivateTab(unsigned n);
 
@@ -37,9 +40,15 @@ private:
     unsigned _activeTab;
 
     Scene _scene;
-    Scene _imageScene;
+
     Space _space;
-    RayMarchingView& _rayMarchView;
+    Scene _imageScene;
+    CalculateTarget _lastTarget;
+    FlatArray<char> _modelData;
+    FlatArray<double> _imageData;
+    VoxelObject* _voxelObject;
+
+    RayMarchingView* _rayMarchView;
     TextEditor _textEditor;
     OpenclCalculator _openclCalculator;
 };

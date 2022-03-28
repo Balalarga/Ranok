@@ -1,16 +1,18 @@
 #include "Renderable.h"
 
+#include "Graphics/Gui/Scene.h"
+
 #include <assert.h>
 #include <iostream>
 
 
-const BufferLayout BufferInfo::DefaultLayout({
+const BufferLayout BufferInfo::DefaultLayout = {
     /// Position
     LayoutItemData(GL_FLOAT, 3),
     /// Color
     LayoutItemData(GL_FLOAT, 4),
-});
-const size_t BufferInfo::DefaultLayoutSize = 7;
+};
+static const size_t DefaultLayoutSize = 7;
 
 
 LayoutItemData::LayoutItemData(unsigned openglType, unsigned count):
@@ -36,7 +38,7 @@ LayoutItemData::LayoutItemData(unsigned openglType, unsigned count):
     }
 }
 
-BufferInfo::BufferInfo(void *data, unsigned count, unsigned drawType, const BufferLayout &layout):
+BufferInfo::BufferInfo(void *data, size_t count, unsigned drawType, const BufferLayout &layout):
     data(data),
     count(count),
     drawType(drawType),
@@ -48,13 +50,13 @@ BufferInfo::BufferInfo(void *data, unsigned count, unsigned drawType, const Buff
 }
 
 
-Renderable::Renderable(Scene *parent, Shader *shader, const BufferInfo &vbo, const BufferInfo &ibo):
-    _parent(parent),
+Renderable::Renderable(Scene *scene, Shader *shader, const BufferInfo &vbo, const BufferInfo &ibo):
+    _parent(scene),
     _handler(0),
-    _shader(shader)
+    _shader(nullptr),
+    _modelMatrix(glm::mat4(1.f))
 {
-    if (vbo.data != nullptr)
-        SetData(vbo, ibo);
+    Recreate(vbo, shader, ibo);
 }
 
 Renderable::~Renderable()
@@ -63,14 +65,37 @@ Renderable::~Renderable()
     delete _shader;
 }
 
-bool Renderable::SetData(const BufferInfo &vbo, const BufferInfo &ibo)
+void Renderable::Render(size_t count)
 {
-    if (_vbo.data != nullptr)
-        return false;
+    _shader->Bind();
+    _shader->SetUniform("MVP", _modelMatrix * _parent->GetCameraViewProject());
+    glBindVertexArray(_handler);
+    if (_ibo.data == nullptr)
+        glDrawArrays(_vbo.drawType, 0, count);
+}
 
+void Renderable::Render()
+{
+    _shader->Bind();
+    _shader->SetUniform("MVP", _modelMatrix * _parent->GetCameraViewProject());
+    glBindVertexArray(_handler);
+    if (_ibo.data == nullptr)
+        glDrawArrays(_vbo.drawType, 0, _vbo.count);
+}
+
+void Renderable::Recreate(const BufferInfo &vbo, Shader *shader, const BufferInfo &ibo)
+{
     _vbo = vbo;
 
-    constexpr int buffersCount = 2;
+    if (_shader)
+        delete _shader;
+
+    _shader = shader;
+
+    if (_handler != 0)
+        glDeleteVertexArrays(1, &_handler);
+
+    constexpr int buffersCount = 1;
     unsigned buffers[buffersCount];
 
     glGenVertexArrays(1, &_handler);
@@ -80,8 +105,8 @@ bool Renderable::SetData(const BufferInfo &vbo, const BufferInfo &ibo)
     glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
     glBufferData(GL_ARRAY_BUFFER, _vbo.count * _vbo.layoutSize, _vbo.data, GL_STATIC_DRAW);
 
-    long long offset = 0;
-    for (int i = 0; i < _vbo.layout.size(); ++i)
+    size_t offset = 0;
+    for (size_t i = 0; i < _vbo.layout.size(); ++i)
     {
         const LayoutItemData& item = _vbo.layout[i];
         glEnableVertexAttribArray(i);
@@ -93,22 +118,4 @@ bool Renderable::SetData(const BufferInfo &vbo, const BufferInfo &ibo)
                               (void*)offset);
         offset += item.count * item.size;
     }
-
-    return true;
-}
-
-void Renderable::Render(unsigned count)
-{
-    _shader->Bind();
-    glBindVertexArray(_handler);
-    if (_ibo.data == nullptr)
-        glDrawArrays(_vbo.drawType, 0, count);
-}
-
-void Renderable::Render()
-{
-    _shader->Bind();
-    glBindVertexArray(_handler);
-    if (_ibo.data == nullptr)
-        glDrawArrays(_vbo.drawType, 0, _vbo.count);
 }

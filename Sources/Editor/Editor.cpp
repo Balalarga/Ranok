@@ -15,7 +15,8 @@ Editor::Editor():
     GuiBase("Editor##editor1"),
     _rayMarchView(_scene.AddObject<RayMarchingView>(&_scene)),
     _tabButtons(2),
-    _activeTab(0)
+    _activeTab(0),
+    _voxelObject(nullptr)
 {
     TabButton& textEditorBtn = _tabButtons.at(0);
     textEditorBtn.imageData = ImageStorage::Get().Load("editIcon", "Images/editIcon.png");
@@ -43,7 +44,7 @@ Editor::Editor():
         }
     }
     TextEditor::Tab tab("New");
-    tab.window.SetText(R"(args x, y, z;
+    tab.window.SetText(R"(args x, y, z; // default range [-1, 1];
 
 x0 = 0;
 y0 = 0;
@@ -55,9 +56,7 @@ s = r ^ 2 - (x - x0) ^ 2 -(y - y0) ^ 2 - (z - z0) ^ 2;
 return s;)");
     _textEditor.AddTab(tab);
 
-
-    _imageScene.SetBackgroundColor({0.8, 0.8, 0.8, 1.0});
-    _imageScene.AddObject<GridObject>(&_imageScene);
+    SetupViewScene();
 }
 
 void Editor::Render()
@@ -164,7 +163,7 @@ void Editor::EditorTab()
             }
             else
             {
-                _rayMarchView.SetModel(program);
+                _rayMarchView->SetModel(program);
                 _scene.NeedUpdate();
             }
         }
@@ -193,19 +192,19 @@ void Editor::EditorTab()
         }
         ImGui::EndChild();
 
-        static int modeId = 0;
+        static CalculateTarget calculateTarget;
         static std::string selectedText = "Model";
         if (ImGui::BeginCombo("Compute type", selectedText.c_str()))
         {
             if (ImGui::Selectable("Model"))
             {
                 selectedText = "Model";
-                modeId = 0;
+                calculateTarget = CalculateTarget::Model;
             }
             if (ImGui::Selectable("M-Image"))
             {
                 selectedText = "M-Image";
-                modeId = 1;
+                calculateTarget = CalculateTarget::Image;
             }
 
             ImGui::EndCombo();
@@ -229,7 +228,7 @@ void Editor::EditorTab()
         static int batchSize = batchMin;
         if (enableBatching)
         {
-            std::string batchLabel = std::to_string((pow(2, batchSize) * (modeId == 0 ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
+            std::string batchLabel = std::to_string((pow(2, batchSize) * (calculateTarget  == CalculateTarget::Model ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
             if (ImGui::InputInt(batchLabel.c_str(), &batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
             {
                 if (batchSize < batchMin)
@@ -252,7 +251,7 @@ void Editor::EditorTab()
                 _space.SetStartPoint(startPoint);
                 _space.SetSize(spaceSize);
                 _space.SetPartition(pow(2, recursionDepth));
-                auto calculateCallback = [this, modeIdCopy = modeId](size_t start, size_t count)
+                auto calculateCallback = [this, targetCopy = calculateTarget](size_t start, size_t count)
                 {
                     std::ios_base::openmode mode = std::ios_base::openmode::_S_out;
                     if (start != 0)
@@ -262,9 +261,12 @@ void Editor::EditorTab()
                     if (file)
                     {
                         if (start == 0)
+                        {
                             file << _space;
+                            file << static_cast<uint8_t>(targetCopy);
+                        }
                         bool ok;
-                        if (modeIdCopy == 0)
+                        if (targetCopy == CalculateTarget::Model)
                             ok = _openclCalculator.GetModel().WritePart(file, count);
                         else
                             ok = _openclCalculator.GetImage().WritePart(file, count);
@@ -276,7 +278,7 @@ void Editor::EditorTab()
                     }
                 };
 
-                if (!_openclCalculator.Calculate(modeId == 0 ? CalculateTarget::Model : CalculateTarget::Image,
+                if (!_openclCalculator.Calculate(calculateTarget,
                                                  program,
                                                  _space,
                                                  enableBatching ? pow(2, batchSize) : 0,
@@ -328,9 +330,32 @@ void Editor::ViewerTab()
                 {
                     if (FileSystem::HasFile(filepath))
                     {
+                        _modelData.Clear();
+                        _imageData.Clear();
                         std::ifstream file(filepath);
                         file >> _space;
+                        uint8_t target;
+                        file >> target;
+                        _lastTarget = (CalculateTarget)target;
+                        void* resData = &_modelData;
+                        size_t dataSize = 0;
+                        if (_lastTarget == CalculateTarget::Model)
+                        {
+                            file >> _modelData;
+                            resData = &_modelData;
+                        }
+                        else
+                        {
+                            file >> _imageData;
+                            resData = &_imageData;
+                        }
                         file.close();
+
+                        if (!_voxelObject)
+                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, resData, dataSize);
+                        else
+                            _voxelObject->Recreate(BufferInfo(resData, dataSize, GL_POINTS));
+                        _imageScene.NeedUpdate();
                     }
                 }
             }
@@ -386,6 +411,28 @@ void Editor::ViewerTab()
     ImGui::SameLine();
 
     _imageScene.Render();
+}
+
+void Editor::SetupViewScene()
+{
+    struct Vertex
+    {
+        float x, y, z;
+        glm::fvec4 color;
+    };
+    _imageScene.SetBackgroundColor({0.8, 0.8, 0.8, 1.0});
+
+    Vertex data[]{
+        { 0, 0, 0, {0.7, 0.3, 0.3, 1.0} },
+        { 0, 1, 2, {0.7, 0.3, 0.3, 1.0} },
+        { 0, 2, 0, {0.7, 0.3, 0.3, 1.0} },
+        { 1, 1, 2, {0.7, 0.3, 0.3, 1.0} },
+        { 2, 3, 6, {0.7, 0.3, 0.3, 1.0} },
+        { -5, 8, 10, {0.7, 0.3, 0.3, 1.0} },
+    };
+    int count = sizeof(data)/sizeof(data[0]);
+    _imageScene.AddObject<Renderable>(&_imageScene, new Shader(), BufferInfo(data, count, GL_TRIANGLE_FAN));
+    _imageScene.GetCamera().MouseSensitivity = 0.1f;
 }
 
 void Editor::ActivateTab(unsigned n)

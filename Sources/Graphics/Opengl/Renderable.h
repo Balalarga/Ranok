@@ -6,6 +6,7 @@
 
 #include "Shader.h"
 
+
 class Scene;
 
 
@@ -18,32 +19,22 @@ struct LayoutItemData
     unsigned count;
 };
 
-class BufferLayout: public std::vector<LayoutItemData>
-{
-public:
-    BufferLayout(const std::vector<LayoutItemData>& data):
-        std::vector<LayoutItemData>(data) {}
-    BufferLayout() = default;
-
-};
+using BufferLayout = std::vector<LayoutItemData>;
 
 struct BufferInfo
 {
     static const BufferLayout DefaultLayout;
     static const size_t DefaultLayoutSize;
 
-    BufferInfo():
-        data(nullptr) {}
-
-    BufferInfo(void* data,
-               unsigned count,
+    BufferInfo(void* data = nullptr,
+               size_t count = 0,
                unsigned drawType = GL_TRIANGLES,
                const BufferLayout& layout = DefaultLayout);
 
     void* data;
-    unsigned count;
+    size_t count;
     unsigned drawType;
-    unsigned layoutSize;
+    size_t layoutSize;
     BufferLayout layout;
 };
 
@@ -51,32 +42,35 @@ struct BufferInfo
 class Renderable
 {
 public:
-    Renderable(Scene* parent,
+    Renderable(Scene* scene,
                Shader* shader,
-               const BufferInfo& vbo = BufferInfo(nullptr, 0, {}),
+               const BufferInfo& vbo,
                const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
     ~Renderable();
 
-    bool SetData(const BufferInfo& vbo, const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
-
-    virtual void Render(unsigned count);
+    virtual void Render(size_t count);
     virtual void Render();
+
+    void Recreate(const BufferInfo& vbo,
+                  Shader* shader = nullptr,
+                  const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
 
 
 protected:
+    inline Scene* Parent() { return _parent; }
     inline Shader* GetShader() { return _shader; }
     inline const unsigned& GetVao() { return _handler; }
     inline const BufferInfo& GetVbo() { return _vbo; }
-    inline Scene* Parent() const { return _parent; }
 
 
 private:
     BufferInfo _vbo;
     BufferInfo _ibo;
     Shader* _shader;
+    Scene* _parent;
 
     unsigned _handler;
-    Scene* _parent;
+    glm::mat4 _modelMatrix;
 };
 
 #endif // RENDERABLE_H

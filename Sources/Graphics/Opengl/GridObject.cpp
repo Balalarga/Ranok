@@ -1,9 +1,13 @@
 #include "GridObject.h"
 
-#include "Graphics/Gui/Scene.h"
+
+size_t GridObject::LinesCount = 1000;
 
 
-std::string GridObject::defaultVertexShader = R"(
+glm::vec4 GridObject::Color = {0.5, 0.5, 0.5, 1.0};
+
+
+std::string GridObject::DefaultVertexShader = R"(
 #version 330
 
 layout(location = 0) in vec3 position;
@@ -20,14 +24,15 @@ void main(void)
 }
 )";
 
-std::string GridObject::defaultFragmentShader = R"(
+
+std::string GridObject::DefaultFragmentShader = R"(
 #version 330
 
 out vec4 finalColor;
 
 in vec4 vColor;
 
-uniform vec4 backColor = vec4(0.5, 0.5, 0.5, 1.0);
+uniform vec4 backColor = vec4(0.8, 0.8, 0.8, 1.0);
 const float FARPLANE = 1000;
 
 void main()
@@ -35,51 +40,6 @@ void main()
     float distanceFromCamera = (gl_FragCoord.z / gl_FragCoord.w) / FARPLANE;
     distanceFromCamera = max(0, min(1, distanceFromCamera)); // clip to valid value range
     finalColor = mix(vColor, backColor, distanceFromCamera);
-    finalColor = vColor;
+//    finalColor = vColor;
 }
 )";
-
-
-GridObject::GridObject(Scene *parent):
-    Renderable(parent, new Shader(defaultVertexShader, defaultFragmentShader))
-{
-    static bool bIsInit = false;
-    constexpr size_t count = AxisLinesCount * 4;
-    constexpr float step = 0.1f;
-    constexpr float length = count * step;
-    constexpr float startPos = step / 2.f;
-    static struct Vertex {
-        float x, y, z;
-        float r, g, b, a;
-    } data[count];
-    if (!bIsInit)
-    {
-        auto setter = [](Vertex& vertex, const glm::vec3& pos){
-            vertex.x = pos.x;
-            vertex.y = pos.y;
-            vertex.z = pos.z;
-            vertex.r = Color.r;
-            vertex.g = Color.g;
-            vertex.b = Color.b;
-            vertex.a = Color.a;
-        };
-        for (int i = 0; i < AxisLinesCount; ++i)
-        {
-            float pos = startPos + i * step;
-            setter(data[i], glm::vec3(pos, 0, -length));
-            setter(data[i], glm::vec3(pos, 0, length));
-
-            setter(data[i], glm::vec3(-length, 0, pos));
-            setter(data[i], glm::vec3(length, 0, pos));
-        }
-        bIsInit = true;
-    }
-    SetData(BufferInfo(data, count, GL_LINES));
-}
-
-void GridObject::Render()
-{
-    GetShader()->Bind();
-    GetShader()->SetUniform("MVP", _parent->GetCameraViewProject());
-    Renderable::Render();
-}
