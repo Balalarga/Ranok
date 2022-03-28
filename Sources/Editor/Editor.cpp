@@ -252,8 +252,7 @@ void Editor::EditorTab()
                 _space.SetStartPoint(startPoint);
                 _space.SetSize(spaceSize);
                 _space.SetPartition(pow(2, recursionDepth));
-                int modeIdCopy = modeId;
-                auto calculateCallback = [this, modeIdCopy](size_t start, size_t count)
+                auto calculateCallback = [this, modeIdCopy = modeId](size_t start, size_t count)
                 {
                     std::ios_base::openmode mode = std::ios_base::openmode::_S_out;
                     if (start != 0)
