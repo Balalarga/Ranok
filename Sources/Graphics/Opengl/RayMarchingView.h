@@ -27,4 +27,3 @@ private:
     static CodeGenerator::LanguageDefinition _languageDefenition;
     static CodeGenerator _codeGenerator;
 };
-

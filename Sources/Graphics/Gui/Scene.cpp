@@ -1,6 +1,6 @@
 #include "Scene.h"
 #include "Graphics/Opengl/Renderable.h"
-#include "Utility/Math.h"
+#include "Ranok/Utility/Math.h"
 
 #include <functional>
 
@@ -129,6 +129,7 @@ void Scene::HandleMouse(const ImVec2 &mouseDelta)
 void Scene::HandleKeyboard(Camera::Camera_Movement dir, float deltaTime)
 {
     _camera.ProcessKeyboard(dir, deltaTime);
+    _needUpdate = true;
 }
 
 void Scene::HandleScroll(float delta)

@@ -118,4 +118,8 @@ void Renderable::Recreate(const BufferInfo &vbo, Shader *shader, const BufferInf
                               (void*)offset);
         offset += item.count * item.size;
     }
+
+    glBindVertexArray(0);
+
+    glDeleteBuffers(buffersCount, buffers);
 }

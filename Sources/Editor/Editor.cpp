@@ -1,14 +1,15 @@
 #include "Editor.h"
 
-#include <Graphics/Gui/Scene.h>
+#include <Graphics/Gui/Gui.h>
 #include <Graphics/Opengl/GridObject.h>
 #include <Graphics/Opengl/RayMarchingView.h>
+
 #include <Ranok/LanguageCore/Parser.h>
 #include <Ranok/LanguageCore/CustomFunction.h>
 #include <Ranok/LanguageCore/Functions.h>
+#include <Ranok/Utility/StringUtility.h>
 
 #include "Utility/FileSystem.h"
-#include "Utility/StringUtility.h"
 
 
 Editor::Editor():
@@ -32,17 +33,6 @@ Editor::Editor():
     };
     viewBtn.render = std::bind(&Editor::ViewerTab, this);
 
-    auto funcsFile = FileSystem::ReadAssetFile("ranokFunctions.txt");
-    if (funcsFile.Ok())
-    {
-        int startId = 0;
-        std::string data = StringUtility::Trim(funcsFile.Get());
-        while (startId < data.size())
-        {
-            std::string cutted = data.substr(startId);
-            Functions::AddCustom(CustomFunction::FromString(cutted, startId));
-        }
-    }
     TextEditor::Tab tab("New");
     tab.window.SetText(R"(args x, y, z; // default range [-1, 1];
 
@@ -89,6 +79,17 @@ void Editor::Render()
 
 void Editor::EditorTab()
 {
+    constexpr unsigned customFuncNameLen = 256;
+    static char customFuncName[customFuncNameLen];
+    static TextEditWindow customFuncEditor;
+    static bool customInit = false;
+    if (!customInit)
+    {
+        customFuncEditor.SetLanguageDefinition(TextEditor::RanokLanguageDefinition());
+        customInit = true;
+    }
+
+
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -118,9 +119,6 @@ void Editor::EditorTab()
                         FileSystem::WriteSomeFile(filepath, text);
                 }
             }
-
-            if (ImGui::MenuItem("Add function"))
-                ImGui::OpenPopup("Add function");
 
             ImGui::EndMenu();
         }
@@ -175,6 +173,15 @@ void Editor::EditorTab()
         ImGui::OpenPopup("Build model data");
     }
 
+    ImGui::SameLine();
+    if (ImGui::Button("Add function"))
+    {
+        customFuncName[0] = '\0';
+        customFuncEditor.SetText("");
+        ImGui::OpenPopup("Create function");
+    }
+
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 
     bool unused_open = true;
@@ -186,7 +193,7 @@ void Editor::EditorTab()
         ImGui::SameLine();
         if (ImGui::Button("Open"))
         {
-            std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save, "*.");
+            std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save);
             if (!filepath.empty())
                 pathToSave = filepath;
         }
@@ -248,9 +255,9 @@ void Editor::EditorTab()
                 std::vector<ArgumentExpression::Range> ranges{args[0]->range, args[1]->range, args[2]->range};
                 std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
                 std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
-                _space.SetStartPoint(startPoint);
                 _space.SetSize(spaceSize);
                 _space.SetPartition(pow(2, recursionDepth));
+                _space.SetStartPoint(startPoint);
                 auto calculateCallback = [this, targetCopy = calculateTarget](size_t start, size_t count)
                 {
                     std::ios_base::openmode mode = std::ios_base::openmode::_S_out;
@@ -260,12 +267,13 @@ void Editor::EditorTab()
                     std::ofstream file(pathToSave, mode);
                     if (file)
                     {
+                        bool ok = false;
                         if (start == 0)
                         {
                             file << _space;
                             file << static_cast<uint8_t>(targetCopy);
                         }
-                        bool ok;
+
                         if (targetCopy == CalculateTarget::Model)
                             ok = _openclCalculator.GetModel().WritePart(file, count);
                         else
@@ -277,15 +285,13 @@ void Editor::EditorTab()
                         file.close();
                     }
                 };
-
-                if (!_openclCalculator.Calculate(calculateTarget,
-                                                 program,
-                                                 _space,
-                                                 enableBatching ? pow(2, batchSize) : 0,
-                                                 calculateCallback))
-                {
+                bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
+                                                                   program,
+                                                                   _space,
+                                                                   calculateCallback,
+                                                                   enableBatching ? pow(2, batchSize) : 0);
+                if (!calculateStatus)
                     std::cout << "Some calculate error\n";
-                }
             }
         }
 
@@ -299,8 +305,47 @@ void Editor::EditorTab()
 
         ImGui::EndPopup();
     }
-    ImGui::PopStyleVar();
 
+    unused_open = true;
+    if (ImGui::BeginPopupModal("Create function", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        static ImVec4 color(1.f, 1.f, 1.f, 1.f);
+        static bool functionExists = false;
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        if (ImGui::InputText("Function name", customFuncName, customFuncNameLen))
+        {
+            if (Functions::Find(customFuncName) || Functions::FindCustom(customFuncName))
+            {
+                color = ImVec4(1.f, 0.2f, 0.2f, 1.f);
+                functionExists = true;
+            }
+            else
+            {
+                color = ImVec4(1.f, 1.f, 1.f, 1.f);
+                functionExists = false;
+            }
+        }
+        ImGui::PopStyleColor();
+
+        customFuncEditor.Render("Custom func code", ImVec2(500, 300), true);
+
+        if (ImGui::Button("Create"))
+        {
+            Lexer lexer;
+            lexer.Process(customFuncEditor.GetText());
+            Parser parser;
+            Program program = parser.Parse(lexer);
+            if (!functionExists && lexer.Error().empty() && parser.Error().empty())
+            {
+//                Functions::AddCustom(CustomFunction::FromString());
+            }
+
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar();
 
     _textEditor.SetSize(childSize);
     _textEditor.Render();
@@ -309,8 +354,6 @@ void Editor::EditorTab()
     ImGui::SameLine();
 
     _scene.Render();
-
-    ImGui::ShowDemoWindow();
 }
 
 void Editor::ViewerTab()
@@ -325,38 +368,44 @@ void Editor::ViewerTab()
         {
             if (ImGui::MenuItem("Open"))
             {
-                std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open, "*.mbin");
-                if (!filepath.empty())
+                std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open);
+                if (!filepath.empty() && FileSystem::HasFile(filepath))
                 {
-                    if (FileSystem::HasFile(filepath))
-                    {
-                        _modelData.Clear();
-                        _imageData.Clear();
-                        std::ifstream file(filepath);
-                        file >> _space;
-                        uint8_t target;
-                        file >> target;
-                        _lastTarget = (CalculateTarget)target;
-                        void* resData = &_modelData;
-                        size_t dataSize = 0;
-                        if (_lastTarget == CalculateTarget::Model)
-                        {
-                            file >> _modelData;
-                            resData = &_modelData;
-                        }
-                        else
-                        {
-                            file >> _imageData;
-                            resData = &_imageData;
-                        }
-                        file.close();
+                    _modelData.Clear();
+                    _imageData.Clear();
+                    std::ifstream file(filepath);
 
-                        if (!_voxelObject)
-                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, resData, dataSize);
-                        else
-                            _voxelObject->Recreate(BufferInfo(resData, dataSize, GL_POINTS));
-                        _imageScene.NeedUpdate();
+                    file >> _space;
+
+                    uint8_t target;
+                    file >> target;
+                    _lastTarget = (CalculateTarget)target;
+
+                    size_t dataSize = _space.GetTotalPartition();
+                    if (_lastTarget == CalculateTarget::Model)
+                    {
+                        _modelData.Resize(dataSize);
+                        _modelData.ReadSome(file, dataSize);
                     }
+                    else
+                    {
+                        _imageData.Resize(dataSize);
+                        _imageData.ReadSome(file, dataSize);
+                    }
+                    file.close();
+
+                    if (!_voxelObject)
+                    {
+                        if (_lastTarget == CalculateTarget::Model)
+                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, _space, _modelData);
+                        else
+                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, _space, _imageData);
+                    }
+                    else
+                    {
+//                        _voxelObject->Recreate(BufferInfo(resData, dataSize, GL_POINTS));
+                    }
+                    _imageScene.NeedUpdate();
                 }
             }
 
@@ -424,11 +473,8 @@ void Editor::SetupViewScene()
 
     Vertex data[]{
         { 0, 0, 0, {0.7, 0.3, 0.3, 1.0} },
-        { 0, 1, 2, {0.7, 0.3, 0.3, 1.0} },
-        { 0, 2, 0, {0.7, 0.3, 0.3, 1.0} },
-        { 1, 1, 2, {0.7, 0.3, 0.3, 1.0} },
-        { 2, 3, 6, {0.7, 0.3, 0.3, 1.0} },
-        { -5, 8, 10, {0.7, 0.3, 0.3, 1.0} },
+        { 0, 1, 1, {0.7, 0.3, 0.3, 1.0} },
+        { 0, 1, 0, {0.7, 0.3, 0.3, 1.0} },
     };
     int count = sizeof(data)/sizeof(data[0]);
     _imageScene.AddObject<Renderable>(&_imageScene, new Shader(), BufferInfo(data, count, GL_TRIANGLE_FAN));

@@ -4,6 +4,9 @@
 #include "Graphics/Gui/Gui.h"
 #include "Editor/Editor.h"
 
+#include <Ranok/LanguageCore/Functions.h>
+#include "Utility/FileSystem.h"
+
 using namespace std;
 
 
@@ -104,7 +107,7 @@ int main(int argc, char **argv)
         return -1;
     }
     OpenclSystem::Get().Init();
-
+    Functions::InitCustomsFrom(FileSystem::GetAssetFolder() + "/ranokFunctions.txt");
     Editor* editor = new Editor;
 
     window->AddItem(editor);
@@ -115,5 +118,6 @@ int main(int argc, char **argv)
 
     Window::Destroy();
     OpenclSystem::Get().Destroy();
+    Functions::DumpCustomsOnDemandTo(FileSystem::GetAssetFolder() + "/ranokFunctions.txt");
     return 0;
 }

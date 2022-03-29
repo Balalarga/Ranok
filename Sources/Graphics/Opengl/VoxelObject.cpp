@@ -77,19 +77,47 @@ void main(void)
 )";
 
 
-float VoxelObject::PointSize = 10.f;
+float VoxelObject::PointSize = 1.f;
 
+static bool init = false;
 
-VoxelObject::VoxelObject(Scene* parent, void* data, size_t size):
-    Renderable(parent, new Shader(), BufferInfo(data, size, GL_POINTS)),
-    _voxelsCount(size),
+VoxelObject::VoxelObject(Scene *parent, Space space, FlatArray<char> &model, glm::vec4 color):
+    Renderable(parent, new Shader(), BufferInfo(nullptr, space.GetTotalPartition(), GL_POINTS)),
+    _voxelsCount(space.GetTotalPartition()),
     _voxelFilled(0)
 {
-    static bool init = false;
     if(!init)
     {
         glEnable(GL_POINT_SIZE);
         glPointSize(PointSize);
+        init = true;
+    }
+    struct Vertex{
+        float x, y, z;
+        glm::fvec4 color;
+    };
+    Vertex data[model.Size()];
+    for (size_t i = 0; i < model.Size(); ++i)
+    {
+        auto point = space.GetPoint(i);
+        data[i].x = point[0];
+        data[i].y = point[1];
+        data[i].z = point[2];
+        data[i].color = color;
+    }
+    SetSubData(&data[0], model.Size());
+}
+
+VoxelObject::VoxelObject(Scene *parent, Space space, FlatArray<double> &image):
+    Renderable(parent, new Shader(), BufferInfo(nullptr, space.GetTotalPartition(), GL_POINTS)),
+    _voxelsCount(space.GetTotalPartition()),
+    _voxelFilled(0)
+{
+    if(!init)
+    {
+        glEnable(GL_POINT_SIZE);
+        glPointSize(PointSize);
+        init = true;
     }
 }
 

@@ -1,8 +1,7 @@
 #include "TextEditor.h"
 #include "Utility/FileSystem.h"
-#include "Utility/StringUtility.h"
 
-
+#include <Ranok/Utility/StringUtility.h>
 #include <Ranok/LanguageCore/Functions.h>
 
 
@@ -97,23 +96,13 @@ std::string TextEditor::GetActiveTabText()
     return "";
 }
 
-const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition()
+const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bool forceUpdate)
 {
     static bool inited = false;
     static TextEditWindow::LanguageDefinition langDef = TextEditWindow::LanguageDefinition::GLSL();
-    if (!inited)
+    if (!inited || forceUpdate)
     {
-        auto funcsFile = FileSystem::ReadAssetFile("ranokFunctions.txt");
-        if (funcsFile.Ok())
-        {
-            int startId = 0;
-            std::string data = StringUtility::Trim(funcsFile.Get());
-            while (startId < data.size())
-            {
-                std::string cutted = data.substr(startId);
-                Functions::AddCustom(CustomFunction::FromString(cutted, startId));
-            }
-        }
+        langDef = TextEditWindow::LanguageDefinition::GLSL();
 
         static std::string keywords[] = {
             "var", "args", "arg", "variable", "argument", "arguments", "return", "const", "constant"

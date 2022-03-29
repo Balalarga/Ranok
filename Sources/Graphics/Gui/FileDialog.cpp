@@ -11,7 +11,10 @@ std::string FileDialog::GetFilepath(FileMode mode, const std::string filter)
 
     ofn.lStructSize = sizeof(OPENFILENAME);
     ofn.hwndOwner = NULL;
-    ofn.lpstrFilter = filter.c_str();
+    if (filter.empty())
+        ofn.lpstrFilter = NULL;
+    else
+        ofn.lpstrFilter = filter.c_str();
     ofn.lpstrFile = fileName;
     ofn.nMaxFile = sizeof(fileName);
     ofn.nFilterIndex = 1;

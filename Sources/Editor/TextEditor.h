@@ -32,9 +32,7 @@ public:
     std::string GetActiveTabText();
 
 
-protected:
-    const TextEditWindow::LanguageDefinition& RanokLanguageDefinition();
-
+    static const TextEditWindow::LanguageDefinition& RanokLanguageDefinition(bool forceUpdate = false);
     static std::string LanguageCustomFunctionsFilepath;
 
 
