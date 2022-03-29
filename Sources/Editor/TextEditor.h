@@ -30,10 +30,10 @@ public:
 
     const Tab* GetActiveTab();
     std::string GetActiveTabText();
+    void UpdateLanguageDef();
 
 
     static const TextEditWindow::LanguageDefinition& RanokLanguageDefinition(bool forceUpdate = false);
-    static std::string LanguageCustomFunctionsFilepath;
 
 
 private:

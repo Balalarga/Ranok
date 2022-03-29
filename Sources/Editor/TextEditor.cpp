@@ -5,7 +5,6 @@
 #include <Ranok/LanguageCore/Functions.h>
 
 
-std::string TextEditor::LanguageCustomFunctionsFilepath = "ranokFunctions.txt";
 static unsigned tabCounter = 0;
 
 TextEditor::TextEditor():
@@ -69,6 +68,10 @@ void TextEditor::AddTab(const Tab& tab)
 
     auto& last = _tabs.back();
     last.id = tabId;
+    if (tab.window.GetText().size() == 1)
+        last.window.SetText(R"(args x, y, z;
+
+return ;)");
     last.window.SetLanguageDefinition(RanokLanguageDefinition());
 }
 
@@ -96,6 +99,13 @@ std::string TextEditor::GetActiveTabText()
     return "";
 }
 
+void TextEditor::UpdateLanguageDef()
+{
+    RanokLanguageDefinition(true);
+    for (auto& i: _tabs)
+        i.window.SetLanguageDefinition(RanokLanguageDefinition());
+}
+
 const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bool forceUpdate)
 {
     static bool inited = false;
@@ -107,11 +117,6 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bo
         static std::string keywords[] = {
             "var", "args", "arg", "variable", "argument", "arguments", "return", "const", "constant"
         };
-        static std::string baseIds[] =
-        {
-            "abs", "sqrt", "sin", "cos", "tan", "arctan", "arcsin", "arccos", "cosh", "sinh",
-            "tanh", "exp", "ln", "log", "log10", "log2", "ceil", "floor"
-        };
 
         langDef.mKeywords.clear();
         for (auto& k : keywords)
@@ -121,21 +126,25 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bo
         std::vector<std::pair<std::string, std::string>> identifiers;
 
         langDef.mIdentifiers.clear();
-        for (auto& k : baseIds)
-        {
-            identifiers.push_back({"Build-in function", k});
-        }
-
         for (auto& f: Functions::GetAll())
         {
             std::string name = f.name;
-            identifiers.push_back({"Build-in function", f.name});
+            identifiers.push_back({f.desc, f.name});
         }
 
         for (auto& f: Functions::GetAllCustoms())
         {
-            std::string name = f.Info().name;
-            identifiers.push_back({"User-define function", name});
+            std::stringstream customDesc;
+            customDesc << f.Info().name << "(";
+            for (size_t i = 0; i < f.Args().size(); ++i)
+            {
+                customDesc << f.Args()[i]->name;
+                if (i != f.Args().size() - 1)
+                    customDesc << ", ";
+            }
+            customDesc << ")";
+
+            identifiers.push_back({customDesc.str(), f.Info().name});
         }
 
 
@@ -148,7 +157,7 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bo
 
         langDef.mSingleLineComment = "//";
 
-        langDef.mCaseSensitive = false;
+        langDef.mCaseSensitive = true;
         langDef.mAutoIndentation = true;
 
         langDef.mName = "Ranok";

@@ -89,7 +89,6 @@ void Editor::EditorTab()
         customInit = true;
     }
 
-
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -312,6 +311,7 @@ void Editor::EditorTab()
         static ImVec4 color(1.f, 1.f, 1.f, 1.f);
         static bool functionExists = false;
         ImGui::PushStyleColor(ImGuiCol_Text, color);
+        customFuncEditor.SetLanguageDefinition(TextEditor::RanokLanguageDefinition());
         if (ImGui::InputText("Function name", customFuncName, customFuncNameLen))
         {
             if (Functions::Find(customFuncName) || Functions::FindCustom(customFuncName))
@@ -329,18 +329,35 @@ void Editor::EditorTab()
 
         customFuncEditor.Render("Custom func code", ImVec2(500, 300), true);
 
+        static std::string functionCreationError = "";
         if (ImGui::Button("Create"))
         {
-            Lexer lexer;
-            lexer.Process(customFuncEditor.GetText());
-            Parser parser;
-            Program program = parser.Parse(lexer);
-            if (!functionExists && lexer.Error().empty() && parser.Error().empty())
+            if (functionExists)
             {
-//                Functions::AddCustom(CustomFunction::FromString());
+                ImGui::OpenPopup("Function error");
+                functionCreationError = "Function named " + std::string(customFuncName) + " already exists";
             }
-
-            ImGui::CloseCurrentPopup();
+            else
+            {
+                CustomFunction func(customFuncName, customFuncEditor.GetText());
+                if (!func.Root())
+                {
+                    ImGui::OpenPopup("Function error");
+                    functionCreationError = "Function code error, please check it";
+                }
+                else
+                {
+                    Functions::AddCustom(func);
+                    _textEditor.UpdateLanguageDef();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+        }
+        bool unusedopen = true;
+        if (ImGui::BeginPopupModal("Function error", &unusedopen, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::TextUnformatted(functionCreationError.c_str());
+            ImGui::EndPopup();
         }
 
         ImGui::EndPopup();

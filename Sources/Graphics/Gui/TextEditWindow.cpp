@@ -46,7 +46,7 @@ TextEditWindow::TextEditWindow()
     , mHandleKeyboardInputs(true)
     , mHandleMouseInputs(true)
     , mIgnoreImGuiChild(false)
-    , mShowWhitespaces(true)
+    , mShowWhitespaces(false)
     , mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 {
     SetPalette(GetDarkPalette());
@@ -1086,9 +1086,12 @@ void TextEditWindow::Render()
             auto id = GetWordAt(ScreenPosToCoordinates(ImGui::GetMousePos()));
             if (!id.empty())
             {
+                ImVec2 tooltipPos = ImGui::GetMousePos();
+                tooltipPos.y -= 20;
                 auto it = mLanguageDefinition.mIdentifiers.find(id);
                 if (it != mLanguageDefinition.mIdentifiers.end())
                 {
+                    ImGui::SetNextWindowPos(tooltipPos);
                     ImGui::BeginTooltip();
                     ImGui::TextUnformatted(it->second.mDeclaration.c_str());
                     ImGui::EndTooltip();
@@ -1098,6 +1101,7 @@ void TextEditWindow::Render()
                     auto pi = mLanguageDefinition.mPreprocIdentifiers.find(id);
                     if (pi != mLanguageDefinition.mPreprocIdentifiers.end())
                     {
+                        ImGui::SetNextWindowPos(tooltipPos);
                         ImGui::BeginTooltip();
                         ImGui::TextUnformatted(pi->second.mDeclaration.c_str());
                         ImGui::EndTooltip();

@@ -1,11 +1,11 @@
-symetryAxis
+SymetryAxis
 {
 args o, p;
 
 return abs(o - p) + p;
 }
 
-cut
+Cut
 {
 args f, o, s, e;
 
@@ -13,5 +13,13 @@ var p1 = -(o - s);
 var p2 = o + e;
 
 return f & p1 & p2;
+}
+
+Sphere
+{
+args x, y, z, x0, y0, z0, r;
+
+return r^2 - (x-x0)^2 - (y-y0)^2 - (z-z0)^2;
 
 }
+
