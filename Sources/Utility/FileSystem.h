@@ -14,6 +14,7 @@ public:
 
     /// Path to folder without / at end
     static std::string GetAssetFolder();
+    static std::string GetAssetPath(const std::string& file);
 
     /// Read file with some relative or absolute path
     static CheckedResult<std::string> ReadSomeFile(const std::string& path);

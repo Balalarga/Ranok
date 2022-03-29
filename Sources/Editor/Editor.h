@@ -17,16 +17,18 @@ class Editor: public GuiBase
 {
 public:
     Editor();
+    ~Editor();
 
     void Render() override;
 
-    void TryOpenPopup();
+    void ActivateTab(unsigned n);
+
 
     void EditorTab();
     void ViewerTab();
-    void SetupViewScene();
+    void BlueprintTab();
 
-    void ActivateTab(unsigned n);
+    void SetupViewScene();
 
 
 private:

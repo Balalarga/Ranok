@@ -24,6 +24,9 @@ bool equals(InputIt1 first1, InputIt1 last1,
     return first1 == last1 && first2 == last2;
 }
 
+
+ImFont* TextEditWindow::DefaultFont = nullptr;
+
 TextEditWindow::TextEditWindow()
     : mLineSpacing(1.0f)
     , mUndoIndex(0)
@@ -48,6 +51,7 @@ TextEditWindow::TextEditWindow()
     , mIgnoreImGuiChild(false)
     , mShowWhitespaces(false)
     , mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
+    , mFont(DefaultFont ? DefaultFont : ImGui::GetFont())
 {
     SetPalette(GetDarkPalette());
     SetLanguageDefinition(LanguageDefinition::CPlusPlus());
@@ -853,6 +857,7 @@ void TextEditWindow::HandleMouseInputs()
 
 void TextEditWindow::Render()
 {
+    ImGui::PushFont(mFont);
     /* Compute mCharAdvance regarding to scaled font size (Ctrl + mouse wheel)*/
     const float fontSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, "#", nullptr, nullptr).x;
     mCharAdvance = ImVec2(fontSize, ImGui::GetTextLineHeightWithSpacing() * mLineSpacing);
@@ -1120,6 +1125,8 @@ void TextEditWindow::Render()
         ImGui::SetWindowFocus();
         mScrollToCursor = false;
     }
+
+    ImGui::PopFont();
 }
 
 void TextEditWindow::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)

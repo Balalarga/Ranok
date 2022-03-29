@@ -264,9 +264,12 @@ public:
     void Undo(int aSteps = 1);
     void Redo(int aSteps = 1);
 
+    inline void SetFont(ImFont* font) { mFont = font; }
+
     static const Palette& GetDarkPalette();
     static const Palette& GetLightPalette();
     static const Palette& GetRetroBluePalette();
+    static void SetDefaultFont(ImFont* defFont);
 
 private:
     typedef std::vector<std::pair<std::regex, PaletteIndex>> RegexList;
@@ -312,6 +315,8 @@ private:
     };
 
     typedef std::vector<UndoRecord> UndoBuffer;
+
+    static ImFont* DefaultFont;
 
     void ProcessInputs();
     void Colorize(int aFromLine = 0, int aCount = -1);
@@ -386,6 +391,6 @@ private:
     Coordinates mInteractiveStart, mInteractiveEnd;
     std::string mLineBuffer;
     uint64_t mStartTime;
-
+    ImFont* mFont;
     float mLastClick;
 };

@@ -4,3 +4,6 @@
 [submodule "ThirdParty/RanokLibraryCore"]
 	path = ThirdParty/RanokLibraryCore
 	url = https://github.com/Balalarga/RanokLibraryCore.git
+[submodule "ThirdParty/NodeEditor"]
+	path = ThirdParty/NodeEditor
+	url = https://github.com/thedmd/imgui-node-editor.git

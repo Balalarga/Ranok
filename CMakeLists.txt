@@ -32,6 +32,11 @@ add_library(ImGui
     ${THIRDPARTY_DIR}/ImGui/imgui.cpp ${THIRDPARTY_DIR}/ImGui/imgui_draw.cpp
     ${THIRDPARTY_DIR}/ImGui/imgui_tables.cpp ${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
     ${THIRDPARTY_DIR}/ImGui/imgui_demo.cpp
+    ${THIRDPARTY_DIR}/NodeEditor/imgui_node_editor.cpp
+    ${THIRDPARTY_DIR}/NodeEditor/imgui_node_editor_api.cpp
+    ${THIRDPARTY_DIR}/NodeEditor/crude_json.cpp
+    ${THIRDPARTY_DIR}/NodeEditor/imgui_canvas.cpp
+    ${THIRDPARTY_DIR}/NodeEditor/imgui_node_editor.cpp
     # SDL2+OpenGL-specific files
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_sdl.cpp
     ${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp)
@@ -39,6 +44,7 @@ target_link_libraries(ImGui PUBLIC ${LIBS})
 target_link_directories(ImGui PUBLIC ${LIBS_LOCATIONS})
 target_include_directories(ImGui PUBLIC ${THIRDPARTY_DIR}/ImGui
                            ${THIRDPARTY_DIR}/ImGui/backends
+                           ${THIRDPARTY_DIR}/NodeEditor
                            ${LIBS_INCLUDES})
 set(LIBS ${LIBS} ImGui)
 

@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 
 #include "Graphics/Window.h"
 #include "Graphics/Gui/Gui.h"
@@ -106,8 +106,12 @@ int main(int argc, char **argv)
         cout << "Window creation error\n";
         return -1;
     }
+    ImGuiIO& io = ImGui::GetIO();
+    ImFont* font1 = io.Fonts->AddFontFromFileTTF(FileSystem::GetAssetPath("Fonts/Roboto-Regular.ttf").c_str(), 18);
+    io.FontDefault = font1;
+
     OpenclSystem::Get().Init();
-    Functions::InitCustomsFrom(FileSystem::GetAssetFolder() + "/ranokFunctions.txt");
+    Functions::InitCustomsFrom(FileSystem::GetAssetPath("ranokFunctions.txt"));
     Editor* editor = new Editor;
 
     window->AddItem(editor);
@@ -115,9 +119,8 @@ int main(int argc, char **argv)
     window->Open();
 
     delete editor;
-
     Window::Destroy();
     OpenclSystem::Get().Destroy();
-    Functions::DumpCustomsOnDemandTo(FileSystem::GetAssetFolder() + "/ranokFunctions.txt");
+    Functions::DumpCustomsOnDemandTo(FileSystem::GetAssetPath("ranokFunctions.txt"));
     return 0;
 }

@@ -8,30 +8,44 @@
 #include <Ranok/LanguageCore/CustomFunction.h>
 #include <Ranok/LanguageCore/Functions.h>
 #include <Ranok/Utility/StringUtility.h>
+#include <imgui_node_editor.h>
 
 #include "Utility/FileSystem.h"
+
+namespace ed = ax::NodeEditor;
+
+static ed::EditorContext* g_Context = nullptr;
 
 
 Editor::Editor():
     GuiBase("Editor##editor1"),
     _rayMarchView(_scene.AddObject<RayMarchingView>(&_scene)),
-    _tabButtons(2),
+    _tabButtons(3),
     _activeTab(0),
     _voxelObject(nullptr)
 {
+    g_Context = ed::CreateEditor();
+
     TabButton& textEditorBtn = _tabButtons.at(0);
-    textEditorBtn.imageData = ImageStorage::Get().Load("editIcon", "Images/editIcon.png");
+    textEditorBtn.imageData = ImageStorage::Get().Load("codeTabIcon", "Images/code.png");
     textEditorBtn.pressed = [this](){
         ActivateTab(0);
     };
     textEditorBtn.render = std::bind(&Editor::EditorTab, this);
 
     TabButton& viewBtn = _tabButtons.at(1);
-    viewBtn.imageData = ImageStorage::Get().Load("cameraIcon", "Images/cameraIcon.png");
+    viewBtn.imageData = ImageStorage::Get().Load("imageTabIcon", "Images/image.png");
     viewBtn.pressed = [this](){
         ActivateTab(1);
     };
     viewBtn.render = std::bind(&Editor::ViewerTab, this);
+
+    TabButton& blueprintBtn = _tabButtons.at(2);
+    blueprintBtn.imageData = ImageStorage::Get().Load("blueprintTabIcon", "Images/blueprint.png");
+    blueprintBtn.pressed = [this](){
+        ActivateTab(2);
+    };
+    blueprintBtn.render = std::bind(&Editor::BlueprintTab, this);
 
     TextEditor::Tab tab("New");
     tab.window.SetText(R"(args x, y, z; // default range [-1, 1];
@@ -47,6 +61,11 @@ return s;)");
     _textEditor.AddTab(tab);
 
     SetupViewScene();
+}
+
+Editor::~Editor()
+{
+    ed::DestroyEditor(g_Context);
 }
 
 void Editor::Render()
@@ -477,6 +496,40 @@ void Editor::ViewerTab()
     ImGui::SameLine();
 
     _imageScene.Render();
+}
+
+void Editor::BlueprintTab()
+{
+    ed::SetCurrentEditor(g_Context);
+
+    ed::Begin("My Editor");
+
+    int uniqueId = 1;
+
+    // Start drawing nodes.
+    ed::BeginNode(uniqueId++);
+    ImGui::Text("Node A");
+        ed::BeginPin(uniqueId++, ed::PinKind::Input);
+        ImGui::Text("In");
+        ed::EndPin();
+        ImGui::SameLine();
+        ed::BeginPin(uniqueId++, ed::PinKind::Output);
+        ImGui::Text("Out");
+        ed::EndPin();
+    ed::EndNode();
+
+    ed::BeginNode(uniqueId++);
+    ImGui::Text("Node B");
+        ed::BeginPin(uniqueId++, ed::PinKind::Input);
+        ImGui::Text("In");
+        ed::EndPin();
+        ImGui::SameLine();
+        ed::BeginPin(uniqueId++, ed::PinKind::Output);
+        ImGui::Text("Out");
+        ed::EndPin();
+    ed::EndNode();
+
+    ed::End();
 }
 
 void Editor::SetupViewScene()

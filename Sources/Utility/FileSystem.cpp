@@ -28,6 +28,11 @@ string FileSystem::GetAssetFolder()
     return AssetFolder;
 }
 
+string FileSystem::GetAssetPath(const std::string &file)
+{
+    return AssetFolder + "/" + file;
+}
+
 CheckedResult<string> FileSystem::ReadSomeFile(const string &path)
 {
     ifstream file(path);

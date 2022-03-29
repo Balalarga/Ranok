@@ -11,6 +11,7 @@ TextEditor::TextEditor():
     GuiBase("TextEditor"),
     _activeTab(-1)
 {
+
 }
 
 void TextEditor::Render()
