@@ -84,9 +84,12 @@ void Editor::Render()
         ImGui::SameLine();
 
         _tabButtons.at(_activeTab).render();
+
         ImGui::End();
     }
     ImGui::PopStyleVar(1);
+
+    ImGui::ShowDemoWindow();
 }
 
 void Editor::EditorTab()
@@ -493,7 +496,15 @@ void Editor::ViewerTab()
 
 void Editor::BlueprintTab()
 {
+    const auto parentWidth = ImGui::GetWindowContentRegionWidth();
+    constexpr float widthCoef = 0.6;
+    ImVec2 childSize = {parentWidth * widthCoef, 0};
+
+    ImGui::BeginChild("BlueprintControls", childSize);
+
     _blueprintEditor.Render();
+
+    ImGui::EndChild();
 }
 
 void Editor::SetupViewScene()

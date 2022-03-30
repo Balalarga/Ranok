@@ -7,7 +7,7 @@
 #include "Graphics/Opengl/VoxelObject.h"
 
 #include "TextEditor.h"
-#include "BlueprintEditor.h"
+#include "Blueprints/BlueprintEditor.h"
 #include "Utility/ImageStorage.h"
 
 class Scene;

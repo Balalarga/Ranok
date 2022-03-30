@@ -128,25 +128,10 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bo
 
         langDef.mIdentifiers.clear();
         for (auto& f: Functions::GetAll())
-        {
-            std::string name = f.name;
-            identifiers.push_back({f.desc, f.name});
-        }
+            identifiers.push_back({f.Desc(), f.Name()});
 
         for (auto& f: Functions::GetAllCustoms())
-        {
-            std::stringstream customDesc;
-            customDesc << f.Info().name << "(";
-            for (size_t i = 0; i < f.Args().size(); ++i)
-            {
-                customDesc << f.Args()[i]->name;
-                if (i != f.Args().size() - 1)
-                    customDesc << ", ";
-            }
-            customDesc << ")";
-
-            identifiers.push_back({customDesc.str(), f.Info().name});
-        }
+            identifiers.push_back({f.Info().Desc(), f.Info().Name()});
 
 
         for (auto& k : identifiers)
