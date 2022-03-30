@@ -8,7 +8,7 @@
 class GuiBase
 {
 public:
-    GuiBase(const std::string& name);
+    GuiBase(const std::string& name = "");
     virtual ~GuiBase() = default;
 
     virtual void Render() = 0;

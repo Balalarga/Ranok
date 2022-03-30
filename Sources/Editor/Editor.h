@@ -4,9 +4,10 @@
 
 #include <Ranok/Core/OpenclCalculator.h>
 
-#include <Graphics/Opengl/VoxelObject.h>
+#include "Graphics/Opengl/VoxelObject.h"
 
 #include "TextEditor.h"
+#include "BlueprintEditor.h"
 #include "Utility/ImageStorage.h"
 
 class Scene;
@@ -53,4 +54,5 @@ private:
     RayMarchingView* _rayMarchView;
     TextEditor _textEditor;
     OpenclCalculator _openclCalculator;
+    BlueprintEditor _blueprintEditor;
 };
