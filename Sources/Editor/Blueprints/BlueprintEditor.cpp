@@ -170,6 +170,7 @@ ImColor GetIconColor(BlueprintEditor::PinType type)
         case BlueprintEditor::PinType::Bool:     return ImColor(220,  48,  48);
         case BlueprintEditor::PinType::Int:      return ImColor( 68, 201, 156);
         case BlueprintEditor::PinType::Float:    return ImColor(147, 226,  74);
+        case BlueprintEditor::PinType::Variable: return ImColor(147, 226,  74);
         case BlueprintEditor::PinType::String:   return ImColor(124,  21, 153);
         case BlueprintEditor::PinType::Object:   return ImColor( 51, 150, 215);
         case BlueprintEditor::PinType::Function: return ImColor(218,   0, 183);
@@ -188,6 +189,7 @@ void BlueprintEditor::DrawPinIcon(const Pin& pin, bool connected, int alpha)
         case PinType::Bool:     iconType = IconType::Circle; break;
         case PinType::Int:      iconType = IconType::Circle; break;
         case PinType::Float:    iconType = IconType::Circle; break;
+        case PinType::Variable: iconType = IconType::Circle; break;
         case PinType::String:   iconType = IconType::Circle; break;
         case PinType::Object:   iconType = IconType::Circle; break;
         case PinType::Function: iconType = IconType::Circle; break;
@@ -220,57 +222,95 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 
     }
 
-    for (auto& op : Operations::GetBinaries())
+    if (ImGui::TreeNode("Binary operations"))
     {
-        if (ImGui::MenuItem(op.first.c_str()))
+        for (auto& op : Operations::GetBinaries())
         {
-            _nodes.push_back(Node(GetNextId(), op.first.c_str()));
-            _nodes.back().Type = NodeType::Simple;
-            _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-            _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-            _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-            return &_nodes.back();
+            if (ImGui::MenuItem(op.first.c_str()))
+            {
+                _nodes.push_back(Node(GetNextId(), op.first.c_str()));
+                _nodes.back().Type = NodeType::Simple;
+                _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+                _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+                _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+                ImGui::TreePop();
+                return &_nodes.back();
+            }
         }
-    }
-    ImGui::Separator();
-    for (auto& op : Operations::GetUnaries())
-    {
-        if (ImGui::MenuItem(op.first.c_str()))
-        {
-            _nodes.push_back(Node(GetNextId(), op.first.c_str()));
-            _nodes.back().Type = NodeType::Simple;
-            _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-            _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-            return &_nodes.back();
-        }
-    }
-    ImGui::Separator();
-    for (auto& func : Functions::GetAll())
-    {
-        if (ImGui::MenuItem(func.Name().c_str()))
-        {
-            _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
-            _nodes.back().Type = NodeType::Simple;
-            _nodes.back().Descr = func.Desc();
-            _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-            _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-            return &_nodes.back();
-        }
+        ImGui::TreePop();
     }
 
-    ImGui::Separator();
-    for (auto& func : Functions::GetAllCustoms())
+    if (ImGui::TreeNode("Unary operations"))
     {
-        if (ImGui::MenuItem(func.Name().c_str()))
+        for (auto& op : Operations::GetUnaries())
         {
-            _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
-            _nodes.back().Type = NodeType::Simple;
-            _nodes.back().Descr = func.Info().Desc();
-            for (auto& arg: func.Args())
-                _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
-            _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-            return &_nodes.back();
+            if (ImGui::MenuItem(op.first.c_str()))
+            {
+                _nodes.push_back(Node(GetNextId(), op.first.c_str()));
+                _nodes.back().Type = NodeType::Simple;
+                _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+                _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+                ImGui::TreePop();
+                return &_nodes.back();
+            }
         }
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Standart functions"))
+    {
+        for (auto& func : Functions::GetAll())
+        {
+            if (ImGui::MenuItem(func.Name().c_str()))
+            {
+                _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+                _nodes.back().Type = NodeType::Simple;
+                _nodes.back().Descr = func.Desc();
+                _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+                _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+                ImGui::TreePop();
+                return &_nodes.back();
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Custom functions"))
+    {
+        for (auto& func : Functions::GetAllCustoms())
+        {
+            if (ImGui::MenuItem(func.Name().c_str()))
+            {
+                _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+                _nodes.back().Type = NodeType::Simple;
+                _nodes.back().Descr = func.Info().Desc();
+                for (auto& arg: func.Args())
+                    _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+                _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+                ImGui::TreePop();
+                return &_nodes.back();
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    if (ImGui::MenuItem("Add variable"))
+    {
+        _nodes.push_back(Node(GetNextId(), "Name"));
+        _nodes.back().Type = NodeType::Simple;
+        _nodes.back().Descr = "User-defined variable";
+        _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+        _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+        return &_nodes.back();
+    }
+
+    if (ImGui::MenuItem("Comment"))
+    {
+        _nodes.push_back(Node(GetNextId(), "Comment"));
+        _nodes.back().Type = NodeType::Comment;
+        _nodes.back().Name.resize(512);
+        _nodes.back().Size = ImVec2(300, 200);
+        return &_nodes.back();
     }
 
     return nullptr;
@@ -767,7 +807,7 @@ void BlueprintEditor::Render()
             ImGui::BeginHorizontal("horizontal");
             ImGui::Spring(1);
             ImGui::PushFont(_textFont);
-            ImGui::TextUnformatted(node.Name.c_str());
+            ImGui::InputText("", &node.Name[0], node.Name.size());
             ImGui::PopFont();
             ImGui::Spring(1);
             ImGui::EndHorizontal();

@@ -21,6 +21,7 @@ public:
         Object,
         Function,
         Delegate,
+        Variable,
     };
     enum class PinKind
     {
