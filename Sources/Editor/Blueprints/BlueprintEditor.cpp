@@ -107,7 +107,7 @@ BlueprintEditor::Link *BlueprintEditor::FindLink(ax::NodeEditor::LinkId id)
     return nullptr;
 }
 
-BlueprintEditor::Pin *BlueprintEditor::FindPin(ax::NodeEditor::PinId id)
+BlueprintEditor::Pin *BlueprintEditor::FindPin(const ax::NodeEditor::PinId& id)
 {
     if (!id)
         return nullptr;
@@ -332,7 +332,7 @@ void BlueprintEditor::AddDefaultNodes()
     _nodes.back().CanDelete = false;
     _nodes.back().Descr = "Result of function";
     _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-    ed::SetNodePosition(_nodes.back().ID, ImVec2(1000, 0));
+    ed::SetNodePosition(_nodes.back().ID, ImVec2(600, 0));
 };
 
 void BlueprintEditor::Render()
@@ -423,6 +423,11 @@ void BlueprintEditor::Render()
                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
                     DrawPinIcon(input, IsPinLinked(input.ID), (int)(alpha * 255));
                     ImGui::Spring(0);
+                    if (input.LinkId == -1)
+                    {
+                        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+                        ImGui::InputDouble("", &input.Value, 0, 0, "%.3f");
+                    }
                     if (!input.Name.empty())
                     {
                         ImGui::TextUnformatted(input.Name.c_str());
@@ -493,6 +498,7 @@ void BlueprintEditor::Render()
             builder.End();
         }
 
+        // Tree
         for (auto& node : _nodes)
         {
             if (node.Type != NodeType::Tree)
@@ -632,6 +638,7 @@ void BlueprintEditor::Render()
             //ImGui::PopStyleVar();
         }
 
+        // Houdini
         for (auto& node : _nodes)
         {
             if (node.Type != NodeType::Houdini)
@@ -791,6 +798,7 @@ void BlueprintEditor::Render()
             //ImGui::PopStyleVar();
         }
 
+        // Comment
         for (auto& node : _nodes)
         {
             if (node.Type != NodeType::Comment)
@@ -920,6 +928,8 @@ void BlueprintEditor::Render()
                             showLabel("+ Create Link", ImColor(32, 45, 32, 180));
                             if (ed::AcceptNewItem(ImColor(128, 255, 128), 4.0f))
                             {
+                                FindPin(startPinId)->LinkId = _links.size();
+                                FindPin(endPinId)->LinkId = _links.size();
                                 _links.emplace_back(Link(GetNextId(), startPinId, endPinId));
                                 _links.back().Color = GetIconColor(startPin->Type);
                             }
@@ -959,7 +969,15 @@ void BlueprintEditor::Render()
                     {
                         auto id = std::find_if(_links.begin(), _links.end(), [linkId](auto& link) { return link.ID == linkId; });
                         if (id != _links.end())
+                        {
+                            if (auto pin = FindPin(id->StartPinID))
+                                pin->LinkId = -1;
+
+                            if (auto pin = FindPin(id->EndPinID))
+                                pin->LinkId = -1;
+
                             _links.erase(id);
+                        }
                     }
                 }
 
@@ -1090,6 +1108,8 @@ void BlueprintEditor::Render()
                         if (startPin->Kind == PinKind::Input)
                             std::swap(startPin, endPin);
 
+                        startPin->LinkId = _links.size();
+                        endPin->LinkId = _links.size();
                         _links.emplace_back(Link(GetNextId(), startPin->ID, endPin->ID));
                         _links.back().Color = GetIconColor(startPin->Type);
 
@@ -1133,4 +1153,72 @@ void BlueprintEditor::Render()
     ed::End();
 
     ed::SetCurrentEditor(nullptr);
+}
+
+spExpression BlueprintEditor::Iterate(Program& program, Pin* pin)
+{
+    if (pin->LinkId == -1)
+        return program.Table().CreateConstant(pin->Value);
+
+    Node* node = pin->Node;
+
+    auto NextNode = [&node, this](size_t id) -> Pin*
+    {
+        if (node->Inputs[id].LinkId != -1)
+            return FindPin(_links[node->Inputs[id].LinkId].StartPinID);
+        else
+            return &node->Inputs[id];
+    };
+
+    auto expr = program.Table().FindArgument(pin->Name);
+    if (expr && node->Name == "Args")
+        return expr;
+
+    auto unOp = Operations::UnaryFromString(node->Name);
+    if (unOp && node->Inputs.size() == 1)
+        return std::make_shared<UnaryOperation>(FunctionInfo{node->Name, unOp},
+                                                Iterate(program, NextNode(0)));
+
+    auto binOp = Operations::BinaryFromString(node->Name);
+    if (binOp && node->Inputs.size() == 2)
+    {
+        auto lChild = Iterate(program, NextNode(0));
+        auto rChild = Iterate(program, NextNode(1));
+        return std::make_shared<BinaryOperation>(FunctionInfo{node->Name, binOp}, lChild, rChild);
+    }
+
+    if (auto func = Functions::Find(node->Name))
+    {
+        std::vector<spExpression> args(node->Inputs.size());
+        for (size_t i = 0; i < args.size(); ++i)
+            args[i] = Iterate(program, NextNode(i));
+        return std::make_shared<FunctionExpression>(*func, args);
+    }
+
+    if (auto func = Functions::FindCustom(node->Name))
+    {
+        std::vector<spExpression> args(node->Inputs.size());
+        for (size_t i = 0; i < args.size(); ++i)
+            args[i] = Iterate(program, NextNode(i));
+        return std::make_shared<CustomFunctionExpression>(func->Info(), func->Root(), args);
+    }
+
+    return nullptr;
+}
+
+Program BlueprintEditor::GetProgram()
+{
+    Program program;
+
+    auto BeginNode = _nodes[0];
+    auto ResultNode = _nodes[1];
+
+    for (const auto& argPin : BeginNode.Outputs)
+        program.Table().CreateArgument(argPin.Name, {-1, 1});
+
+
+    if (ResultNode.Inputs[0].LinkId != -1)
+        program.Init(Iterate(program, FindPin(_links[ResultNode.Inputs[0].LinkId].StartPinID)));
+
+    return program;
 }

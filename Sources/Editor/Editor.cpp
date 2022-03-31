@@ -496,15 +496,55 @@ void Editor::ViewerTab()
 
 void Editor::BlueprintTab()
 {
+    static auto scene = Scene();
+    static auto view = scene.AddObject<RayMarchingView>(&scene);
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
     constexpr float widthCoef = 0.6;
     ImVec2 childSize = {parentWidth * widthCoef, 0};
 
     ImGui::BeginChild("BlueprintControls", childSize);
 
+    if (ImGui::Button("Compile"))
+    {
+        auto program = _blueprintEditor.GetProgram();
+        std::queue<std::pair<int, Expression*>> nodes;
+        if (program.Root())
+        {
+            program.Root()->Visit(nodes);
+            while (!nodes.empty())
+            {
+                auto &top = nodes.front();
+                for (int i = 1; i < top.first+1; ++i)
+                    std::cout << '\t';
+
+                if (auto func = dynamic_cast<FunctionExpression*>(top.second))
+                {
+                    std::cout << func->function.Name() << "(";
+                    for (auto &a: func->params)
+                        std::cout << a->name << ", ";
+                    std::cout << ")\n";
+                }
+                else
+                {
+                    std::cout << "Node: " << top.second->name << std::endl;
+                }
+                nodes.pop();
+            }
+        }
+        else
+        {
+            std::cout << "Error\n";
+        }
+
+        view->SetModel(program);
+        scene.NeedUpdate();
+    }
+
     _blueprintEditor.Render();
 
     ImGui::EndChild();
+    ImGui::SameLine();
+    scene.Render();
 }
 
 void Editor::SetupViewScene()

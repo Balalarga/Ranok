@@ -6,6 +6,7 @@
 #include "Utility/ImageStorage.h"
 
 #include <imgui_node_editor.h>
+#include <Ranok/LanguageCore/Program.h>
 
 
 class BlueprintEditor: public GuiBase
@@ -67,6 +68,7 @@ public:
         }
     };
 
+    struct Link;
     struct Pin
     {
         ax::NodeEditor::PinId   ID;
@@ -74,9 +76,17 @@ public:
         std::string Name;
         PinType     Type;
         PinKind     Kind;
+        int         LinkId;
+        double      Value;
 
         Pin(int id, const char* name, PinType type):
-            ID(id), Node(nullptr), Name(name), Type(type), Kind(PinKind::Input)
+            ID(id),
+            Node(nullptr),
+            Name(name),
+            Type(type),
+            Kind(PinKind::Input),
+            Value(0),
+            LinkId(-1)
         {
         }
     };
@@ -97,7 +107,7 @@ public:
     };
     Node* FindNode(ax::NodeEditor::NodeId id);
     Link* FindLink(ax::NodeEditor::LinkId id);
-    Pin* FindPin(ax::NodeEditor::PinId id);
+    Pin* FindPin(const ax::NodeEditor::PinId& id);
     bool IsPinLinked(ax::NodeEditor::PinId id);
     void DrawPinIcon(const Pin &pin, bool connected, int alpha);
 
@@ -109,6 +119,10 @@ public:
     Node* ContextMenu();
     void AddDefaultNodes();
     void Render() override;
+
+
+    Program GetProgram();
+    spExpression Iterate(Program& program, Pin* pin);
 
 
 private:
