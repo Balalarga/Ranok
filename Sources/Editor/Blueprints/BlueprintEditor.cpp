@@ -344,6 +344,11 @@ void BlueprintEditor::Render()
     static Pin* newNodeLinkPin = nullptr;
     static Pin* newLinkPin     = nullptr;
 
+    static enum class NodeCreationState
+    {
+        None, Opened, Opening
+    } nodeCreationState = NodeCreationState::None;
+
     ed::SetCurrentEditor(_context);
     ed::Begin("Node editor");
     {
@@ -1079,7 +1084,12 @@ void BlueprintEditor::Render()
 
     if (ImGui::BeginPopup("Create New Node"))
     {
-        auto newNodePostion = openPopupPosition;
+        static auto newNodePostion = openPopupPosition;
+        if (nodeCreationState == NodeCreationState::Opening)
+        {
+            newNodePostion = openPopupPosition;
+            nodeCreationState = NodeCreationState::Opened;
+        }
         //ImGui::SetCursorScreenPos(ImGui::GetMousePosOnOpeningCurrentPopup());
 
         //auto drawList = ImGui::GetWindowDrawList();
