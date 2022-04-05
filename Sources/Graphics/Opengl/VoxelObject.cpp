@@ -3,9 +3,10 @@
 #include "Graphics/Gui/Scene.h"
 
 #include <gtc/matrix_transform.hpp>
+#include <Ranok/Utility/Math.h>
 
 
-std::string VoxelObject::defaultVertexShader = R"(
+std::string vertexImageShader = R"(
 #version 330
 
 layout(location = 0) in vec3 position;
@@ -22,7 +23,18 @@ void main(void)
 }
 )";
 
-std::string VoxelObject::defaultGeometryShader = R"(
+std::string fragmentImageShader = R"(
+#version 330
+
+in vec4 vColor;
+
+void main(void)
+{
+    gl_FragColor = vColor;
+}
+)";
+
+std::string geometryShader = R"(
 #version 330
 
 layout(points) in;
@@ -65,53 +77,94 @@ void main()
 }
 )";
 
-std::string VoxelObject::defaultFragmentShader = R"(
+std::string vertexModelShader = R"(
 #version 330
 
-in vec4 gColor;
+layout(location = 0) in vec3 position;
+
+uniform mat4 MVP;
 
 void main(void)
 {
-    gl_FragColor = gColor;
+    gl_Position = MVP * vec4(position, 1.0);
+}
+)";
+
+std::string fragmentModelShader = R"(
+#version 330
+
+uniform vec4 Color;
+
+void main(void)
+{
+    gl_FragColor = Color;
 }
 )";
 
 
-float VoxelObject::PointSize = 1.f;
+float VoxelObject::PointSize = 3.f;
+
+#include <iostream>
 
 static bool init = false;
-
-VoxelObject::VoxelObject(Scene *parent, Space space, FlatArray<char> &model, glm::vec4 color):
-    Renderable(parent, new Shader(), BufferInfo(nullptr, space.GetTotalPartition(), GL_POINTS)),
-    _voxelsCount(space.GetTotalPartition()),
-    _voxelFilled(0)
+VoxelObject* VoxelObject::Make(Scene *parent, const Space& space, FlatArray<char> &model, glm::vec4 color)
 {
-    if(!init)
-    {
-        glEnable(GL_POINT_SIZE);
-        glPointSize(PointSize);
-        init = true;
-    }
-    struct Vertex{
-        float x, y, z;
-        glm::fvec4 color;
-    };
-    Vertex data[model.Size()];
+    BufferLayout layout({
+                            // Position
+                            LayoutItemData(GL_FLOAT, 3),
+                        });
+    std::vector<glm::vec3> data;
     for (size_t i = 0; i < model.Size(); ++i)
     {
-        auto point = space.GetPoint(i);
-        data[i].x = point[0];
-        data[i].y = point[1];
-        data[i].z = point[2];
-        data[i].color = color;
+        if (model[i] == 0)
+        {
+            auto pos = space.GetPoint(i);
+            data.push_back({pos[0], pos[1], pos[2]});
+        }
     }
-    SetSubData(&data[0], model.Size());
+
+    std::cout << "Model has " << data.size() << " points of " << space.GetTotalPartition() << " points in space\n";
+
+    BufferInfo vbo(&data[0], data.size(), GL_POINTS, layout);
+    auto object = parent->AddObject<VoxelObject>(parent,
+                                          new Shader(vertexModelShader, fragmentModelShader),
+                                          vbo);
+    object->GetShader()->AddUniform("Color");
+    object->_modelColor = color;
+    return object;
 }
 
-VoxelObject::VoxelObject(Scene *parent, Space space, FlatArray<double> &image):
-    Renderable(parent, new Shader(), BufferInfo(nullptr, space.GetTotalPartition(), GL_POINTS)),
-    _voxelsCount(space.GetTotalPartition()),
-    _voxelFilled(0)
+VoxelObject* VoxelObject::Make(Scene *parent, const Space& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage)
+{
+    assert(activeImage < 5);
+
+    struct Vertex
+    {
+        glm::fvec3 pos;
+        glm::fvec4 color;
+    };
+    auto normalize = [](const double& value)
+    {
+        return UINT_MAX * (1.0 + value)/2.0;
+    };
+
+    std::vector<Vertex> data(image.Size());
+    for (size_t i = 0; i < image.Size(); ++i)
+    {
+        auto pos = space.GetPoint(i);
+        data[i].pos = {pos[0], pos[1], pos[2]};
+        data[i].color = gradient.GetColor(normalize(image[i][activeImage]));
+    }
+
+    BufferInfo vbo(&data[0], data.size(), GL_POINTS);
+    return parent->AddObject<VoxelObject>(parent,
+                                          new Shader(vertexImageShader, fragmentImageShader),
+                                          vbo);
+}
+
+VoxelObject::VoxelObject(Scene *scene, Shader *shader, const BufferInfo &vbo, const BufferInfo &ibo):
+    Renderable(scene, shader, vbo, ibo),
+    _voxelFilled(vbo.count)
 {
     if(!init)
     {
@@ -134,5 +187,6 @@ void VoxelObject::SetSubData(void *begin, size_t count)
 
 void VoxelObject::Render()
 {
+    GetShader()->SetUniform("Color", _modelColor);
     Renderable::Render(_voxelFilled);
 }

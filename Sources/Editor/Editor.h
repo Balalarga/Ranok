@@ -48,11 +48,12 @@ private:
     Scene _imageScene;
     CalculateTarget _lastTarget;
     FlatArray<char> _modelData;
-    FlatArray<double> _imageData;
+    FlatArray<std::array<double, 5>> _imageData;
     VoxelObject* _voxelObject;
 
     RayMarchingView* _rayMarchView;
     TextEditor _textEditor;
     OpenclCalculator _openclCalculator;
     BlueprintEditor _blueprintEditor;
+    LinearGradient _imageGradient;
 };

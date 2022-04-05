@@ -88,6 +88,7 @@ Window::Window(const WindowParams &params):
     ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
 
     ImGuiIO& io = ImGui::GetIO();
+    io.WantSaveIniSettings = false;
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);

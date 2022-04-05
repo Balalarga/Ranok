@@ -5,8 +5,7 @@
 
 #include "GuiItem.h"
 #include "Graphics/Opengl/Camera.h"
-
-class Renderable;
+#include "Graphics/Opengl/Renderable.h"
 
 
 class Scene: public GuiBase
@@ -23,6 +22,19 @@ public:
         _objects.push_back(std::make_unique<T>(args...));
         return static_cast<T*>((_objects.back().get()));
     }
+    bool DeleteObject(Renderable* ptr)
+    {
+        for (size_t i = 0; i < _objects.size(); ++i)
+        {
+            if (_objects[i].get() == ptr)
+            {
+                _objects.erase(_objects.begin() + i);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     void SetBackgroundColor(const ImVec4& color);
     inline void NeedUpdate() { _needUpdate = true; }
@@ -37,6 +49,7 @@ public:
     void HandleScroll(float delta);
 
     inline Camera& GetCamera() { return _camera; }
+    inline bool IsMouseHandle() { return _mouseHandle; }
 
 
 protected:
@@ -52,6 +65,7 @@ private:
     ImVec4 _backgroundColor;
 
     Camera _camera;
+    bool _mouseHandle;
 
     std::vector<std::unique_ptr<Renderable>> _objects;
 };

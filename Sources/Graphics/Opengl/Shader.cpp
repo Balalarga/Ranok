@@ -120,35 +120,9 @@ bool Shader::AddUniforms(const std::vector<std::string> &names)
     }
 
     Unbind();
-    if (!allOk)
-    {
-//        std::cout << _vertexCode << "\n";
-//        std::cout << _fragmentCode << "\n";
-//        std::cout << _geometryCode << "\n";
-    }
     return allOk;
 }
 
-bool Shader::UpdateVertexShader(const std::string& code)
-{
-    Destroy();
-    _vertexCode = code;
-    return Compile();
-}
-
-bool Shader::UpdateFragmentShader(const std::string& code)
-{
-    Destroy();
-    _fragmentCode = code;
-    return Compile();
-}
-
-bool Shader::UpdateGeomertyShader(const std::string& code)
-{
-    Destroy();
-    _geometryCode = code;
-    return Compile();
-}
 
 bool Shader::Compile()
 {
@@ -162,7 +136,7 @@ bool Shader::Compile()
     _handler = glCreateProgram();
 
     std::vector<unsigned> attachedShaders;
-    for(auto& [type, code]: shaders)
+    for (auto& [type, code]: shaders)
     {
         if (code.empty())
             continue;
@@ -193,7 +167,7 @@ bool Shader::Compile()
 
     glLinkProgram(_handler);
 
-    for(auto& i: attachedShaders)
+    for (auto& i: attachedShaders)
     {
         glDetachShader(_handler, i);
         glDeleteShader(i);
@@ -209,6 +183,90 @@ void Shader::Bind() const
 void Shader::Unbind() const
 {
     glUseProgram(0);
+}
+
+bool Shader::UpdateVertexShader(const std::string& code)
+{
+    Destroy();
+    _vertexCode = code;
+    return Compile();
+}
+
+bool Shader::UpdateFragmentShader(const std::string& code)
+{
+    Destroy();
+    _fragmentCode = code;
+    return Compile();
+}
+
+bool Shader::UpdateGeomertyShader(const std::string& code)
+{
+    Destroy();
+    _geometryCode = code;
+    return Compile();
+}
+
+void Shader::SetUniform(const std::string &name, const int &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniform1i(loc, value);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const float &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniform1f(loc, value);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const glm::vec2 &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniform2f(loc, value.x, value.y);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const glm::vec3 &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniform3f(loc, value.x, value.y, value.z);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const glm::vec4 &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniform4f(loc, value.x, value.y, value.z, value.w);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const glm::mat4 &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniformMatrix4fv(loc, 1, GL_FALSE, &value[0][0]);
+    }
+}
+
+void Shader::SetUniform(const std::string &name, const glm::mat3 &value)
+{
+    int loc = GetUniformLoc(name);
+    if (loc >= 0)
+    {
+        glUniformMatrix3fv(loc, 1, GL_FALSE, &value[0][0]);
+    }
 }
 
 int Shader::GetUniformLoc(const std::string& name)

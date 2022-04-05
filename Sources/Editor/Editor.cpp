@@ -19,7 +19,6 @@ Editor::Editor():
     _activeTab(0),
     _voxelObject(nullptr)
 {
-
     TabButton& textEditorBtn = _tabButtons.at(0);
     textEditorBtn.imageData = ImageStorage::Get().Load("codeTabIcon", "Images/code.png");
     textEditorBtn.pressed = [this](){
@@ -390,6 +389,12 @@ void Editor::EditorTab()
 
 void Editor::ViewerTab()
 {
+    static float xMin, xMax;
+    static float yMin, yMax;
+    static float zMin, zMax;
+    static int selectedImage = 0;
+    constexpr int imageSize = 3 + 2;
+
     ImGuiIO& io = ImGui::GetIO();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3, 3));
@@ -426,17 +431,13 @@ void Editor::ViewerTab()
                     }
                     file.close();
 
-                    if (!_voxelObject)
-                    {
-                        if (_lastTarget == CalculateTarget::Model)
-                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, _space, _modelData);
-                        else
-                            _voxelObject = _imageScene.AddObject<VoxelObject>(&_imageScene, _space, _imageData);
-                    }
+                    if (_voxelObject)
+                        _imageScene.DeleteObject(_voxelObject);
+
+                    if (_lastTarget == CalculateTarget::Model)
+                        _voxelObject = VoxelObject::Make(&_imageScene, _space, _modelData);
                     else
-                    {
-//                        _voxelObject->Recreate(BufferInfo(resData, dataSize, GL_POINTS));
-                    }
+                        _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, selectedImage);
                     _imageScene.NeedUpdate();
                 }
             }
@@ -457,9 +458,6 @@ void Editor::ViewerTab()
 
     ImGui::BeginChild("ViewsTabControls", childSize);
 
-    static float xMin, xMax;
-    static float yMin, yMax;
-    static float zMin, zMax;
     if (ImGui::DragFloatRange2("Ox", &xMin, &xMax, .001f, -1, 1))
     {
         // update scene
@@ -474,8 +472,6 @@ void Editor::ViewerTab()
     }
 
 
-    static int selectedImage = 0;
-    constexpr int imageSize = 3 + 2;
     if (ImGui::BeginCombo("Image", ("C"+std::to_string(selectedImage)).c_str()))
     {
         for (int i = 0; i < imageSize; ++i)
@@ -499,10 +495,10 @@ void Editor::BlueprintTab()
     static auto scene = Scene();
     static auto view = scene.AddObject<RayMarchingView>(&scene);
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
-    constexpr float widthCoef = 0.6;
+    constexpr float widthCoef = 0.5;
     ImVec2 childSize = {parentWidth * widthCoef, 0};
 
-    ImGui::BeginChild("BlueprintControls", childSize);
+    ImGui::BeginChild("BlueprintControls", childSize, scene.IsMouseHandle() ? ImGuiWindowFlags_NoMouseInputs : ImGuiWindowFlags_None);
 
     if (ImGui::Button("Compile"))
     {
@@ -530,14 +526,13 @@ void Editor::BlueprintTab()
                 }
                 nodes.pop();
             }
+            view->SetModel(program);
+            scene.NeedUpdate();
         }
         else
         {
             std::cout << "Error\n";
         }
-
-        view->SetModel(program);
-        scene.NeedUpdate();
     }
 
     _blueprintEditor.Render();
@@ -556,14 +551,14 @@ void Editor::SetupViewScene()
     };
     _imageScene.SetBackgroundColor({0.8, 0.8, 0.8, 1.0});
 
-    Vertex data[]{
-        { 0, 0, 0, {0.7, 0.3, 0.3, 1.0} },
-        { 0, 1, 1, {0.7, 0.3, 0.3, 1.0} },
-        { 0, 1, 0, {0.7, 0.3, 0.3, 1.0} },
-    };
-    int count = sizeof(data)/sizeof(data[0]);
-    _imageScene.AddObject<Renderable>(&_imageScene, new Shader(), BufferInfo(data, count, GL_TRIANGLE_FAN));
     _imageScene.GetCamera().MouseSensitivity = 0.1f;
+    _imageScene.GetCamera().Zoom -= 20;
+
+    _imageGradient.SetColors({
+                                 ColorFromHex(0xF6D8AE),
+                                 ColorFromHex(0x2E4057),
+                                 ColorFromHex(0x083D77),
+                             });
 }
 
 void Editor::ActivateTab(unsigned n)

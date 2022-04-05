@@ -18,14 +18,14 @@ public:
            const std::string& geomertyCode = "");
     ~Shader();
 
+    bool UpdateVertexShader(const std::string &code);
+    bool UpdateFragmentShader(const std::string &code);
+    bool UpdateGeomertyShader(const std::string &code);
+
     bool AddUniform(const std::string& name);
     bool AddUniforms(const std::vector<std::string>& names);
 
     int GetUniformLoc(const std::string& name);
-
-    bool UpdateVertexShader(const std::string& code);
-    bool UpdateFragmentShader(const std::string& code);
-    bool UpdateGeomertyShader(const std::string& code);
 
     bool Compile();
 
@@ -33,64 +33,18 @@ public:
     void Unbind() const;
 
 
-    void SetUniform(const std::string& name, const int& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniform1i(loc, value);
-        }
-    }
-
-    void SetUniform(const std::string& name, const float& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniform1f(loc, value);
-        }
-    }
-
-    void SetUniform(const std::string& name, const glm::vec2& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniform2f(loc, value.x, value.y);
-        }
-    }
-
-    void SetUniform(const std::string& name, const glm::vec3& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniform3f(loc, value.x, value.y, value.z);
-        }
-    }
-
-    void SetUniform(const std::string& name, const glm::mat4& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniformMatrix4fv(loc, 1, GL_FALSE, &value[0][0]);
-        }
-    }
-
-    void SetUniform(const std::string& name, const glm::mat3& value)
-    {
-        int loc = GetUniformLoc(name);
-        if (loc >= 0)
-        {
-            glUniformMatrix3fv(loc, 1, GL_FALSE, &value[0][0]);
-        }
-    }
+    void SetUniform(const std::string& name, const int& value);
+    void SetUniform(const std::string& name, const float& value);
+    void SetUniform(const std::string& name, const glm::vec2& value);
+    void SetUniform(const std::string& name, const glm::vec3& value);
+    void SetUniform(const std::string& name, const glm::vec4& value);
+    void SetUniform(const std::string& name, const glm::mat4& value);
+    void SetUniform(const std::string& name, const glm::mat3& value);
 
 
 protected:
-    bool HasErrors(unsigned shaderId);
     void Destroy();
+    bool HasErrors(unsigned shaderId);
 
 
 private:
@@ -99,6 +53,6 @@ private:
     std::string _geometryCode;
     std::map<std::string, int> _uniforms;
 
-    unsigned _handler;
+    GLuint _handler;
 };
 

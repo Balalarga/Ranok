@@ -9,7 +9,8 @@ Scene::Scene(ImVec2 renderSize, const std::string& title):
     GuiBase(title),
     _renderSize(renderSize),
     _backgroundColor({0.5, 0.5, 0.5, 1.0}),
-    _needUpdate(true)
+    _needUpdate(true),
+    _mouseHandle(false)
 {
     glGenFramebuffers(1, &_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
@@ -84,8 +85,9 @@ void Scene::Render()
     bool isMouseInside = mousePosRel.x > 0 && mousePosRel.y > 0 &&
             mousePosRel.x < windowSize.x && mousePosRel.y < windowSize.y;
 
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Right) && (isMouseInside || io.MouseDownDuration[ImGuiMouseButton_Right] > 0.f))
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Right) && (isMouseInside || _mouseHandle))
     {
+        _mouseHandle = true;
         HandleMouse(io.MouseDelta);
         HandleScroll(io.MouseWheel);
     }
@@ -93,6 +95,8 @@ void Scene::Render()
     {
         HandleScroll(io.MouseWheel);
     }
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+        _mouseHandle = false;
 
 
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
