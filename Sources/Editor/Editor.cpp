@@ -229,7 +229,7 @@ void Editor::EditorTab()
 
             ImGui::EndCombo();
         }
-        constexpr int minDepth = 5; // Opencl local group size
+        constexpr int minDepth = 3; // Opencl local group size
         constexpr int maxDepth = 15;
         static int recursionDepth = minDepth;
         std::string depthLabel = std::to_string((int)pow(2, recursionDepth)) + " voxels/axis";
@@ -271,40 +271,32 @@ void Editor::EditorTab()
                 _space.SetSize(spaceSize);
                 _space.SetPartition(pow(2, recursionDepth));
                 _space.SetStartPoint(startPoint);
-                auto calculateCallback = [this, targetCopy = calculateTarget](size_t start, size_t count)
+
+                std::ofstream file(pathToSave);
+                auto calculateCallback = [this, &file](size_t start, size_t count)
                 {
-                    std::ios_base::openmode mode = std::ios_base::openmode::_S_out;
-                    if (start != 0)
-                        mode = std::ios_base::app;
-
-                    std::ofstream file(pathToSave, mode);
-                    if (file)
-                    {
                         bool ok = false;
-                        if (start == 0)
-                        {
-                            file << _space;
-                            file << static_cast<uint8_t>(targetCopy);
-                        }
-
-                        if (targetCopy == CalculateTarget::Model)
+                        if (calculateTarget == CalculateTarget::Model)
                             ok = _openclCalculator.GetModel().WritePart(file, count);
                         else
                             ok = _openclCalculator.GetImage().WritePart(file, count);
 
                         if (!ok)
                             std::cout << "Write error\n";
-
-                        file.close();
-                    }
                 };
-                bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
-                                                                   program,
-                                                                   _space,
-                                                                   calculateCallback,
-                                                                   enableBatching ? pow(2, batchSize) : 0);
-                if (!calculateStatus)
-                    std::cout << "Some calculate error\n";
+                if (file)
+                {
+                    file << _space;
+                    file << static_cast<uint8_t>(calculateTarget);
+                    bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
+                                                                       program,
+                                                                       _space,
+                                                                       calculateCallback,
+                                                                       enableBatching ? pow(2, batchSize) : 0);
+                    file.close();
+                    if (!calculateStatus)
+                        std::cout << "Some calculate error\n";
+                }
             }
         }
 
