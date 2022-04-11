@@ -27,6 +27,7 @@ public:
     static Window* Create(const WindowParams& params = {});
     static Window* Get();
     static void Destroy();
+    SDL_Window* RawWindow() { return _sdlWindow; }
 
     void Open();
     void Close();

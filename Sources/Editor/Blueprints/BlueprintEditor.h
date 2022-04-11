@@ -7,7 +7,7 @@
 
 #include <imgui_node_editor.h>
 #include <Ranok/LanguageCore/Program.h>
-
+#include <set>
 
 class BlueprintEditor: public GuiBase
 {
@@ -59,6 +59,12 @@ public:
             CanDelete(true)
         {
         }
+
+        Node(ax::NodeEditor::NodeId id, const char* name, ImColor color = ImColor(128, 195, 248)):
+            ID(id), Name(name), Color(color), Type(NodeType::Blueprint), Size(0, 0), Descr(""),
+            CanDelete(true)
+        {
+        }
     };
     struct NodeIdLess
     {
@@ -72,21 +78,30 @@ public:
     struct Pin
     {
         ax::NodeEditor::PinId   ID;
-        Node*     Node;
+        Node*       Node;
         std::string Name;
         PinType     Type;
         PinKind     Kind;
-        int         LinkId;
+        std::vector<Link*> Linker;
         double      Value;
 
+        Pin() = default;
         Pin(int id, const char* name, PinType type):
             ID(id),
             Node(nullptr),
             Name(name),
             Type(type),
             Kind(PinKind::Input),
-            Value(0),
-            LinkId(-1)
+            Value(0)
+        {
+        }
+        Pin(ax::NodeEditor::PinId id, const char* name, PinType type):
+            ID(id),
+            Node(nullptr),
+            Name(name),
+            Type(type),
+            Kind(PinKind::Input),
+            Value(0)
         {
         }
     };
@@ -95,14 +110,35 @@ public:
     {
         ax::NodeEditor::LinkId ID;
 
-        ax::NodeEditor::PinId StartPinID;
-        ax::NodeEditor::PinId EndPinID;
+        Pin& StartPin;
+        Pin& EndPin;
 
         ImColor Color;
 
-        Link(ax::NodeEditor::LinkId id, ax::NodeEditor::PinId startPinId, ax::NodeEditor::PinId endPinId):
-            ID(id), StartPinID(startPinId), EndPinID(endPinId), Color(255, 255, 255)
+        ~Link()
         {
+            auto bIt = std::find(StartPin.Linker.begin(), StartPin.Linker.end(), this);
+            if (bIt != StartPin.Linker.end())
+                StartPin.Linker.erase(bIt);
+
+            auto eIt = std::find(EndPin.Linker.begin(), EndPin.Linker.end(), this);
+            if (eIt != EndPin.Linker.end())
+                EndPin.Linker.erase(eIt);
+        }
+
+        Link(ax::NodeEditor::LinkId id, Pin& startPin, Pin& endPin):
+            ID(id), StartPin(startPin), EndPin(endPin), Color(255, 255, 255)
+        {
+            StartPin.Linker.push_back(this);
+            EndPin.Linker.push_back(this);
+        }
+        Link& operator=(const Link& oth)
+        {
+            this->ID = oth.ID;
+            this->StartPin = oth.StartPin;
+            this->EndPin = oth.EndPin;
+            this->Color = oth.Color;
+            return *this;
         }
     };
     Node* FindNode(ax::NodeEditor::NodeId id);
@@ -120,9 +156,12 @@ public:
     void AddDefaultNodes();
     void Render() override;
 
+    void Save(const std::string& filepath);
+    void Open(const std::string& filepath);
+
 
     Program GetProgram();
-    spExpression Iterate(Program& program, Pin* pin);
+    spExpression Iterate(Program& program, Pin& pin);
 
 
 private:
@@ -130,7 +169,7 @@ private:
     ax::NodeEditor::EditorContext* _context = nullptr;
     const ImageData _nodeHeaderBackground;
 
-    std::vector<Link> _links;
+    std::vector<std::unique_ptr<Link>> _links;
     std::vector<Node> _nodes;
 };
 

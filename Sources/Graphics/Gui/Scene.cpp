@@ -3,6 +3,8 @@
 #include "Ranok/Utility/Math.h"
 
 #include <functional>
+#include <SDL.h>
+#include "Graphics/Window.h"
 
 
 Scene::Scene(ImVec2 renderSize, const std::string& title):
@@ -40,6 +42,7 @@ Scene::Scene(ImVec2 renderSize, const std::string& title):
                            0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    _camera.SetSize({renderSize.x, renderSize.y});
 }
 
 Scene::~Scene()
@@ -95,8 +98,22 @@ void Scene::Render()
     {
         HandleScroll(io.MouseWheel);
     }
+
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+    {
         _mouseHandle = false;
+    }
+
+
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+    if (state[SDL_SCANCODE_W] || state[SDL_SCANCODE_UP])
+        HandleKeyboard(Camera::Camera_Movement::FORWARD, 0.1);
+    else if (state[SDL_SCANCODE_S] || state[SDL_SCANCODE_DOWN])
+        HandleKeyboard(Camera::Camera_Movement::BACKWARD, 0.1);
+    else if (state[SDL_SCANCODE_A] || state[SDL_SCANCODE_LEFT])
+        HandleKeyboard(Camera::Camera_Movement::LEFT, 0.1);
+    else if (state[SDL_SCANCODE_D] || state[SDL_SCANCODE_RIGHT])
+        HandleKeyboard(Camera::Camera_Movement::RIGHT, 0.1);
 
 
     ImGui::Image((void*)(intptr_t)_texture, ImGui::GetWindowSize(), ImVec2(0, 1), ImVec2(1, 0));
@@ -118,6 +135,7 @@ void Scene::SetRenderSize(unsigned x, unsigned y)
         _renderSize.x = x;
         _renderSize.y = y;
         UpdateTexture();
+        _camera.SetSize({x, y});
     }
 }
 
@@ -125,7 +143,7 @@ void Scene::HandleMouse(const ImVec2 &mouseDelta)
 {
     if (!Math::IsZero(mouseDelta.x) && !Math::IsZero(mouseDelta.y))
     {
-        _camera.ProcessMouseMovement(mouseDelta.x, mouseDelta.y);
+        _camera.ProcessMouseMovement(mouseDelta.x, -mouseDelta.y);
         _needUpdate = true;
     }
 }

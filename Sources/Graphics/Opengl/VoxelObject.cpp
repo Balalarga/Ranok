@@ -102,7 +102,7 @@ void main(void)
 )";
 
 
-float VoxelObject::PointSize = 3.f;
+float VoxelObject::PointSize = 2.f;
 
 #include <iostream>
 
@@ -182,6 +182,31 @@ void VoxelObject::SetSubData(void *begin, size_t count)
     glBufferSubData(GL_ARRAY_BUFFER, offset, count * GetVbo().layoutSize, begin);
 
     _voxelFilled += count;
+    glBindVertexArray(0);
+}
+
+void VoxelObject::Update(const Space& space, FlatArray<std::array<double, 5>> &image, LinearGradient &gradient, size_t activeImage)
+{
+    struct Vertex
+    {
+        glm::fvec3 pos;
+        glm::fvec4 color;
+    };
+    auto normalize = [](const double& value)
+    {
+        return UINT_MAX * (1.0 + value)/2.0;
+    };
+    std::vector<Vertex> data(image.Size());
+    for (size_t i = 0; i < image.Size(); ++i)
+    {
+        auto pos = space.GetPoint(i);
+        data[i].pos = {pos[0], pos[1], pos[2]};
+        data[i].color = gradient.GetColor(normalize(image[i][activeImage]));
+    }
+
+
+    glBindVertexArray(GetVao());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, data.size() * GetVbo().layoutSize, &data[0]);
     glBindVertexArray(0);
 }
 

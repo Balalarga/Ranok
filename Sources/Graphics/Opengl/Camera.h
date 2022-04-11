@@ -30,6 +30,7 @@ public:
     glm::vec3 Right;
     glm::vec3 WorldUp;
     glm::mat4 ViewProjection;
+    glm::mat4 Projection;
     // euler Angles
     float Yaw;
     float Pitch;
@@ -63,6 +64,12 @@ public:
         return ViewProjection;
     }
 
+    void SetSize(glm::uvec2 size)
+    {
+        Projection = glm::perspective(45.0f, float(size.x)/size.y, 0.1f, 1000.0f);
+        updateCameraVectors();
+    }
+
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
@@ -75,6 +82,7 @@ public:
             Position -= Right * velocity;
         if (direction == Camera_Movement::RIGHT)
             Position += Right * velocity;
+        updateCameraVectors();
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -103,8 +111,7 @@ public:
         Zoom -= (float)yoffset;
         if (Zoom < 1.0f)
             Zoom = 1.0f;
-        if (Zoom > 45.0f)
-            Zoom = 45.0f;
+        updateCameraVectors();
     }
 
 
@@ -121,8 +128,7 @@ private:
         // also re-calculate the Right and Up vector
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));
-
-        ViewProjection = glm::lookAt(Position, Position + Front, Up);
+        ViewProjection = Projection * glm::lookAt(Position, Position + Front, Up);
     }
 };
 #endif // CAMERA_H

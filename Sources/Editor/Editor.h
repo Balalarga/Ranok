@@ -50,6 +50,7 @@ private:
     FlatArray<char> _modelData;
     FlatArray<std::array<double, 5>> _imageData;
     VoxelObject* _voxelObject;
+    unsigned _viewerSelectedImage;
 
     RayMarchingView* _rayMarchView;
     TextEditor _textEditor;

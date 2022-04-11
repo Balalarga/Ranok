@@ -87,8 +87,6 @@ void Editor::Render()
         ImGui::End();
     }
     ImGui::PopStyleVar(1);
-
-    ImGui::ShowDemoWindow();
 }
 
 void Editor::EditorTab()
@@ -272,7 +270,7 @@ void Editor::EditorTab()
                 _space.SetPartition(pow(2, recursionDepth));
                 _space.SetStartPoint(startPoint);
 
-                std::ofstream file(pathToSave);
+                std::ofstream file(pathToSave, std::ios_base::binary);
                 auto calculateCallback = [this, &file](size_t start, size_t count)
                 {
                         bool ok = false;
@@ -402,7 +400,7 @@ void Editor::ViewerTab()
                 {
                     _modelData.Clear();
                     _imageData.Clear();
-                    std::ifstream file(filepath);
+                    std::ifstream file(filepath, std::ios_base::binary);
 
                     file >> _space;
 
@@ -423,6 +421,8 @@ void Editor::ViewerTab()
                     }
                     file.close();
 
+                    VoxelObject::PointSize = _space.GetUnitSize()[0] * 200;
+
                     if (_voxelObject)
                         _imageScene.DeleteObject(_voxelObject);
 
@@ -431,6 +431,13 @@ void Editor::ViewerTab()
                     else
                         _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, selectedImage);
                     _imageScene.NeedUpdate();
+
+                    xMin = _space.GetStartPoint()[0];
+                    yMin = _space.GetStartPoint()[1];
+                    zMin = _space.GetStartPoint()[2];
+                    xMin = xMin + _space.GetSize()[0];
+                    yMin = yMin + _space.GetSize()[1];
+                    zMin = zMin + _space.GetSize()[2];
                 }
             }
 
@@ -473,6 +480,17 @@ void Editor::ViewerTab()
         }
         ImGui::EndCombo();
     }
+    if (_viewerSelectedImage != selectedImage)
+    {
+        _viewerSelectedImage = selectedImage;
+        if (_voxelObject && _lastTarget == CalculateTarget::Image)
+        {
+            _imageScene.DeleteObject(_voxelObject);
+            _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, _viewerSelectedImage);
+            _imageScene.NeedUpdate();
+        }
+    }
+
 
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
@@ -495,29 +513,8 @@ void Editor::BlueprintTab()
     if (ImGui::Button("Compile"))
     {
         auto program = _blueprintEditor.GetProgram();
-        std::queue<std::pair<int, Expression*>> nodes;
         if (program.Root())
         {
-            program.Root()->Visit(nodes);
-            while (!nodes.empty())
-            {
-                auto &top = nodes.front();
-                for (int i = 1; i < top.first+1; ++i)
-                    std::cout << '\t';
-
-                if (auto func = dynamic_cast<FunctionExpression*>(top.second))
-                {
-                    std::cout << func->function.Name() << "(";
-                    for (auto &a: func->params)
-                        std::cout << a->name << ", ";
-                    std::cout << ")\n";
-                }
-                else
-                {
-                    std::cout << "Node: " << top.second->name << std::endl;
-                }
-                nodes.pop();
-            }
             view->SetModel(program);
             scene.NeedUpdate();
         }
@@ -532,6 +529,33 @@ void Editor::BlueprintTab()
     ImGui::EndChild();
     ImGui::SameLine();
     scene.Render();
+
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Open"))
+            {
+                std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open, "*.bfunc");
+                if (!filepath.empty())
+                {
+                    _blueprintEditor.Open(filepath);
+                }
+            }
+
+            if (ImGui::MenuItem("Save"))
+            {
+                std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save, "*.bfunc");
+                if (!filepath.empty())
+                {
+                    _blueprintEditor.Save(filepath);
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
 }
 
 void Editor::SetupViewScene()
@@ -547,9 +571,9 @@ void Editor::SetupViewScene()
     _imageScene.GetCamera().Zoom -= 20;
 
     _imageGradient.SetColors({
-                                 ColorFromHex(0xF6D8AE),
-                                 ColorFromHex(0x2E4057),
-                                 ColorFromHex(0x083D77),
+                                 ColorFromUint(208, 0, 0, 255),
+                                 ColorFromUint(255, 186, 8, 255),
+                                 ColorFromUint(63, 136, 197, 255),
                              });
 }
 

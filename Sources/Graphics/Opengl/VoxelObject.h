@@ -29,12 +29,13 @@ public:
                 const BufferInfo& ibo = BufferInfo(nullptr, 0, {}));
 
     void SetSubData(void* begin, size_t count);
+    void Update(const Space& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage);
 
     virtual void Render();
 
 
-private:
     static float PointSize;
+private:
 
     size_t _voxelsCount;
     size_t _voxelFilled;
