@@ -162,7 +162,7 @@ void Editor::EditorTab()
             Program program = parser.Parse(lexer);
             if (!program.Root())
             {
-                compileError = "Program created with error\nCheck your's code";
+                compileError = "Program created with error\n\nCheck your's code\n\n" + parser.Error();
                 ImGui::OpenPopup("Compile error");
             }
             else if (!parser.Error().empty())
@@ -181,7 +181,13 @@ void Editor::EditorTab()
     ImGui::SameLine();
     if (ImGui::Button("Build"))
     {
-        ImGui::OpenPopup("Build model data");
+        Parser parser;
+        _program = parser.Parse(Lexer::CreateFrom(_textEditor.GetActiveTabText()));
+        if (_program.Root().get())
+            ImGui::OpenPopup("Build model data");
+        else
+            ImGui::OpenPopup("Program build error");
+
     }
 
     ImGui::SameLine();
@@ -195,113 +201,9 @@ void Editor::EditorTab()
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 
+    BuildPopUp();
+
     bool unused_open = true;
-    if (ImGui::BeginPopupModal("Build model data", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::BeginChild("PathContainer", ImVec2(0, 40));
-        static std::string pathToSave(512, ' ');
-        ImGui::InputText("##resPath1", &pathToSave[0], 512, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-        ImGui::SameLine();
-        if (ImGui::Button("Open"))
-        {
-            std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save);
-            if (!filepath.empty())
-                pathToSave = filepath;
-        }
-        ImGui::EndChild();
-
-        static CalculateTarget calculateTarget;
-        static std::string selectedText = "Model";
-        if (ImGui::BeginCombo("Compute type", selectedText.c_str()))
-        {
-            if (ImGui::Selectable("Model"))
-            {
-                selectedText = "Model";
-                calculateTarget = CalculateTarget::Model;
-            }
-            if (ImGui::Selectable("M-Image"))
-            {
-                selectedText = "M-Image";
-                calculateTarget = CalculateTarget::Image;
-            }
-
-            ImGui::EndCombo();
-        }
-        constexpr int minDepth = 3; // Opencl local group size
-        constexpr int maxDepth = 15;
-        static int recursionDepth = minDepth;
-        std::string depthLabel = std::to_string((int)pow(2, recursionDepth)) + " voxels/axis";
-        if (ImGui::InputInt(depthLabel.c_str(), &recursionDepth, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
-        {
-            if (recursionDepth > maxDepth)
-                recursionDepth = maxDepth;
-            else if(recursionDepth < minDepth)
-                recursionDepth = minDepth;
-        }
-
-        static bool enableBatching = false;
-        ImGui::Checkbox("Enable batching", &enableBatching);
-
-        constexpr int batchMin = 10;
-        static int batchSize = batchMin;
-        if (enableBatching)
-        {
-            std::string batchLabel = std::to_string((pow(2, batchSize) * (calculateTarget  == CalculateTarget::Model ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
-            if (ImGui::InputInt(batchLabel.c_str(), &batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
-            {
-                if (batchSize < batchMin)
-                    batchSize = batchMin;
-            }
-        }
-
-
-        if (ImGui::Button("Start"))
-        {
-            ImGui::CloseCurrentPopup();
-            Parser parser;
-            Program program = parser.Parse(Lexer::CreateFrom(_textEditor.GetActiveTabText()));
-            auto args = program.GetAllOf<ArgumentExpression>();
-            if (args.size() == 3)
-            {
-                std::vector<ArgumentExpression::Range> ranges{args[0]->range, args[1]->range, args[2]->range};
-                std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
-                std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
-                _space.SetSize(spaceSize);
-                _space.SetPartition(pow(2, recursionDepth));
-                _space.SetStartPoint(startPoint);
-
-                std::ofstream file(pathToSave, std::ios_base::binary);
-                auto calculateCallback = [this, &file](size_t start, size_t count)
-                {
-                        bool ok = false;
-                        if (calculateTarget == CalculateTarget::Model)
-                            ok = _openclCalculator.GetModel().WritePart(file, count);
-                        else
-                            ok = _openclCalculator.GetImage().WritePart(file, count);
-
-                        if (!ok)
-                            std::cout << "Write error\n";
-                };
-                if (file)
-                {
-                    file << _space;
-                    file << static_cast<uint8_t>(calculateTarget);
-                    bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
-                                                                       program,
-                                                                       _space,
-                                                                       calculateCallback,
-                                                                       enableBatching ? pow(2, batchSize) : 0);
-                    file.close();
-                    if (!calculateStatus)
-                        std::cout << "Some calculate error\n";
-                }
-            }
-        }
-
-        ImGui::EndPopup();
-    }
-
-    unused_open = true;
     if (ImGui::BeginPopupModal("Compile error", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("%s", compileError.c_str());
@@ -505,13 +407,14 @@ void Editor::BlueprintTab()
     static auto scene = Scene();
     static auto view = scene.AddObject<RayMarchingView>(&scene);
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
-    constexpr float widthCoef = 0.5;
+    constexpr float widthCoef = 1;
     ImVec2 childSize = {parentWidth * widthCoef, 0};
 
-    ImGui::BeginChild("BlueprintControls", childSize, scene.IsMouseHandle() ? ImGuiWindowFlags_NoMouseInputs : ImGuiWindowFlags_None);
+    ImGui::BeginChild("BlueprintControls", childSize, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing);
 
     if (ImGui::Button("Compile"))
     {
+        ImGui::SetWindowFocus("View");
         auto program = _blueprintEditor.GetProgram();
         if (program.Root())
         {
@@ -524,12 +427,21 @@ void Editor::BlueprintTab()
         }
     }
 
+    ImGui::SameLine();
+    if (ImGui::Button("Build"))
+    {
+        _program = _blueprintEditor.GetProgram();
+        if (_program.Root().get())
+            ImGui::OpenPopup("Build model data");
+        else
+            ImGui::OpenPopup("Program build error");
+    }
+    BuildPopUp();
+    ImGui::BeginChild("BlueprintEditor", ImVec2(0, 0), false, ImGuiWindowFlags_NoBringToFrontOnFocus);
     _blueprintEditor.Render();
+    ImGui::EndChild();
 
     ImGui::EndChild();
-    ImGui::SameLine();
-    scene.Render();
-
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -556,6 +468,12 @@ void Editor::BlueprintTab()
         }
         ImGui::EndMenuBar();
     }
+
+    if (ImGui::Begin("View", nullptr, ImGuiWindowFlags_NoScrollbar))
+    {
+        scene.Render();
+    }
+    ImGui::End();
 }
 
 void Editor::SetupViewScene()
@@ -577,7 +495,129 @@ void Editor::SetupViewScene()
                              });
 }
 
+void Editor::BuildPopUp()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+
+    bool unused_open = true;
+    if (ImGui::BeginPopupModal("Program build error", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("The program has errors, try to compile it first");
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("Build model data", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::BeginChild("PathContainer", ImVec2(0, 40));
+        static std::string pathToSave(512, ' ');
+        ImGui::InputText("##resPath1", &pathToSave[0], 512, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+        ImGui::SameLine();
+        if (ImGui::Button("Open"))
+        {
+            std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Save);
+            if (!filepath.empty())
+                pathToSave = filepath;
+        }
+        ImGui::EndChild();
+
+        static CalculateTarget calculateTarget;
+        static std::string selectedText = "Model";
+        if (ImGui::BeginCombo("Compute type", selectedText.c_str()))
+        {
+            if (ImGui::Selectable("Model"))
+            {
+                selectedText = "Model";
+                calculateTarget = CalculateTarget::Model;
+            }
+            if (ImGui::Selectable("M-Image"))
+            {
+                selectedText = "M-Image";
+                calculateTarget = CalculateTarget::Image;
+            }
+
+            ImGui::EndCombo();
+        }
+        constexpr int minDepth = 3; // Opencl local group size
+        constexpr int maxDepth = 15;
+        static int recursionDepth = minDepth;
+        std::string depthLabel = std::to_string((int)pow(2, recursionDepth)) + " voxels/axis";
+        if (ImGui::InputInt(depthLabel.c_str(), &recursionDepth, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+        {
+            if (recursionDepth > maxDepth)
+                recursionDepth = maxDepth;
+            else if(recursionDepth < minDepth)
+                recursionDepth = minDepth;
+        }
+
+        static bool enableBatching = false;
+        ImGui::Checkbox("Enable batching", &enableBatching);
+
+        constexpr int batchMin = 10;
+        static int batchSize = batchMin;
+        if (enableBatching)
+        {
+            std::string batchLabel = std::to_string((pow(2, batchSize) * (calculateTarget  == CalculateTarget::Model ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
+            if (ImGui::InputInt(batchLabel.c_str(), &batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+            {
+                if (batchSize < batchMin)
+                    batchSize = batchMin;
+            }
+        }
+
+
+        if (ImGui::Button("Start"))
+        {
+            ImGui::CloseCurrentPopup();
+            auto args = _program.Table().Arguments();
+            if (args.size() == 3)
+            {
+                std::vector<ArgumentExpression::Range> ranges{args[0]->range, args[1]->range, args[2]->range};
+                std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
+                std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
+                _space.SetSize(spaceSize);
+                _space.SetPartition(pow(2, recursionDepth));
+                _space.SetStartPoint(startPoint);
+
+                std::ofstream file(pathToSave, std::ios_base::binary);
+                auto calculateCallback = [this, &file](size_t start, size_t count)
+                {
+                        bool ok = false;
+                        if (calculateTarget == CalculateTarget::Model)
+                            ok = _openclCalculator.GetModel().WritePart(file, count);
+                        else
+                            ok = _openclCalculator.GetImage().WritePart(file, count);
+
+                        if (!ok)
+                            std::cout << "Write error\n";
+                };
+                if (file)
+                {
+                    file << _space;
+                    file << static_cast<uint8_t>(calculateTarget);
+                    bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
+                                                                       _program,
+                                                                       _space,
+                                                                       calculateCallback,
+                                                                       enableBatching ? pow(2, batchSize) : 0);
+                    file.close();
+                    if (!calculateStatus)
+                        std::cout << "Some calculate error\n";
+                }
+            }
+        }
+
+        ImGui::EndPopup();
+    }
+
+    ImGui::PopStyleVar();
+}
+
 void Editor::ActivateTab(unsigned n)
 {
     _activeTab = n;
+}
+
+void Editor::EditorTabSettings::Render()
+{
+
 }

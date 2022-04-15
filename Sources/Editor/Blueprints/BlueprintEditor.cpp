@@ -68,9 +68,7 @@ static void UpdateTouch()
 
 static bool CanCreateLink(BlueprintEditor::Pin* a, BlueprintEditor::Pin* b)
 {
-    if (!a || !b || a == b || a->Kind == b->Kind || a->Type != b->Type || a->Node == b->Node ||
-            (a->Kind == BlueprintEditor::PinKind::Input && !a->Linker.empty()) ||
-            (b->Kind == BlueprintEditor::PinKind::Input && !b->Linker.empty()))
+    if (!a || !b || a == b || a->Kind == b->Kind || a->Type != b->Type || a->Node == b->Node)
         return false;
 
     return true;
@@ -334,6 +332,7 @@ void BlueprintEditor::AddDefaultNodes()
     _nodes.back().Outputs.emplace_back(GetNextId(), "y", PinType::Float);
     _nodes.back().Outputs.emplace_back(GetNextId(), "z", PinType::Float);
     ed::SetNodePosition(_nodes.back().ID, ImVec2(0, 0));
+    BuildNode(&_nodes.back());
 
     _nodes.push_back(Node(GetNextId(), "Result"));
     _nodes.back().Type = NodeType::Simple;
@@ -341,6 +340,7 @@ void BlueprintEditor::AddDefaultNodes()
     _nodes.back().Descr = "Result of function";
     _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
     ed::SetNodePosition(_nodes.back().ID, ImVec2(600, 0));
+    BuildNode(&_nodes.back());
 };
 
 void BlueprintEditor::Render()
@@ -620,7 +620,7 @@ void BlueprintEditor::Render()
 
                     if (startPin && endPin)
                     {
-                        if (endPin == startPin || !endPin->Linker.empty())
+                        if (endPin == startPin)
                         {
                             ed::RejectNewItem(ImColor(255, 0, 0), 2.0f);
                         }
@@ -644,6 +644,13 @@ void BlueprintEditor::Render()
                             showLabel("+ Create Link", ImColor(32, 45, 32, 180));
                             if (ed::AcceptNewItem(ImColor(128, 255, 128), 4.0f))
                             {
+                                if (!endPin->Linker.empty())
+                                {
+                                    auto it = std::find_if(_links.begin(), _links.end(),[&endPin](const std::unique_ptr<Link>& link){ return endPin->Linker[0] == link.get(); });
+                                    if (it != _links.end())
+                                        _links.erase(it);
+                                }
+
                                 _links.emplace_back(std::make_unique<Link>(GetNextId(), *startPin, *endPin));
                                 _links.back()->Color = GetIconColor(startPin->Type);
                             }
@@ -815,6 +822,13 @@ void BlueprintEditor::Render()
                         auto endPin = &pin;
                         if (startPin->Kind == PinKind::Input)
                             std::swap(startPin, endPin);
+
+                        if (!endPin->Linker.empty())
+                        {
+                            auto it = std::find_if(_links.begin(), _links.end(), [&endPin](const std::unique_ptr<Link>& link){ return endPin->Linker[0] == link.get(); });
+                            if (it != _links.end())
+                                _links.erase(it);
+                        }
 
                         _links.emplace_back(std::make_unique<Link>(GetNextId(), *startPin, *endPin));
                         _links.back()->Color = GetIconColor(startPin->Type);

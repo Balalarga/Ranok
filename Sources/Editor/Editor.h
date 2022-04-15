@@ -9,6 +9,7 @@
 #include "TextEditor.h"
 #include "Blueprints/BlueprintEditor.h"
 #include "Utility/ImageStorage.h"
+#include "Settings.h"
 
 class Scene;
 class RayMarchingView;
@@ -30,6 +31,7 @@ public:
     void BlueprintTab();
 
     void SetupViewScene();
+    void BuildPopUp();
 
 
 private:
@@ -43,7 +45,7 @@ private:
     unsigned _activeTab;
 
     Scene _scene;
-
+    Program _program;
     Space _space;
     Scene _imageScene;
     CalculateTarget _lastTarget;
@@ -57,4 +59,11 @@ private:
     OpenclCalculator _openclCalculator;
     BlueprintEditor _blueprintEditor;
     LinearGradient _imageGradient;
+
+    struct EditorTabSettings{
+        Setting<glm::fvec3> BackgroundColor;
+        Setting<glm::fvec3> ModelColor;
+        void Render();
+
+    } _editorTabSettings;
 };

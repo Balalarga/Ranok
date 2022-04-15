@@ -116,7 +116,7 @@ const TextEditWindow::LanguageDefinition &TextEditor::RanokLanguageDefinition(bo
         langDef = TextEditWindow::LanguageDefinition::GLSL();
 
         static std::string keywords[] = {
-            "var", "args", "arg", "variable", "argument", "arguments", "return", "const", "constant"
+            "var", "args", "return",
         };
 
         langDef.mKeywords.clear();
