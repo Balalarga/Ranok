@@ -406,15 +406,17 @@ void Editor::BlueprintTab()
 {
     static auto scene = Scene();
     static auto view = scene.AddObject<RayMarchingView>(&scene);
+    static bool firstTime = true;
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
     constexpr float widthCoef = 1;
     ImVec2 childSize = {parentWidth * widthCoef, 0};
 
-    ImGui::BeginChild("BlueprintControls", childSize, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing);
+    ImGui::BeginChild("BlueprintControls", childSize, ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::Button("Compile"))
     {
         ImGui::SetWindowFocus("View");
+        ImGui::SetWindowCollapsed("View", false);
         auto program = _blueprintEditor.GetProgram();
         if (program.Root())
         {
@@ -423,9 +425,18 @@ void Editor::BlueprintTab()
         }
         else
         {
-            std::cout << "Error\n";
+            ImGui::OpenPopup("Blueprint compile error");
         }
     }
+
+    bool unused = true;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+    if (ImGui::BeginPopupModal("Blueprint compile error", &unused, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Error while compiling model\nPlease check you nodes");
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleVar();
 
     ImGui::SameLine();
     if (ImGui::Button("Build"))
@@ -469,11 +480,15 @@ void Editor::BlueprintTab()
         ImGui::EndMenuBar();
     }
 
+    if (firstTime)
+        ImGui::SetNextWindowSize({200, 200});
     if (ImGui::Begin("View", nullptr, ImGuiWindowFlags_NoScrollbar))
     {
         scene.Render();
     }
     ImGui::End();
+
+    firstTime = false;
 }
 
 void Editor::SetupViewScene()

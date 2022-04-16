@@ -43,7 +43,7 @@ void Window::Destroy()
 Window::Window(const WindowParams &params):
     _windowColor(0.2f, 0.2f, 0.2f, 1.00f)
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
         std::cout << "Error: " << SDL_GetError() << std::endl;
         return;
@@ -88,9 +88,7 @@ Window::Window(const WindowParams &params):
     ImGui_ImplOpenGL3_Init(params.glsl_version.c_str());
 
     ImGuiIO& io = ImGui::GetIO();
-    io.WantSetMousePos = true;
     io.WantSaveIniSettings = false;
-    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
@@ -103,7 +101,6 @@ Window::~Window()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
-
 
     IMG_Quit();
 

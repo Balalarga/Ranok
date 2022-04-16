@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if (!MSVC)
+    add_compile_options(-Wl,-subsystem,windows)
+endif()
+
 set(THIRDPARTY_DIR ThirdParty)
 # Windows libs only
 set(LIBS mingw32 opengl32 glu32 Imm32)
