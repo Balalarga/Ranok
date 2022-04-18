@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if (!MSVC)
+    add_compile_options(-Wl,-subsystem,windows)
+endif()
+
 set(THIRDPARTY_DIR ThirdParty)
 # Windows libs only
 set(LIBS mingw32 opengl32 glu32 Imm32)
@@ -48,9 +52,9 @@ target_include_directories(ImGui PUBLIC ${THIRDPARTY_DIR}/ImGui
                            ${LIBS_INCLUDES})
 set(LIBS ${LIBS} ImGui)
 
-# RanokCore setup
-add_subdirectory(ThirdParty/RanokLibraryCore/RanokLibraryCore)
-set(LIBS ${LIBS} RanokLibraryCore)
+# RanokCalculator setup
+add_subdirectory(ThirdParty/RanokCalculator/RanokCalculator)
+set(LIBS ${LIBS} RanokCalculator)
 
 # Find all source files
 file(GLOB_RECURSE PROJECT_SOURCES Sources/*.cpp Sources/*.h Sources/*.hpp Assets/*)
