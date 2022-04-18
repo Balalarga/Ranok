@@ -245,7 +245,7 @@ void Editor::EditorTab()
             }
             else
             {
-                CustomFunction func(customFuncName, customFuncEditor.GetText());
+                CustomFunction func = CustomFunction::FromString(customFuncName, customFuncEditor.GetText());
                 if (!func.Root())
                 {
                     ImGui::OpenPopup("Function error");
@@ -586,7 +586,10 @@ void Editor::BuildPopUp()
             auto args = _program.Table().Arguments();
             if (args.size() == 3)
             {
-                std::vector<ArgumentExpression::Range> ranges{args[0]->range, args[1]->range, args[2]->range};
+                std::vector<Range> ranges{
+                    static_cast<RangedVariableExpression*>(args[0].get())->range,
+                    static_cast<RangedVariableExpression*>(args[1].get())->range,
+                    static_cast<RangedVariableExpression*>(args[2].get())->range};
                 std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
                 std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
                 _space.SetSize(spaceSize);

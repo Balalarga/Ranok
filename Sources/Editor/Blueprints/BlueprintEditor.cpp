@@ -227,9 +227,9 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
     {
         for (auto& op : Operations::GetBinaries())
         {
-            if (Filter.PassFilter(op.first.c_str()) && ImGui::MenuItem(op.first.c_str()))
+            if (Filter.PassFilter(op.Name().c_str()) && ImGui::MenuItem(op.Name().c_str()))
             {
-                _nodes.push_back(Node(GetNextId(), op.first.c_str()));
+                _nodes.push_back(Node(GetNextId(), op.Name().c_str()));
                 _nodes.back().Type = NodeType::Simple;
                 _nodes.back().Inputs.emplace_back(GetNextId(), "l", PinType::Float);
                 _nodes.back().Inputs.emplace_back(GetNextId(), "r", PinType::Float);
@@ -247,9 +247,9 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
     {
         for (auto& op : Operations::GetUnaries())
         {
-            if (Filter.PassFilter(op.first.c_str()) && ImGui::MenuItem(op.first.c_str()))
+            if (Filter.PassFilter(op.Name().c_str()) && ImGui::MenuItem(op.Name().c_str()))
             {
-                _nodes.push_back(Node(GetNextId(), op.first.c_str()));
+                _nodes.push_back(Node(GetNextId(), op.Name().c_str()));
                 _nodes.back().Type = NodeType::Simple;
                 _nodes.back().Inputs.emplace_back(GetNextId(), "i", PinType::Float);
                 _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
@@ -1038,14 +1038,14 @@ spExpression BlueprintEditor::Iterate(Program& program, Pin& pin)
     auto unOp = Operations::UnaryFromString(node->Name);
     if (unOp && node->Inputs.size() == 1)
     {
-        return std::make_shared<UnaryOperation>(FunctionInfo{node->Name, unOp},
+        return std::make_shared<UnaryOperation>(*unOp,
                                                 CheckPin(node->Inputs[0]));
     }
 
     auto binOp = Operations::BinaryFromString(node->Name);
     if (binOp && node->Inputs.size() == 2)
     {
-        return std::make_shared<BinaryOperation>(FunctionInfo{node->Name, binOp},
+        return std::make_shared<BinaryOperation>(*binOp,
                                                  CheckPin(node->Inputs[0]),
                                                  CheckPin(node->Inputs[1]));
     }
