@@ -7,7 +7,7 @@ return abs(o);
 Cut
 {
 args func, axis, len;
-return func & -axis & -(o + len);
+return func & -axis & -(axis + len);
 }
 
 Translate
@@ -50,4 +50,11 @@ Circle
 {
 args axis1, axis2, radius;
 return radius^2 - axis1^2 - axis2^2;
+}
+
+SomeFunc
+{
+args s[3];
+s2[3] = { s[0] + 1, s[1], s[2] };
+return s2;
 }

@@ -239,7 +239,22 @@ CodeGenerator::LanguageDefinition RayMarchingView::_languageDefenition =
         .Functions({{"abs", "abs"}})
         .NumberType("float")
         .NumberArrayType("float")
-        .ArrayParamSignature("{0} {1}[{2}]");
+        .ArrayParamSignature("{0} {1}[{2}]")
+        .ArrayReturnAsParam(true)
+        .ArrayResultParamSignature("out {0} {1}[{2}]")
+        .FillResultArray([](const std::string& varName, const std::vector<std::string>& params) -> std::string
+        {
+            std::stringstream stream;
+
+            for (size_t i = 0; i < params.size(); ++i)
+            {
+                stream << varName << "[" << i << "]" << " = " << params[i];
+                if (i + 1 < params.size())
+                    stream << ";\n";
+            }
+
+            return stream.str();
+        });
 
 CodeGenerator RayMarchingView::_codeGenerator(_languageDefenition);
 
