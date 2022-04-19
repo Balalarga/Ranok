@@ -41,16 +41,11 @@ Editor::Editor():
     blueprintBtn.render = std::bind(&Editor::BlueprintTab, this);
 
     TextEditor::Tab tab("New");
-    tab.window.SetText(R"(args x, y, z; // default range [-1, 1];
+    tab.window.SetText(R"(args s[3]; // default range [-1, 1];
 
-x0 = 0;
-y0 = 0;
-z0 = 0;
+w = 1 - s[0]^2 - s[1]^2 - s[2]^2;
 
-r = 1;
-s = r ^ 2 - (x - x0) ^ 2 -(y - y0) ^ 2 - (z - z0) ^ 2;
-
-return s;)");
+return w;)");
     _textEditor.AddTab(tab);
 
     SetupViewScene();
@@ -586,12 +581,34 @@ void Editor::BuildPopUp()
             auto args = _program.Table().Arguments();
             if (args.size() == 3)
             {
-                std::vector<Range> ranges{
-                    static_cast<RangedVariableExpression*>(args[0].get())->range,
-                    static_cast<RangedVariableExpression*>(args[1].get())->range,
-                    static_cast<RangedVariableExpression*>(args[2].get())->range};
-                std::vector<double> startPoint{ranges[0].min, ranges[1].min, ranges[2].min};
-                std::vector<double> spaceSize{ranges[0].max - ranges[0].min, ranges[1].max - ranges[1].min, ranges[2].max - ranges[2].min};
+                std::vector<double> startPoint;
+                std::vector<double> spaceSize;
+                if (dynamic_cast<ArrayExpression*>(args[0]->child.get()))
+                {
+                    spaceSize = {
+                        _program.Table().Ranges()[0][0].max - _program.Table().Ranges()[0][0].min,
+                        _program.Table().Ranges()[0][1].max - _program.Table().Ranges()[0][1].min,
+                        _program.Table().Ranges()[0][2].max - _program.Table().Ranges()[0][2].min
+                    };
+                    startPoint = {
+                        _program.Table().Ranges()[0][0].min,
+                        _program.Table().Ranges()[0][1].min,
+                        _program.Table().Ranges()[0][2].min
+                    };
+                }
+                else
+                {
+                    spaceSize = {
+                        _program.Table().Ranges()[0][0].max - _program.Table().Ranges()[0][0].min,
+                        _program.Table().Ranges()[1][0].max - _program.Table().Ranges()[1][0].min,
+                        _program.Table().Ranges()[2][0].max - _program.Table().Ranges()[2][0].min
+                    };
+                    startPoint = {
+                        _program.Table().Ranges()[0][0].min,
+                        _program.Table().Ranges()[1][0].min,
+                        _program.Table().Ranges()[2][0].min
+                    };
+                }
                 _space.SetSize(spaceSize);
                 _space.SetPartition(pow(2, recursionDepth));
                 _space.SetStartPoint(startPoint);

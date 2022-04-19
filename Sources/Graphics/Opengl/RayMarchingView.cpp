@@ -40,7 +40,8 @@ std::string RayMarchingView::shaderFooter = R"(
 
 // get distance in the world
 float dist_field( vec3 p ) {
-    return -__resultFunc(p.x, p.y, p.z);
+    float params[3] = float[](p.x, p.y, p.z);
+    return -__resultFunc(params);
 }
 
 // get gradient in the world
@@ -226,9 +227,9 @@ void main()
 )";
 
 std::string RayMarchingView::defaultFragmentShader = shaderHeader + R"(
-float __resultFunc(float x, float y, float z)
+float __resultFunc(float s[3])
 {
-    return 1 - x*x - y*y - z*z;
+    return 1 - s[0]*s[0] - s[1]*s[1] - s[2]*s[2];
 }
 )" + shaderFooter;
 
@@ -236,7 +237,9 @@ float __resultFunc(float x, float y, float z)
 CodeGenerator::LanguageDefinition RayMarchingView::_languageDefenition =
         CodeGenerator::LanguageDefinition().MainFuncName("__resultFunc")
         .Functions({{"abs", "abs"}})
-        .NumberType("float");
+        .NumberType("float")
+        .NumberArrayType("float")
+        .ArrayParamSignature("{0} {1}[{2}]");
 
 CodeGenerator RayMarchingView::_codeGenerator(_languageDefenition);
 
