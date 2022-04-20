@@ -3,6 +3,17 @@
 #include <sstream>
 #include "Graphics/Gui/Scene.h"
 
+#include <iostream>
+#include <fmt/format.h>
+
+#if 0
+    #define Debugln(msg) std::cout << "[Debug] " << msg << std::endl;
+    #define Debug(msg) std::cout << "[Debug] " << msg;
+#else
+    #define Debugln(msg)
+    #define Debug(msg)
+#endif
+
 
 glm::fvec2 RayMarchingView::vertices[6] = {
 //   x    y
@@ -267,6 +278,35 @@ RayMarchingView::RayMarchingView(Scene *parent):
 
 bool RayMarchingView::SetModel(Program &program)
 {
+    Debugln("-----------Nodes begin-------------");
+    std::queue<std::pair<int, Expression *>> nodes;
+    program.Root()->Visit(nodes);
+
+    for (auto& func: program.Table().Variables())
+        func->VisitRecur(nodes);
+
+    while (!nodes.empty())
+    {
+        auto &top = nodes.front();
+
+        for (int i = 1; i < top.first; ++i)
+            std::cout << "  ";
+
+        if (auto func = dynamic_cast<FunctionExpression *>(top.second))
+        {
+            Debug(func->function.Name() + "(");
+            for (auto &a: func->params)
+                std::cout << a->name << ", ";
+            std::cout << ")\n";
+        }
+        else
+        {
+            Debugln(fmt::format("Node: {}", top.second->name));
+        }
+        nodes.pop();
+    }
+    Debugln("------------Nodes end--------------");
+
     std::stringstream stream;
     stream << shaderHeader;
     std::string code = _codeGenerator.Generate(program);

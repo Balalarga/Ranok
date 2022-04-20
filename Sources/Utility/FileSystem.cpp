@@ -7,7 +7,7 @@
 using namespace std;
 
 
-string FileSystem::AssetFolder = "Assets";
+string FileSystem::AssetFolder = "../Assets";
 
 
 void FileSystem::SetAssetFolder(const string& newAssetFolder)

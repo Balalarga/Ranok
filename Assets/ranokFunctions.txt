@@ -52,9 +52,18 @@ args axis1, axis2, radius;
 return radius^2 - axis1^2 - axis2^2;
 }
 
-SomeFunc
+CircleArrayEvenXY
 {
-args s[3];
-s2[3] = { s[0] + 1, s[1], s[2] };
-return s2;
+args s[3], halfCount, radius;
+no = halfCount;
+ro = sqrt(s[0]^2 + s[1]^2);
+tet = arctan(s[1] / s[0]);
+
+ff = tet * no;
+mu = 4 / PI / no * (sin(ff) - sin(3*ff)/9 + sin(5*ff)/25 - sin(7*ff)/49); // Похоже на костыль
+
+x11 = ro * cos(mu) - radius; // радиус вычитается именно из косинуса
+y11 = ro * sin(mu);
+sn[3] = { x11, y11, s[2] };
+return sn;
 }
