@@ -23,6 +23,7 @@ public:
         Function,
         Delegate,
         Variable,
+        Array
     };
     enum class PinKind
     {
@@ -83,25 +84,25 @@ public:
         PinType     Type;
         PinKind     Kind;
         std::vector<Link*> Linker;
-        double      Value;
+        std::vector<double> Values;
 
         Pin() = default;
-        Pin(int id, const char* name, PinType type):
+        Pin(int id, const char* name, PinType type, PinKind kind = PinKind::Input):
             ID(id),
             Node(nullptr),
             Name(name),
             Type(type),
-            Kind(PinKind::Input),
-            Value(0)
+            Kind(kind),
+            Values({0})
         {
         }
-        Pin(ax::NodeEditor::PinId id, const char* name, PinType type):
+        Pin(ax::NodeEditor::PinId id, const char* name, PinType type, PinKind kind = PinKind::Input):
             ID(id),
             Node(nullptr),
             Name(name),
             Type(type),
-            Kind(PinKind::Input),
-            Value(0)
+            Kind(kind),
+            Values({0})
         {
         }
     };
