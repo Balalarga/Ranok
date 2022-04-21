@@ -6,6 +6,7 @@
 #include "Utility/ImageStorage.h"
 
 #include <imgui_node_editor.h>
+#include <Ranok/LanguageCore/CustomFunction.h>
 #include <Ranok/LanguageCore/Program.h>
 #include <set>
 
@@ -172,6 +173,7 @@ private:
 
     std::vector<std::unique_ptr<Link>> _links;
     std::vector<Node> _nodes;
+    BlueprintEditor::Node *RenderContextCustomFunc(const CustomFunction &func, ImGuiTextFilter &Filter, int level = 0);
 };
 
 #endif // BLUEPRINTEDITOR_H

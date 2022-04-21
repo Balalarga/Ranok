@@ -154,6 +154,7 @@ BlueprintEditor::BlueprintEditor():
     _textFont = ImGui::GetFont();
 
     ed::SetCurrentEditor(_context);
+    ed::EnableShortcuts(true);
     AddDefaultNodes();
     ed::NavigateToContent();
     ed::SetCurrentEditor(nullptr);
@@ -172,10 +173,10 @@ ImColor GetIconColor(BlueprintEditor::PinType type)
         default:
         case BlueprintEditor::PinType::Flow:     return ImColor(255, 255, 255);
         case BlueprintEditor::PinType::Bool:     return ImColor(220,  48,  48);
-        case BlueprintEditor::PinType::Object:    return ImColor( 68, 201, 156);
+        case BlueprintEditor::PinType::Object:   return ImColor( 68, 201, 156);
         case BlueprintEditor::PinType::Float:    return ImColor(147, 226,  74);
         case BlueprintEditor::PinType::Variable: return ImColor(147, 226,  74);
-        case BlueprintEditor::PinType::Array:   return ImColor(124,  21, 153);
+        case BlueprintEditor::PinType::Array:    return ImColor(124,  21, 153);
         case BlueprintEditor::PinType::String:   return ImColor( 51, 150, 215);
         case BlueprintEditor::PinType::Function: return ImColor(218,   0, 183);
         case BlueprintEditor::PinType::Delegate: return ImColor(255,  48,  48);
@@ -191,7 +192,7 @@ void BlueprintEditor::DrawPinIcon(const Pin& pin, bool connected, int alpha)
     {
         case PinType::Flow:     iconType = IconType::Flow;   break;
         case PinType::Bool:     iconType = IconType::Circle; break;
-        case PinType::Array:    iconType = IconType::Square; break;
+        case PinType::Array:    iconType = IconType::Flow;   break;
         case PinType::Float:    iconType = IconType::Circle; break;
         case PinType::Variable: iconType = IconType::Circle; break;
         case PinType::String:   iconType = IconType::Circle; break;
@@ -204,6 +205,50 @@ void BlueprintEditor::DrawPinIcon(const Pin& pin, bool connected, int alpha)
 
     ax::Widgets::Icon(NodeIconsSize, iconType, connected, color, ImColor(32, 32, 32, alpha));
 }
+
+BlueprintEditor::Node* BlueprintEditor::RenderContextCustomFunc(const CustomFunction& func, ImGuiTextFilter& Filter, int level)
+{
+    if (level < func.Info().Tags().size())
+    {
+        if (ImGui::TreeNode(func.Info().Tags()[level].c_str()))
+        {
+            auto val = RenderContextCustomFunc(func, Filter, ++level);
+            ImGui::TreePop();
+            return val;
+        }
+    }
+    else if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
+    {
+        _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+        _nodes.back().Type = NodeType::Simple;
+        _nodes.back().Descr = func.Info().Desc();
+        for (auto& arg: func.Args())
+        {
+            if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
+            {
+                _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
+                _nodes.back().Inputs.back().Values.resize(arr->Values.size());
+            }
+            else
+            {
+                _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+            }
+        }
+
+        if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
+        {
+            _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
+            _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
+        }
+        else
+        {
+            _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
+        }
+        return &_nodes.back();
+    }
+    return nullptr;
+}
+
 
 BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 {
@@ -314,48 +359,50 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
     {
         for (auto& func : Functions::GetAllCustoms())
         {
-            if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
+            if (func.Info().Tags().empty())
             {
-                _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
-                _nodes.back().Type = NodeType::Simple;
-                _nodes.back().Descr = func.Info().Desc();
-                for (auto& arg: func.Args())
+                if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
                 {
-                    if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
+                    _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+                    _nodes.back().Type = NodeType::Simple;
+                    _nodes.back().Descr = func.Info().Desc();
+                    for (auto& arg: func.Args())
                     {
-                        _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
-                        _nodes.back().Inputs.back().Values.resize(arr->Values.size());
+                        if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
+                        {
+                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
+                            _nodes.back().Inputs.back().Values.resize(arr->Values.size());
+                        }
+                        else
+                        {
+                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+                        }
+                    }
+
+                    if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
+                    {
+                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
+                        _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
                     }
                     else
                     {
-                        _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
                     }
+                    ImGui::TreePop();
+                    return &_nodes.back();
                 }
-
-                if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
+            }
+            else
+            {
+                auto val = RenderContextCustomFunc(func, Filter);
+                if (val)
                 {
-                    _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
-                    _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
+                    ImGui::TreePop();
+                    return val;
                 }
-                else
-                {
-                    _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
-                }
-                ImGui::TreePop();
-                return &_nodes.back();
             }
         }
         ImGui::TreePop();
-    }
-
-    if (ImGui::MenuItem("Add variable"))
-    {
-        _nodes.push_back(Node(GetNextId(), "Name"));
-        _nodes.back().Type = NodeType::Simple;
-        _nodes.back().Descr = "User-defined variable";
-        _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-        _nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-        return &_nodes.back();
     }
 
     if (ImGui::MenuItem("Comment"))
@@ -372,22 +419,35 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 
 void BlueprintEditor::AddDefaultNodes()
 {
-    _nodes.push_back(Node(GetNextId(), "Space  "));
+    _nodes.push_back(Node(GetNextId(), "3D Space"));
     _nodes.back().Type = NodeType::Simple;
-    _nodes.back().Descr = "Space arguments";
+    _nodes.back().Descr = "3D space arguments";
     _nodes.back().CanDelete = false;
     _nodes.back().Outputs.emplace_back(GetNextId(), "s", PinType::Array);
     _nodes.back().Outputs.back().Values.resize(3);
+    _nodes.back().Inputs.emplace_back(GetNextId(), "x0", PinType::Array);
+    _nodes.back().Inputs.back().Values.resize(2);
+    _nodes.back().Inputs.back().Values[0] = -1;
+    _nodes.back().Inputs.back().Values[1] = 1;
+    _nodes.back().Inputs.emplace_back(GetNextId(), "x1", PinType::Array);
+    _nodes.back().Inputs.back().Values.resize(2);
+    _nodes.back().Inputs.back().Values[0] = -1;
+    _nodes.back().Inputs.back().Values[1] = 1;
+    _nodes.back().Inputs.emplace_back(GetNextId(), "x2", PinType::Array);
+    _nodes.back().Inputs.back().Values.resize(2);
+    _nodes.back().Inputs.back().Values[0] = -1;
+    _nodes.back().Inputs.back().Values[1] = 1;
+    BuildNode(&_nodes[0]);
+
     ed::SetNodePosition(_nodes.back().ID, ImVec2(0, 0));
-    BuildNode(&_nodes.back());
 
     _nodes.push_back(Node(GetNextId(), "Result"));
     _nodes.back().Type = NodeType::Simple;
     _nodes.back().CanDelete = false;
     _nodes.back().Descr = "Result of function";
     _nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+    BuildNode(&_nodes[1]);
     ed::SetNodePosition(_nodes.back().ID, ImVec2(600, 0));
-    BuildNode(&_nodes.back());
 };
 
 void BlueprintEditor::Render()
@@ -398,6 +458,7 @@ void BlueprintEditor::Render()
     static bool createNewNode  = false;
     static Pin* newNodeLinkPin = nullptr;
     static Pin* newLinkPin     = nullptr;
+    static bool init = false;
 
     ed::SetCurrentEditor(_context);
     if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_Space)))
@@ -413,6 +474,13 @@ void BlueprintEditor::Render()
         auto cursorTopLeft = ImGui::GetCursorScreenPos();
 
         util::BlueprintNodeBuilder builder((ImTextureID)_nodeHeaderBackground.id, _nodeHeaderBackground.width, _nodeHeaderBackground.height);
+
+        if (!init)
+        {
+            BuildNode(&_nodes[0]);
+            BuildNode(&_nodes[1]);
+            init = true;
+        }
 
         for (auto& node : _nodes)
         {
@@ -484,9 +552,19 @@ void BlueprintEditor::Render()
 
                     builder.Input(input.ID);
                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
-                    DrawPinIcon(input, IsPinLinked(input.ID), (int)(alpha * 255));
+                    if (input.Node->ID != _nodes[0].ID)
+                        DrawPinIcon(input, IsPinLinked(input.ID), (int)(alpha * 255));
                     ImGui::Spring(0);
-                    if (input.Linker.empty())
+                    // For space inputs
+                    if (input.Node->ID == _nodes[0].ID)
+                    {
+                        for (size_t i = 0; i < input.Values.size(); ++i)
+                        {
+                            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+                            ImGui::InputDouble("", &input.Values[i], 0, 0, "%.3f");
+                        }
+                    }
+                    else if (input.Linker.empty())
                     {
                         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
                         if (input.Type != PinType::Array)
@@ -494,15 +572,11 @@ void BlueprintEditor::Render()
                             ImGui::InputDouble("", &input.Values[0], 0, 0, "%.3f");
                         }
                     }
+
                     if (!input.Name.empty())
                     {
                         ImGui::TextUnformatted(input.Name.c_str());
                         ImGui::Spring(0);
-                    }
-                    if (input.Type == PinType::Bool)
-                    {
-                         ImGui::Button("Hello");
-                         ImGui::Spring(0);
                     }
                     ImGui::PopStyleVar();
                     builder.EndInput();
@@ -819,14 +893,8 @@ void BlueprintEditor::Render()
     {
         auto node = FindNode(contextNodeId);
 
-        ImGui::TextUnformatted("Node Context Menu");
-        ImGui::Separator();
         if (node)
-        {
             ImGui::Text("Description: %s", node->Descr.c_str());
-            ImGui::Text("Inputs: %d", (int)node->Inputs.size());
-            ImGui::Text("Outputs: %d", (int)node->Outputs.size());
-        }
         else
             ImGui::Text("Unknown node: %p", contextNodeId.AsPointer());
         ImGui::Separator();
@@ -838,19 +906,10 @@ void BlueprintEditor::Render()
     if (ImGui::BeginPopup("Pin Context Menu"))
     {
         auto pin = FindPin(contextPinId);
-
-        ImGui::TextUnformatted("Pin Context Menu");
-        ImGui::Separator();
-        if (pin)
-        {
-            if (pin->Node)
-                ImGui::Text("Node: %s", pin->Node->Name.c_str());
-            else
-                ImGui::Text("Node: %s", "<none>");
-        }
+        if (pin->Type == PinType::Array)
+            ImGui::Text("%s: array[%llu]", pin->Name.c_str(), pin->Values.size());
         else
-            ImGui::Text("Unknown pin: %p", contextPinId.AsPointer());
-
+            ImGui::Text("%s: number", pin->Name.c_str());
         ImGui::EndPopup();
     }
 
@@ -858,8 +917,6 @@ void BlueprintEditor::Render()
     {
         auto link = FindLink(contextLinkId);
 
-        ImGui::TextUnformatted("Link Context Menu");
-        ImGui::Separator();
         if (link)
         {
             ImGui::Text("From: %s(%s)", link->StartPin.Node->Name.c_str(), link->StartPin.Name.c_str());
@@ -873,7 +930,7 @@ void BlueprintEditor::Render()
         ImGui::EndPopup();
     }
 
-    ImGui::SetNextWindowSizeConstraints({0, 0}, {ImGui::GetWindowWidth()/3, ImGui::GetWindowHeight()/3});
+    ImGui::SetNextWindowSizeConstraints({0, 0}, {ImGui::GetWindowWidth()/3, ImGui::GetWindowHeight()/2});
     if (ImGui::BeginPopup("Create New Node"))
     {
         static auto newNodePostion = openPopupPosition;

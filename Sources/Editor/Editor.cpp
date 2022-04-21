@@ -41,7 +41,7 @@ Editor::Editor():
     blueprintBtn.render = std::bind(&Editor::BlueprintTab, this);
 
     TextEditor::Tab tab("New");
-    tab.window.SetText(R"(args s[3]; // default range [-1, 1];
+    tab.window.SetText(R"(args s[3](1, 1, 1);
 
 w = 1 - s[0]^2 - s[1]^2 - s[2]^2;
 
@@ -88,6 +88,7 @@ void Editor::EditorTab()
 {
     constexpr unsigned customFuncNameLen = 256;
     static char customFuncName[customFuncNameLen];
+    static char customFuncTag[customFuncNameLen*4];
     static TextEditWindow customFuncEditor;
     static bool customInit = false;
     if (!customInit)
@@ -189,6 +190,7 @@ void Editor::EditorTab()
     if (ImGui::Button("Add function"))
     {
         customFuncName[0] = '\0';
+        customFuncTag[0] = '\0';
         customFuncEditor.SetText("");
         ImGui::OpenPopup("Create function");
     }
@@ -227,6 +229,10 @@ void Editor::EditorTab()
             }
         }
         ImGui::PopStyleColor();
+        if (ImGui::InputText("Function tags", customFuncTag, customFuncNameLen*4))
+        {
+
+        }
 
         customFuncEditor.Render("Custom func code", ImVec2(500, 300), true);
 
@@ -240,7 +246,7 @@ void Editor::EditorTab()
             }
             else
             {
-                CustomFunction func = CustomFunction::FromString(customFuncName, customFuncEditor.GetText());
+                CustomFunction func = CustomFunction::FromString(std::string(customFuncName)+":"+std::string(customFuncTag), customFuncEditor.GetText());
                 if (!func.Root())
                 {
                     ImGui::OpenPopup("Function error");
@@ -401,6 +407,7 @@ void Editor::BlueprintTab()
 {
     static auto scene = Scene();
     static auto view = scene.AddObject<RayMarchingView>(&scene);
+    scene.GetCamera().MouseSensitivity = 0.06f;
     static bool firstTime = true;
     const auto parentWidth = ImGui::GetWindowContentRegionWidth();
     constexpr float widthCoef = 1;
