@@ -100,6 +100,8 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+    srand(time(NULL));
+
     Window* window = Window::Create();
     if (!window)
     {

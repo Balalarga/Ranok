@@ -27,7 +27,7 @@ sinx = sin(angles[0]);
 siny = sin(angles[1]);
 sinz = sin(angles[2]);
 
-x = cosz*coxy * s[0] + ( sinx*siny*cosz - cosx*sinz) * s[1] + ( sinx*sinz+cosx*siny*cosz) * s[2];
+x = cosz*cosy * s[0] + ( sinx*siny*cosz - cosx*sinz) * s[1] + ( sinx*sinz+cosx*siny*cosz) * s[2];
 y = cosy*sinz*s[0] + ( cosx*cosz+sinx*siny*sinz ) * s[1] + ( cosx*siny*sinz - sinx*cosz) * s[2];
 z = (-siny) * s[0] + sinx*cosy *s[1] + cosx*cosy * s[2];
 

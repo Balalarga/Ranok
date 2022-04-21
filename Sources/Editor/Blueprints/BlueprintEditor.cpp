@@ -15,6 +15,8 @@
 #include <utility>
 #include <fstream>
 
+#include <Ranok/Utility/StringUtility.h>
+
 
 namespace ed = ax::NodeEditor;
 namespace util = ed::Utilities;
@@ -282,9 +284,9 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
         ImGui::SetNextTreeNodeOpen(true);
     if (ImGui::TreeNode("Arrays"))
     {
-        if (Filter.PassFilter("Split") && ImGui::MenuItem("Split"))
+        if (Filter.PassFilter("Get") && ImGui::MenuItem("Get"))
         {
-            _nodes.push_back(Node(GetNextId(), "Split"));
+            _nodes.push_back(Node(GetNextId(), "Get"));
             _nodes.back().Type = NodeType::Simple;
             _nodes.back().Descr = "Get array element";
             _nodes.back().Inputs.emplace_back(GetNextId(), "i", PinType::Array);
@@ -293,9 +295,9 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
             return &_nodes.back();
         }
 
-        if (Filter.PassFilter("Merge") && ImGui::MenuItem("Merge"))
+        if (Filter.PassFilter("Make") && ImGui::MenuItem("Make"))
         {
-            _nodes.push_back(Node(GetNextId(), "Merge"));
+            _nodes.push_back(Node(GetNextId(), "Make"));
             _nodes.back().Type = NodeType::Simple;
             _nodes.back().Descr = "Set array elements";
             _nodes.back().Inputs.emplace_back(GetNextId(), "0", PinType::Float);
@@ -700,7 +702,7 @@ void BlueprintEditor::Render()
                                 }
 
                                 _links.emplace_back(std::make_unique<Link>(GetNextId(), *startPin, *endPin));
-                                if (endPin->Type == PinType::Array && startPin->Node->Name == "Merge")
+                                if (endPin->Type == PinType::Array && startPin->Node->Name == "Make")
                                 {
                                     for (auto& i : startPin->Node->Inputs)
                                     {
@@ -716,7 +718,7 @@ void BlueprintEditor::Render()
                                         startPin->Node->Inputs.emplace_back(GetNextId(), std::to_string(i).c_str(), PinType::Float);
                                     BuildNode(startPin->Node);
                                 }
-                                else if (endPin->Type == PinType::Array && endPin->Node->Name == "Split")
+                                else if (endPin->Type == PinType::Array && endPin->Node->Name == "Get")
                                 {
                                     for (auto& i : endPin->Node->Outputs)
                                     {
@@ -911,7 +913,7 @@ void BlueprintEditor::Render()
                         }
 
                         _links.emplace_back(std::make_unique<Link>(GetNextId(), *startPin, *endPin));
-                        if (endPin->Type == PinType::Array && startPin->Node->Name == "Merge")
+                        if (endPin->Type == PinType::Array && startPin->Node->Name == "Make")
                         {
                             for (auto& i : startPin->Node->Inputs)
                             {
@@ -927,7 +929,7 @@ void BlueprintEditor::Render()
                                 startPin->Node->Inputs.emplace_back(GetNextId(), std::to_string(i).c_str(), PinType::Float);
                             BuildNode(startPin->Node);
                         }
-                        else if (endPin->Type == PinType::Array && endPin->Node->Name == "Split")
+                        else if (endPin->Type == PinType::Array && endPin->Node->Name == "Get")
                         {
                             for (auto& i : endPin->Node->Outputs)
                             {
@@ -1141,7 +1143,7 @@ spExpression BlueprintEditor::Iterate(Program& program, Pin& pin)
     if (pin.Linker.empty())
         return program.Table().CreateConstant(pin.Values[0]);
 
-    if (pin.Node->Name == "Split")
+    if (pin.Node->Name == "Get")
     {
         auto sharedVar = std::dynamic_pointer_cast<VariableExpression>(CheckPin(pin.Node->Inputs[0]));
         if (auto var = dynamic_cast<VariableExpression*>(sharedVar.get()))
@@ -1156,12 +1158,20 @@ spExpression BlueprintEditor::Iterate(Program& program, Pin& pin)
         }
     }
 
-    if (pin.Node->Name == "Merge")
+    if (pin.Node->Name == "Make")
     {
-        std::vector<spExpression> values(pin.Node->Inputs.size());
+        std::vector<spExpression> values;
         for (auto &i: pin.Node->Inputs)
             values.push_back(CheckPin(i));
-        return program.Table().CreateConstant(values);
+        std::string randomName;
+        while (true)
+        {
+            randomName = StringUtility::GetRandomString(10 + rand() % 10);
+            if (!program.Table().FindArgument(randomName) && !program.Table().FindVariable(randomName))
+                break;
+        }
+
+        return program.Table().CreateVariable(randomName, std::make_shared<ArrayExpression>(values));
     }
 
 
@@ -1196,10 +1206,29 @@ spExpression BlueprintEditor::Iterate(Program& program, Pin& pin)
 
     if (auto func = Functions::FindCustom(node->Name))
     {
-        std::vector<spExpression> args(node->Inputs.size());
-        for (size_t i = 0; i < args.size(); ++i)
-            args[i] = CheckPin(node->Inputs[i]);
-        return std::make_shared<CustomFunctionExpression>(func->Info(), func->Root(), args);
+        if ( func->Info().ReturnType().Type == LanguageType::Double)
+        {
+            std::vector<spExpression> args(node->Inputs.size());
+            for (size_t i = 0; i < args.size(); ++i)
+                args[i] = CheckPin(node->Inputs[i]);
+            return std::make_shared<CustomFunctionExpression>(func->Info(), func->Root(), args);
+        }
+        else
+        {
+            std::vector<spExpression> args(node->Inputs.size());
+            for (size_t i = 0; i < args.size(); ++i)
+                args[i] = CheckPin(node->Inputs[i]);
+
+            std::string randomName;
+            while (true)
+            {
+                randomName = StringUtility::GetRandomString(10 + rand() % 10);
+                if (!program.Table().FindArgument(randomName) && !program.Table().FindVariable(randomName))
+                    break;
+            }
+            auto var = program.Table().CreateVariable(randomName, std::make_shared<CustomFunctionExpression>(func->Info(), func->Root(), args));
+            return var;
+        }
     }
 
     return nullptr;

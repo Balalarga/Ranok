@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fmt/format.h>
 
-#if 1
+#if 0
     #define Debugln(msg) std::cout << "[Debug] " << msg << std::endl;
     #define Debug(msg) std::cout << "[Debug] " << msg;
 #else
