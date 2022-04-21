@@ -170,11 +170,11 @@ ImColor GetIconColor(BlueprintEditor::PinType type)
         default:
         case BlueprintEditor::PinType::Flow:     return ImColor(255, 255, 255);
         case BlueprintEditor::PinType::Bool:     return ImColor(220,  48,  48);
-        case BlueprintEditor::PinType::Array:    return ImColor( 68, 201, 156);
+        case BlueprintEditor::PinType::Object:    return ImColor( 68, 201, 156);
         case BlueprintEditor::PinType::Float:    return ImColor(147, 226,  74);
         case BlueprintEditor::PinType::Variable: return ImColor(147, 226,  74);
-        case BlueprintEditor::PinType::String:   return ImColor(124,  21, 153);
-        case BlueprintEditor::PinType::Object:   return ImColor( 51, 150, 215);
+        case BlueprintEditor::PinType::Array:   return ImColor(124,  21, 153);
+        case BlueprintEditor::PinType::String:   return ImColor( 51, 150, 215);
         case BlueprintEditor::PinType::Function: return ImColor(218,   0, 183);
         case BlueprintEditor::PinType::Delegate: return ImColor(255,  48,  48);
     }
@@ -189,7 +189,7 @@ void BlueprintEditor::DrawPinIcon(const Pin& pin, bool connected, int alpha)
     {
         case PinType::Flow:     iconType = IconType::Flow;   break;
         case PinType::Bool:     iconType = IconType::Circle; break;
-        case PinType::Array:    iconType = IconType::Circle; break;
+        case PinType::Array:    iconType = IconType::Square; break;
         case PinType::Float:    iconType = IconType::Circle; break;
         case PinType::Variable: iconType = IconType::Circle; break;
         case PinType::String:   iconType = IconType::Circle; break;
@@ -871,7 +871,7 @@ void BlueprintEditor::Render()
         ImGui::EndPopup();
     }
 
-    ImGui::SetNextWindowSizeConstraints({0, 0}, {400, 400});
+    ImGui::SetNextWindowSizeConstraints({0, 0}, {ImGui::GetWindowWidth()/3, ImGui::GetWindowHeight()/3});
     if (ImGui::BeginPopup("Create New Node"))
     {
         static auto newNodePostion = openPopupPosition;
