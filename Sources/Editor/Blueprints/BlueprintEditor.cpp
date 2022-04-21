@@ -249,6 +249,55 @@ BlueprintEditor::Node* BlueprintEditor::RenderContextCustomFunc(const CustomFunc
     return nullptr;
 }
 
+BlueprintEditor::Node *BlueprintEditor::RenderContextCustomFunc(const std::vector<std::string> &tag, const std::vector<CustomFunction*> &funcs, ImGuiTextFilter &Filter, int level)
+{
+    BlueprintEditor::Node* res = nullptr;
+    if (level < tag.size())
+    {
+        if (ImGui::TreeNode(tag[level].c_str()))
+        {
+            res = RenderContextCustomFunc(tag, funcs, Filter, ++level);
+            ImGui::TreePop();
+        }
+    }
+    else
+    {
+        for (auto& f: funcs)
+        {
+            if (Filter.PassFilter(f->Name().c_str()) && ImGui::MenuItem(f->Name().c_str()))
+            {
+                _nodes.push_back(Node(GetNextId(), f->Name().c_str()));
+                _nodes.back().Type = NodeType::Simple;
+                _nodes.back().Descr = f->Info().Desc();
+                for (auto& arg: f->Args())
+                {
+                    if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
+                    {
+                        _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
+                        _nodes.back().Inputs.back().Values.resize(arr->Values.size());
+                    }
+                    else
+                    {
+                        _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+                    }
+                }
+
+                if (f->Info().ReturnType().Type == LanguageType::DoubleArray)
+                {
+                    _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
+                    _nodes.back().Outputs.back().Values.resize(f->Info().ReturnType().Count);
+                }
+                else
+                {
+                    _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
+                }
+                res = &_nodes.back();
+            }
+        }
+    }
+    return res;
+}
+
 
 BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 {
@@ -357,51 +406,62 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
         ImGui::SetNextTreeNodeOpen(true);
     if (ImGui::TreeNode("Custom functions"))
     {
-        for (auto& func : Functions::GetAllCustoms())
+        auto tagedFuncs = Functions::GetTagedCustomFuncs();
+        for (size_t i = 0; i < tagedFuncs.size(); ++i)
         {
-            if (func.Info().Tags().empty())
+            auto val = RenderContextCustomFunc(tagedFuncs[i].first, tagedFuncs[i].second, Filter);
+            if (val)
             {
-                if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
-                {
-                    _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
-                    _nodes.back().Type = NodeType::Simple;
-                    _nodes.back().Descr = func.Info().Desc();
-                    for (auto& arg: func.Args())
-                    {
-                        if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
-                        {
-                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
-                            _nodes.back().Inputs.back().Values.resize(arr->Values.size());
-                        }
-                        else
-                        {
-                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
-                        }
-                    }
-
-                    if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
-                    {
-                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
-                        _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
-                    }
-                    else
-                    {
-                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
-                    }
-                    ImGui::TreePop();
-                    return &_nodes.back();
-                }
-            }
-            else
-            {
-                auto val = RenderContextCustomFunc(func, Filter);
-                if (val)
-                {
-                    ImGui::TreePop();
-                    return val;
-                }
+                ImGui::TreePop();
+                return val;
             }
         }
+
+//        for (auto& func : Functions::GetAllCustoms())
+//        {
+//            if (func.Info().Tags().empty())
+//            {
+//                if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
+//                {
+//                    _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+//                    _nodes.back().Type = NodeType::Simple;
+//                    _nodes.back().Descr = func.Info().Desc();
+//                    for (auto& arg: func.Args())
+//                    {
+//                        if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
+//                        {
+//                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
+//                            _nodes.back().Inputs.back().Values.resize(arr->Values.size());
+//                        }
+//                        else
+//                        {
+//                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
+//                        }
+//                    }
+
+//                    if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
+//                    {
+//                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
+//                        _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
+//                    }
+//                    else
+//                    {
+//                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
+//                    }
+//                    ImGui::TreePop();
+//                    return &_nodes.back();
+//                }
+//            }
+//            else
+//            {
+//                auto val = RenderContextCustomFunc(func, Filter);
+//                if (val)
+//                {
+//                    ImGui::TreePop();
+//                    return val;
+//                }
+//            }
+//        }
         ImGui::TreePop();
     }
 

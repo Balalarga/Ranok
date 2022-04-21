@@ -244,6 +244,11 @@ void Editor::EditorTab()
                 ImGui::OpenPopup("Function error");
                 functionCreationError = "Function named " + std::string(customFuncName) + " already exists";
             }
+            else if (customFuncTag[0] == '\0')
+            {
+                ImGui::OpenPopup("Function error");
+                functionCreationError = "Couldn't create function without TAG";
+            }
             else
             {
                 CustomFunction func = CustomFunction::FromString(std::string(customFuncName)+":"+std::string(customFuncTag), customFuncEditor.GetText());

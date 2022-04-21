@@ -1,82 +1,72 @@
-Translate
+Translate:Space
 {
 args s[3], pos[3];
-
 sn = { s[0] - pos[0], s[1] - pos[1], s[2] - pos[2] };
-
 return sn;
 }
 
-Scale:Space.Transform
+Scale:Space
 {
 args s[3], scale[3];
-
 sn = { s[0] * scale[0], s[1] * scale[1], s[2] * scale[2] };
-
 return sn;
 }
 
-Rotate
+Rotate:Space
 {
 args s[3], angles[3];
-
 cosx = cos(angles[0]);
 cosy = cos(angles[1]);
 cosz = cos(angles[2]);
 sinx = sin(angles[0]);
 siny = sin(angles[1]);
 sinz = sin(angles[2]);
-
 s2[3] = { cosz*cosy * s[0] + ( sinx*siny*cosz - cosx*sinz) * s[1] + ( sinx*sinz+cosx*siny*cosz) * s[2],
         cosy*sinz*s[0] + ( cosx*cosz+sinx*siny*sinz ) * s[1] + ( cosx*siny*sinz - sinx*cosz) * s[2],
         (-siny) * s[0] + sinx*cosy *s[1] + cosx*cosy * s[2] };
-
 return s2;
 }
 
-Sphere
+Sphere:3dObject
 {
 args s[3], radius;
 return radius^2 - s[0]^2 - s[1]^2 - s[2]^2;
 }
 
-RectPrisma
+RectPrisma:3dObject
 {
 args s[3], size[3];
 return (size[0] - abs(s[0])) & (size[1] - abs(s[1])) & (size[2] - abs(s[2]));
 }
 
-Cube
+Cube:3dObject
 {
 args s[3], size;
 sizes[3] = { size, size, size };
-
 return RectPrisma(s, sizes);
 }
 
-Tor
+Tor:3dObject
 {
 args s[3], thickness, radius;
 return thickness^2 - (sqrt(s[0]^2 + s[1]^2) - radius)^2 - s[2]^2;
 }
 
-Circle
+Circle:2dObject
 {
 args s[2], radius;
 return radius^2 - s[0]^2 - s[1]^2;
 }
 
-CircleDuoArray
+CircleArrayDuo:Arrays
 {
 args s[3], halfCount, radius;
 no = halfCount;
 ro = sqrt(s[0]^2 + s[1]^2);
 tet = arctan(s[1] / s[0]);
-
 ff = tet * no;
-mu = 4 / PI / no * (sin(ff) - sin(3*ff)/9 + sin(5*ff)/25 - sin(7*ff)/49); // Похоже на костыль
-
-x11 = ro * cos(mu) - radius; // радиус вычитается именно из косинуса
+mu = 4 / PI / no * (sin(ff) - sin(3*ff)/9 + sin(5*ff)/25 - sin(7*ff)/49);
+x11 = ro * cos(mu) - radius;
 y11 = ro * sin(mu);
 sn[3] = { x11, y11, s[2] };
 return sn;
