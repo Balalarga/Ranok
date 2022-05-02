@@ -229,10 +229,7 @@ void Editor::EditorTab()
             }
         }
         ImGui::PopStyleColor();
-        if (ImGui::InputText("Function tags", customFuncTag, customFuncNameLen*4))
-        {
-
-        }
+        ImGui::InputText("Function tag", customFuncTag, customFuncNameLen*4);
 
         customFuncEditor.Render("Custom func code", ImVec2(500, 300), true);
 

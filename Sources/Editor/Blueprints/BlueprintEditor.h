@@ -173,9 +173,6 @@ private:
 
     std::vector<std::unique_ptr<Link>> _links;
     std::vector<Node> _nodes;
-
-    BlueprintEditor::Node *RenderContextCustomFunc(const CustomFunction &func, ImGuiTextFilter &Filter, int level = 0);
-    BlueprintEditor::Node *RenderContextCustomFunc(const std::vector<std::string> &tag, const std::vector<CustomFunction *> &funcs, ImGuiTextFilter &Filter, int level = 0);
 };
 
 #endif // BLUEPRINTEDITOR_H

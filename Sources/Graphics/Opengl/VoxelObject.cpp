@@ -168,8 +168,8 @@ VoxelObject::VoxelObject(Scene *scene, Shader *shader, const BufferInfo &vbo, co
 {
     if(!init)
     {
-        glEnable(GL_POINT_SIZE);
-        glPointSize(PointSize);
+//        glEnable(GL_POINT_SIZE);
+//        glPointSize(PointSize);
         init = true;
     }
 }
