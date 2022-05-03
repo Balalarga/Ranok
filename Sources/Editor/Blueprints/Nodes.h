@@ -18,6 +18,7 @@ enum class PinType
     Bool,
     Float,
     Variable,
+    Array
 };
 enum class PinKind
 {

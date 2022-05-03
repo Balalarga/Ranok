@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <Ranok/Core/OpenclCalculator.h>
+#include <Ranok/OpenCL/OpenclCalculator.h>
 
 #include "Graphics/Opengl/VoxelObject.h"
 
@@ -45,12 +45,9 @@ private:
     unsigned _activeTab;
 
     Scene _scene;
+    Scene _imageScene;
     Program _program;
     Space _space;
-    Scene _imageScene;
-    CalculateTarget _lastTarget;
-    FlatArray<char> _modelData;
-    FlatArray<std::array<double, 5>> _imageData;
     VoxelObject* _voxelObject;
     unsigned _viewerSelectedImage;
 

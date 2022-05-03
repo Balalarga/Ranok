@@ -15,11 +15,7 @@ class VoxelObject: public Renderable
 public:
     static VoxelObject* Make(Scene* parent,
                              const Space& space,
-                             FlatArray<char>& model,
-                             glm::vec4 color = glm::vec4(0.3, 0.3, 0.3, 0.5));
-    static VoxelObject* Make(Scene* parent,
-                             const Space& space,
-                             FlatArray<std::array<double, 5>> &image,
+                             FlatArray<MImage3D> &image,
                              LinearGradient& gradient,
                              size_t activeImage);
 
@@ -34,9 +30,7 @@ public:
     virtual void Render();
 
 
-    static float PointSize;
 private:
-
     size_t _voxelsCount;
     size_t _voxelFilled;
     glm::fvec4 _modelColor;

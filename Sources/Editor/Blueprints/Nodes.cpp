@@ -30,7 +30,7 @@ ImColor Blueprint::GetIconColor(PinType type)
     default:
     case PinType::Flow:     return ImColor(255, 255, 255);
     case PinType::Bool:     return ImColor(220,  48,  48);
-//    case PinType::Int:      return ImColor( 68, 201, 156);
+    case PinType::Array:      return ImColor( 68, 201, 156);
     case PinType::Float:    return ImColor(147, 226,  74);
     case PinType::Variable: return ImColor(147, 226,  74);
 //    case PinType::String:   return ImColor(124,  21, 153);
@@ -49,7 +49,7 @@ void Blueprint::DrawPinIcon(const Pin &pin, bool connected, int alpha, ImVec2 Ic
     {
     case PinType::Flow:     iconType = ax::Widgets::IconType::Flow;   break;
     case PinType::Bool:     iconType = ax::Widgets::IconType::Circle; break;
-//    case PinType::Int:      iconType = ax::Widgets::IconType::Circle; break;
+    case PinType::Array:      iconType = ax::Widgets::IconType::Circle; break;
     case PinType::Float:    iconType = ax::Widgets::IconType::Circle; break;
     case PinType::Variable: iconType = ax::Widgets::IconType::Circle; break;
 //    case PinType::String:   iconType = ax::Widgets::IconType::Circle; break;

@@ -70,7 +70,7 @@ void TextEditor::AddTab(const Tab& tab)
     auto& last = _tabs.back();
     last.id = tabId;
     if (tab.window.GetText().size() == 1)
-        last.window.SetText(R"(args x, y, z;
+        last.window.SetText(R"(args s[3](1, 1, 1);
 
 return ;)");
     last.window.SetLanguageDefinition(RanokLanguageDefinition());

@@ -3,6 +3,17 @@
 #include <sstream>
 #include "Graphics/Gui/Scene.h"
 
+#include <iostream>
+#include <fmt/format.h>
+
+#if 0
+    #define Debugln(msg) std::cout << "[Debug] " << msg << std::endl;
+    #define Debug(msg) std::cout << "[Debug] " << msg;
+#else
+    #define Debugln(msg)
+    #define Debug(msg)
+#endif
+
 
 glm::fvec2 RayMarchingView::vertices[6] = {
 //   x    y
@@ -40,7 +51,8 @@ std::string RayMarchingView::shaderFooter = R"(
 
 // get distance in the world
 float dist_field( vec3 p ) {
-    return -__resultFunc(p.x, p.y, p.z);
+    float params[3] = float[](p.x, p.y, p.z);
+    return -__resultFunc(params);
 }
 
 // get gradient in the world
@@ -226,9 +238,9 @@ void main()
 )";
 
 std::string RayMarchingView::defaultFragmentShader = shaderHeader + R"(
-float __resultFunc(float x, float y, float z)
+float __resultFunc(float s[3])
 {
-    return 1 - x*x - y*y - z*z;
+    return 1 - s[0]*s[0] - s[1]*s[1] - s[2]*s[2];
 }
 )" + shaderFooter;
 
@@ -236,7 +248,24 @@ float __resultFunc(float x, float y, float z)
 CodeGenerator::LanguageDefinition RayMarchingView::_languageDefenition =
         CodeGenerator::LanguageDefinition().MainFuncName("__resultFunc")
         .Functions({{"abs", "abs"}})
-        .NumberType("float");
+        .NumberType("float")
+        .NumberArrayType("float")
+        .ArrayParamSignature("{0} {1}[{2}]")
+        .ArrayReturnAsParam(true)
+        .ArrayResultParamSignature("out {0} {1}[{2}]")
+        .FillResultArray([](const std::string& varName, const std::vector<std::string>& params) -> std::string
+        {
+            std::stringstream stream;
+
+            for (size_t i = 0; i < params.size(); ++i)
+            {
+                stream << varName << "[" << i << "]" << " = " << params[i];
+                if (i + 1 < params.size())
+                    stream << ";\n";
+            }
+
+            return stream.str();
+        });
 
 CodeGenerator RayMarchingView::_codeGenerator(_languageDefenition);
 
@@ -249,6 +278,35 @@ RayMarchingView::RayMarchingView(Scene *parent):
 
 bool RayMarchingView::SetModel(Program &program)
 {
+    Debugln("-----------Nodes begin-------------");
+    std::queue<std::pair<int, Expression *>> nodes;
+    program.Root()->Visit(nodes);
+
+    for (auto& func: program.Table().Variables())
+        func->VisitRecur(nodes);
+
+    while (!nodes.empty())
+    {
+        auto &top = nodes.front();
+
+        for (int i = 1; i < top.first; ++i)
+            std::cout << "  ";
+
+        if (auto func = dynamic_cast<FunctionExpression *>(top.second))
+        {
+            Debug(func->function.Name() + "(");
+            for (auto &a: func->params)
+                std::cout << a->name << ", ";
+            std::cout << ")\n";
+        }
+        else
+        {
+            Debugln(fmt::format("Node: {}", top.second->name));
+        }
+        nodes.pop();
+    }
+    Debugln("------------Nodes end--------------");
+
     std::stringstream stream;
     stream << shaderHeader;
     std::string code = _codeGenerator.Generate(program);
