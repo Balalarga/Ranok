@@ -354,52 +354,6 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
                 ImGui::TreePop();
             }
         }
-
-//        for (auto& func : Functions::GetAllCustoms())
-//        {
-//            if (func.Info().Tags().empty())
-//            {
-//                if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
-//                {
-//                    _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
-//                    _nodes.back().Type = NodeType::Simple;
-//                    _nodes.back().Descr = func.Info().Desc();
-//                    for (auto& arg: func.Args())
-//                    {
-//                        if (auto arr = dynamic_cast<ArrayExpression*>(arg->child.get()))
-//                        {
-//                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Array);
-//                            _nodes.back().Inputs.back().Values.resize(arr->Values.size());
-//                        }
-//                        else
-//                        {
-//                            _nodes.back().Inputs.emplace_back(GetNextId(), arg->name.c_str(), PinType::Float);
-//                        }
-//                    }
-
-//                    if (func.Info().ReturnType().Type == LanguageType::DoubleArray)
-//                    {
-//                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Array);
-//                        _nodes.back().Outputs.back().Values.resize(func.Info().ReturnType().Count);
-//                    }
-//                    else
-//                    {
-//                        _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
-//                    }
-//                    ImGui::TreePop();
-//                    return &_nodes.back();
-//                }
-//            }
-//            else
-//            {
-//                auto val = RenderContextCustomFunc(func, Filter);
-//                if (val)
-//                {
-//                    ImGui::TreePop();
-//                    return val;
-//                }
-//            }
-//        }
         ImGui::TreePop();
     }
 

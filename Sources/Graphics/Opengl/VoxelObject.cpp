@@ -2,6 +2,7 @@
 
 #include "Graphics/Gui/Scene.h"
 
+#include <iostream>
 #include <gtc/matrix_transform.hpp>
 #include <Ranok/Utility/Math.h>
 
@@ -102,42 +103,8 @@ void main(void)
 )";
 
 
-float VoxelObject::PointSize = 2.f;
-
-#include <iostream>
-
-static bool init = false;
-VoxelObject* VoxelObject::Make(Scene *parent, const Space& space, FlatArray<char> &model, glm::vec4 color)
+VoxelObject *VoxelObject::Make(Scene *parent, const Space &space, FlatArray<MImage3D> &image, LinearGradient &gradient, size_t activeImage)
 {
-    BufferLayout layout({
-                            // Position
-                            LayoutItemData(GL_FLOAT, 3),
-                        });
-    std::vector<glm::vec3> data;
-    for (size_t i = 0; i < model.Size(); ++i)
-    {
-        if (model[i] == 0)
-        {
-            auto pos = space.GetPoint(i);
-            data.push_back({pos[0], pos[1], pos[2]});
-        }
-    }
-
-    std::cout << "Model has " << data.size() << " points of " << space.GetTotalPartition() << " points in space\n";
-
-    BufferInfo vbo(&data[0], data.size(), GL_POINTS, layout);
-    auto object = parent->AddObject<VoxelObject>(parent,
-                                          new Shader(vertexModelShader, fragmentModelShader),
-                                          vbo);
-    object->GetShader()->AddUniform("Color");
-    object->_modelColor = color;
-    return object;
-}
-
-VoxelObject* VoxelObject::Make(Scene *parent, const Space& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage)
-{
-    assert(activeImage < 5);
-
     struct Vertex
     {
         glm::fvec3 pos;
@@ -153,7 +120,26 @@ VoxelObject* VoxelObject::Make(Scene *parent, const Space& space, FlatArray<std:
     {
         auto pos = space.GetPoint(i);
         data[i].pos = {pos[0], pos[1], pos[2]};
-        data[i].color = gradient.GetColor(normalize(image[i][activeImage]));
+        switch(activeImage)
+        {
+        case 0:
+            data[i].color = gradient.GetColor(normalize(image[i].C0));
+            break;
+        case 1:
+            data[i].color = gradient.GetColor(normalize(image[i].C1));
+            break;
+        case 2:
+            data[i].color = gradient.GetColor(normalize(image[i].C2));
+            break;
+        case 3:
+            data[i].color = gradient.GetColor(normalize(image[i].C3));
+            break;
+        case 4:
+            data[i].color = gradient.GetColor(normalize(image[i].C4));
+            break;
+        default:
+            data[i].color = gradient.GetColor(normalize(image[i].C0));
+        }
     }
 
     BufferInfo vbo(&data[0], data.size(), GL_POINTS);
@@ -166,12 +152,6 @@ VoxelObject::VoxelObject(Scene *scene, Shader *shader, const BufferInfo &vbo, co
     Renderable(scene, shader, vbo, ibo),
     _voxelFilled(vbo.count)
 {
-    if(!init)
-    {
-//        glEnable(GL_POINT_SIZE);
-//        glPointSize(PointSize);
-        init = true;
-    }
 }
 
 void VoxelObject::SetSubData(void *begin, size_t count)

@@ -43,7 +43,7 @@ Editor::Editor():
     TextEditor::Tab tab("New");
     tab.window.SetText(R"(args s[3](1, 1, 1);
 
-w = 1 - s[0]^2 - s[1]^2 - s[2]^2;
+w = 1 - (s[0] - 0)^2 - (s[1] - 0)^2 - (s[2] - 0)^2;
 
 return w;)");
     _textEditor.AddTab(tab);
@@ -303,38 +303,23 @@ void Editor::ViewerTab()
                 std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open);
                 if (!filepath.empty() && FileSystem::HasFile(filepath))
                 {
-                    _modelData.Clear();
-                    _imageData.Clear();
+                    _openclCalculator.GetImage().Clear();
                     std::ifstream file(filepath, std::ios_base::binary);
 
                     file >> _space;
 
                     uint8_t target;
                     file >> target;
-                    _lastTarget = (CalculateTarget)target;
 
                     size_t dataSize = _space.GetTotalPartition();
-                    if (_lastTarget == CalculateTarget::Model)
-                    {
-                        _modelData.Resize(dataSize);
-                        _modelData.ReadSome(file, dataSize);
-                    }
-                    else
-                    {
-                        _imageData.Resize(dataSize);
-                        _imageData.ReadSome(file, dataSize);
-                    }
+                    _openclCalculator.GetImage().Resize(dataSize);
+                    _openclCalculator.GetImage().ReadSome(file, dataSize);
                     file.close();
-
-                    VoxelObject::PointSize = _space.GetUnitSize()[0] * 200;
 
                     if (_voxelObject)
                         _imageScene.DeleteObject(_voxelObject);
 
-                    if (_lastTarget == CalculateTarget::Model)
-                        _voxelObject = VoxelObject::Make(&_imageScene, _space, _modelData);
-                    else
-                        _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, selectedImage);
+                    _voxelObject = VoxelObject::Make(&_imageScene, _space, _openclCalculator.GetImage(), _imageGradient, selectedImage);
                     _imageScene.NeedUpdate();
 
                     xMin = _space.GetStartPoint()[0];
@@ -388,12 +373,9 @@ void Editor::ViewerTab()
     if (_viewerSelectedImage != selectedImage)
     {
         _viewerSelectedImage = selectedImage;
-        if (_voxelObject && _lastTarget == CalculateTarget::Image)
-        {
-            _imageScene.DeleteObject(_voxelObject);
-            _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, _viewerSelectedImage);
-            _imageScene.NeedUpdate();
-        }
+        _imageScene.DeleteObject(_voxelObject);
+        _voxelObject = VoxelObject::Make(&_imageScene, _space, _openclCalculator.GetImage(), _imageGradient, _viewerSelectedImage);
+        _imageScene.NeedUpdate();
     }
 
 
@@ -539,23 +521,6 @@ void Editor::BuildPopUp()
         }
         ImGui::EndChild();
 
-        static CalculateTarget calculateTarget;
-        static std::string selectedText = "Model";
-        if (ImGui::BeginCombo("Compute type", selectedText.c_str()))
-        {
-            if (ImGui::Selectable("Model"))
-            {
-                selectedText = "Model";
-                calculateTarget = CalculateTarget::Model;
-            }
-            if (ImGui::Selectable("M-Image"))
-            {
-                selectedText = "M-Image";
-                calculateTarget = CalculateTarget::Image;
-            }
-
-            ImGui::EndCombo();
-        }
         constexpr int minDepth = 3; // Opencl local group size
         constexpr int maxDepth = 15;
         static int recursionDepth = minDepth;
@@ -575,7 +540,7 @@ void Editor::BuildPopUp()
         static int batchSize = batchMin;
         if (enableBatching)
         {
-            std::string batchLabel = std::to_string((pow(2, batchSize) * (calculateTarget  == CalculateTarget::Model ? sizeof(char) : sizeof(double) * 5) ) / 1024.f / 1024.f) + " MB";
+            std::string batchLabel = std::to_string((pow(2, batchSize) * sizeof(MImage3D)) / 1024.f / 1024.f) + " MB";
             if (ImGui::InputInt(batchLabel.c_str(), &batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
             {
                 if (batchSize < batchMin)
@@ -588,7 +553,8 @@ void Editor::BuildPopUp()
         {
             ImGui::CloseCurrentPopup();
             auto args = _program.Table().Arguments();
-            if (args.size() == 3)
+            auto castedArgs = dynamic_cast<ArrayExpression*>(args[0]->child.get());
+            if (castedArgs && castedArgs->Values.size() == 3)
             {
                 std::vector<double> startPoint;
                 std::vector<double> spaceSize;
@@ -626,10 +592,7 @@ void Editor::BuildPopUp()
                 auto calculateCallback = [this, &file](size_t start, size_t count)
                 {
                         bool ok = false;
-                        if (calculateTarget == CalculateTarget::Model)
-                            ok = _openclCalculator.GetModel().WritePart(file, count);
-                        else
-                            ok = _openclCalculator.GetImage().WritePart(file, count);
+                        ok = _openclCalculator.GetImage().WritePart(file, count);
 
                         if (!ok)
                             std::cout << "Write error\n";
@@ -637,13 +600,12 @@ void Editor::BuildPopUp()
                 if (file)
                 {
                     file << _space;
-                    file << static_cast<uint8_t>(calculateTarget);
-                    bool calculateStatus = _openclCalculator.Calculate(calculateTarget,
-                                                                       _program,
+                    bool calculateStatus = _openclCalculator.Calculate(_program,
                                                                        _space,
                                                                        calculateCallback,
                                                                        enableBatching ? pow(2, batchSize) : 0);
                     file.close();
+                    _imageScene.NeedUpdate();
                     if (!calculateStatus)
                         std::cout << "Some calculate error\n";
                 }
