@@ -120,26 +120,7 @@ VoxelObject *VoxelObject::Make(Scene *parent, const Space &space, FlatArray<MIma
     {
         auto pos = space.GetPoint(i);
         data[i].pos = {pos[0], pos[1], pos[2]};
-        switch(activeImage)
-        {
-        case 0:
-            data[i].color = gradient.GetColor(normalize(image[i].C0));
-            break;
-        case 1:
-            data[i].color = gradient.GetColor(normalize(image[i].C1));
-            break;
-        case 2:
-            data[i].color = gradient.GetColor(normalize(image[i].C2));
-            break;
-        case 3:
-            data[i].color = gradient.GetColor(normalize(image[i].C3));
-            break;
-        case 4:
-            data[i].color = gradient.GetColor(normalize(image[i].C4));
-            break;
-        default:
-            data[i].color = gradient.GetColor(normalize(image[i].C0));
-        }
+        data[i].color = gradient.GetColor(normalize(image[i].c[activeImage]));
     }
 
     BufferInfo vbo(&data[0], data.size(), GL_POINTS);

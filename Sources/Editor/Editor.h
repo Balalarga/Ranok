@@ -56,6 +56,7 @@ private:
     OpenclCalculator _openclCalculator;
     BlueprintEditor _blueprintEditor;
     LinearGradient _imageGradient;
+    FlatArray<MImage3D> _imageData;
 
     struct EditorTabSettings{
         Setting<glm::fvec3> BackgroundColor;

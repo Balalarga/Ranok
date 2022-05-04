@@ -303,23 +303,20 @@ void Editor::ViewerTab()
                 std::string filepath = FileDialog::GetFilepath(FileDialog::FileMode::Open);
                 if (!filepath.empty() && FileSystem::HasFile(filepath))
                 {
-                    _openclCalculator.GetImage().Clear();
+                    _imageData.Clear();
                     std::ifstream file(filepath, std::ios_base::binary);
 
                     file >> _space;
 
-                    uint8_t target;
-                    file >> target;
-
                     size_t dataSize = _space.GetTotalPartition();
-                    _openclCalculator.GetImage().Resize(dataSize);
-                    _openclCalculator.GetImage().ReadSome(file, dataSize);
+                    _imageData.Resize(dataSize);
+                    _imageData.ReadSome(file, dataSize);
                     file.close();
 
                     if (_voxelObject)
                         _imageScene.DeleteObject(_voxelObject);
 
-                    _voxelObject = VoxelObject::Make(&_imageScene, _space, _openclCalculator.GetImage(), _imageGradient, selectedImage);
+                    _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, selectedImage);
                     _imageScene.NeedUpdate();
 
                     xMin = _space.GetStartPoint()[0];
@@ -374,7 +371,7 @@ void Editor::ViewerTab()
     {
         _viewerSelectedImage = selectedImage;
         _imageScene.DeleteObject(_voxelObject);
-        _voxelObject = VoxelObject::Make(&_imageScene, _space, _openclCalculator.GetImage(), _imageGradient, _viewerSelectedImage);
+        _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, _viewerSelectedImage);
         _imageScene.NeedUpdate();
     }
 
