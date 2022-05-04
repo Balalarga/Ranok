@@ -290,6 +290,7 @@ void Editor::ViewerTab()
     static float zMin, zMax;
     static int selectedImage = 0;
     constexpr int imageSize = 3 + 2;
+    static glm::vec3 massCenter = glm::vec3(0);
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
@@ -316,6 +317,8 @@ void Editor::ViewerTab()
 
                     if (_voxelObject)
                         _imageScene.DeleteObject(_voxelObject);
+                    if (_massCenterCube)
+                        _imageScene.DeleteObject(_massCenterCube);
 
                     _voxelObject = VoxelObject::Make(&_imageScene, _space, _imageData, _imageGradient, selectedImage);
                     _imageScene.NeedUpdate();
@@ -326,6 +329,8 @@ void Editor::ViewerTab()
                     xMin = xMin + _space.GetSize()[0];
                     yMin = yMin + _space.GetSize()[1];
                     zMin = zMin + _space.GetSize()[2];
+
+                    massCenter = glm::vec3(0);
                 }
             }
 
@@ -346,11 +351,11 @@ void Editor::ViewerTab()
     ImGui::BeginChild("ViewsTabControls", childSize);
     if (ImGui::Button("Center of mass"))
     {
-        glm::vec3 massCenter = glm::vec3(0);
+        massCenter = glm::vec3(0);
         size_t counter = 0;
-        for (size_t i = 0; i < _openclCalculator.GetImage().Size(); ++i)
+        for (size_t i = 0; i < _imageData.Size(); ++i)
         {
-            auto &item = _openclCalculator.GetImage()[i];
+            auto &item = _imageData[i];
             if (item.zone >= 0)
             {
                 ++counter;
@@ -365,10 +370,15 @@ void Editor::ViewerTab()
             massCenter.x /= counter;
             massCenter.y /= counter;
             massCenter.z /= counter;
-            _imageScene.AddObject<Cube>(&_imageScene, massCenter, 0.05);
+            if (_massCenterCube)
+                _imageScene.DeleteObject(_massCenterCube);
+
+            _massCenterCube = _imageScene.AddObject<Cube>(&_imageScene, massCenter, 0.05);
             _imageScene.NeedUpdate();
         }
     }
+    ImGui::SameLine();
+    ImGui::Text("Position: %.3f, %.3f, %.3f", massCenter.x, massCenter.y, massCenter.z);
 
     if (ImGui::DragFloatRange2("Ox", &xMin, &xMax, .001f, -1, 1))
     {

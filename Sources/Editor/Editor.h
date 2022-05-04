@@ -11,6 +11,7 @@
 #include "Utility/ImageStorage.h"
 #include "Settings.h"
 
+class Cube;
 class Scene;
 class RayMarchingView;
 
@@ -49,6 +50,7 @@ private:
     Program _program;
     Space _space;
     VoxelObject* _voxelObject;
+    Cube* _massCenterCube;
     unsigned _viewerSelectedImage;
 
     RayMarchingView* _rayMarchView;
