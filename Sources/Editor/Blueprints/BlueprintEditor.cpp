@@ -232,7 +232,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
         {
             if (Filter.PassFilter(op.Name().c_str()) && ImGui::MenuItem(op.Name().c_str()))
             {
-                _nodes.push_back(Node(GetNextId(), op.Name().c_str()));
+                _nodes.emplace_back(Node(GetNextId(), op.Name().c_str()));
                 _nodes.back().Type = NodeType::Simple;
                 _nodes.back().Inputs.emplace_back(GetNextId(), "l", PinType::Float);
                 _nodes.back().Inputs.emplace_back(GetNextId(), "r", PinType::Float);
@@ -252,7 +252,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
         {
             if (Filter.PassFilter(op.Name().c_str()) && ImGui::MenuItem(op.Name().c_str()))
             {
-                _nodes.push_back(Node(GetNextId(), op.Name().c_str()));
+                _nodes.emplace_back(Node(GetNextId(), op.Name().c_str()));
                 _nodes.back().Type = NodeType::Simple;
                 _nodes.back().Inputs.emplace_back(GetNextId(), "i", PinType::Float);
                 _nodes.back().Outputs.emplace_back(GetNextId(), "o", PinType::Float);
@@ -270,7 +270,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
         {
             if (Filter.PassFilter(func.Name().c_str()) && ImGui::MenuItem(func.Name().c_str()))
             {
-                _nodes.push_back(Node(GetNextId(), func.Name().c_str()));
+                _nodes.emplace_back(Node(GetNextId(), func.Name().c_str()));
                 _nodes.back().Type = NodeType::Simple;
                 _nodes.back().Descr = func.Desc();
                 _nodes.back().Inputs.emplace_back(GetNextId(), "i", PinType::Float);
@@ -287,7 +287,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
     {
         if (Filter.PassFilter("Get") && ImGui::MenuItem("Get"))
         {
-            _nodes.push_back(Node(GetNextId(), "Get"));
+            _nodes.emplace_back(Node(GetNextId(), "Get"));
             _nodes.back().Type = NodeType::Simple;
             _nodes.back().Descr = "Get array element";
             _nodes.back().Inputs.emplace_back(GetNextId(), "i", PinType::Array);
@@ -298,7 +298,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 
         if (Filter.PassFilter("Make") && ImGui::MenuItem("Make"))
         {
-            _nodes.push_back(Node(GetNextId(), "Make"));
+            _nodes.emplace_back(Node(GetNextId(), "Make"));
             _nodes.back().Type = NodeType::Simple;
             _nodes.back().Descr = "Set array elements";
             _nodes.back().Inputs.emplace_back(GetNextId(), "0", PinType::Float);
@@ -321,7 +321,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
                 {
                     if (Filter.PassFilter(func->Name().c_str()) && ImGui::MenuItem(func->Name().c_str()))
                     {
-                        _nodes.push_back(Node(GetNextId(), func->Name().c_str()));
+                        _nodes.emplace_back(Node(GetNextId(), func->Name().c_str()));
                         _nodes.back().Type = NodeType::Simple;
                         _nodes.back().Descr = func->Info().Desc();
                         for (auto& arg: func->Args())
@@ -359,7 +359,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 
     if (ImGui::MenuItem("Comment"))
     {
-        _nodes.push_back(Node(GetNextId(), "Comment"));
+        _nodes.emplace_back(Node(GetNextId(), "Comment"));
         _nodes.back().Type = NodeType::Comment;
         _nodes.back().Name.resize(512);
         _nodes.back().Size = ImVec2(300, 200);
@@ -371,7 +371,7 @@ BlueprintEditor::Node* BlueprintEditor::ContextMenu()
 
 void BlueprintEditor::AddDefaultNodes()
 {
-    _nodes.push_back(Node(GetNextId(), "3D Space"));
+    _nodes.emplace_back(Node(GetNextId(), "3D Space"));
     _nodes.back().Type = NodeType::Simple;
     _nodes.back().Descr = "3D space arguments";
     _nodes.back().CanDelete = false;
@@ -393,7 +393,7 @@ void BlueprintEditor::AddDefaultNodes()
 
     ed::SetNodePosition(_nodes.back().ID, ImVec2(0, 0));
 
-    _nodes.push_back(Node(GetNextId(), "Result"));
+    _nodes.emplace_back(Node(GetNextId(), "Result"));
     _nodes.back().Type = NodeType::Simple;
     _nodes.back().CanDelete = false;
     _nodes.back().Descr = "Result of function";

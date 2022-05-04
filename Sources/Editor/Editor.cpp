@@ -8,6 +8,7 @@
 #include <Ranok/LanguageCore/CustomFunction.h>
 #include <Ranok/LanguageCore/Functions.h>
 #include <Ranok/Utility/StringUtility.h>
+#include <Graphics/Opengl/Cube.h>
 
 #include "Utility/FileSystem.h"
 
@@ -343,6 +344,31 @@ void Editor::ViewerTab()
     ImVec2 childSize = {parentWidth * widthCoef, 0};
 
     ImGui::BeginChild("ViewsTabControls", childSize);
+    if (ImGui::Button("Center of mass"))
+    {
+        glm::vec3 massCenter = glm::vec3(0);
+        size_t counter = 0;
+        for (size_t i = 0; i < _openclCalculator.GetImage().Size(); ++i)
+        {
+            auto &item = _openclCalculator.GetImage()[i];
+            if (item.zone >= 0)
+            {
+                ++counter;
+                auto pos = _space.GetPoint(i);
+                massCenter.x += pos[0];
+                massCenter.y += pos[1];
+                massCenter.z += pos[2];
+            }
+        }
+        if (counter > 0)
+        {
+            massCenter.x /= counter;
+            massCenter.y /= counter;
+            massCenter.z /= counter;
+            _imageScene.AddObject<Cube>(&_imageScene, massCenter, 0.05);
+            _imageScene.NeedUpdate();
+        }
+    }
 
     if (ImGui::DragFloatRange2("Ox", &xMin, &xMax, .001f, -1, 1))
     {

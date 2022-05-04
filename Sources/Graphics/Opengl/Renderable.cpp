@@ -87,10 +87,13 @@ void Renderable::Recreate(const BufferInfo &vbo, Shader *shader, const BufferInf
 {
     _vbo = vbo;
 
-    if (_shader)
-        delete _shader;
+    if (shader)
+    {
+        if (_shader)
+            delete _shader;
+        _shader = shader;
+    }
 
-    _shader = shader;
 
     if (_handler != 0)
         glDeleteVertexArrays(1, &_handler);
