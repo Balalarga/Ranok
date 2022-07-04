@@ -1,4 +1,5 @@
 #include "GuiItem.h"
+#include <string>
 
 static int UnnamedCounter = 0;
 

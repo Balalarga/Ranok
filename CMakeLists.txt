@@ -10,18 +10,26 @@ if (!MSVC)
     add_compile_options(-Wl,-subsystem,windows)
 endif()
 
+if (MINGW)
+    set(LIBS mingw32)
+endif()
+
 set(THIRDPARTY_DIR ThirdParty)
 # Windows libs only
-set(LIBS mingw32 opengl32 glu32 Imm32)
+set(LIBS ${LIBS} opengl32 glu32 Imm32)
 set(LIBS_LOCATIONS)
 set(LIBS_INCLUDES)
 
 # SDL2 setup
-set(SDL2_DIR ${THIRDPARTY_DIR}/SDL2_mingw/x64)
-set(LIBS_LOCATIONS ${SDL2_DIR}/lib)
-set(LIBS_INCLUDES ${SDL2_DIR}/include/SDL2)
-set(LIBS ${LIBS} SDL2main SDL2 SDL2_image SDL2_ttf)
-set(BINARIES ${SDL2_DIR}/bin)
+set(SDL_DIR ${THIRDPARTY_DIR}/SDL2)
+set(LIBS_INCLUDES ${LIBS_INCLUDES} ${SDL_DIR}/include)
+set(BINARIES ${BINARIES} ${SDL_DIR}/bin)
+set(LIBS ${LIBS} SDL2 SDL2main SDL2_image SDL2_ttf)
+if (MSVC)
+    set(LIBS_LOCATIONS ${LIBS_LOCATIONS} ${SDL_DIR}/lib/MSVC/x64)
+else()
+    set(LIBS_LOCATIONS ${LIBS_LOCATIONS} ${SDL_DIR}/lib/MinGW/x64)
+endif()
 
 # Glew setup
 set(GLEW_DIR ${THIRDPARTY_DIR}/GLEW)
