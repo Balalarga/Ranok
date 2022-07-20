@@ -6,9 +6,22 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	Lexer lexer;
+	std::string text = R"(
+	// asgqwegqaweg
+	// agawgaesg
+    var s = 2;
+	g[3]-2;
+	return s;
+	)";
 	
-	std:: cout << "Hellow3\n";
+	Lexer lexer(text);
+	
+	while (!lexer.IsEmpty())
+	{
+		cout << lexer.Peek().TypeToString() << " = " << "\"" << lexer.Peek().string <<"\"";
+		cout << " (" << lexer.Peek().line << " : " << lexer.Peek().column << ")" << endl;
+		lexer.Pop();
+	}
 	
 	return 0;
 }
