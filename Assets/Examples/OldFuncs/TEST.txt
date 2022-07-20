@@ -1,0 +1,10 @@
+ARGUMENT X,Y,Z;
+
+//x : 7 ; y : 27.5 ; z : 7
+
+CONSTANT x1=10;
+
+VARIABLE X1=x1+Y+Z + 9.1;
+
+
+RETURN X1;

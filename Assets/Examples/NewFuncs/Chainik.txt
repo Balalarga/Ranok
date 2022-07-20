@@ -1,0 +1,52 @@
+args X(8),Y(8),Z(8);
+NO=14;
+NO1=36;
+A=0.7;
+
+RO=sqrt(X*X+Y*Y);
+TET=arctan(Y/X);
+FF=TET*NO/2;
+MU=8/PI/NO*(sin(FF)-sin(3*FF)/9+sin(5*FF)/25-sin(7*FF)/49);
+ALT=TET-MU;
+X1=RO*cos(MU);
+Y1=RO*sin(MU);
+
+FF1=TET*NO1/2;
+MU1=8/PI/NO1*(sin(FF1)-sin(3*FF1)/9+sin(5*FF1)/25-sin(7*FF1)/49);
+ALT1=TET-MU1;
+X11=RO*cos(MU1);
+Y11=RO*sin(MU1);
+
+XT=-Y1*sin(ALT)+(X1-3.7)*cos(ALT);
+YT=(X1-3.7)*sin(ALT)+Y1*cos(ALT);
+XT1=-Y11*sin(ALT1)+(X11-4.3)*cos(ALT1);
+YT1=(X11-4.3)*sin(ALT1)+Y11*cos(ALT1);
+XT2=-Y1*sin(ALT)+(X1-4)*cos(ALT);
+YT2=(X1-4)*sin(ALT)+Y1*cos(ALT);
+
+
+W1=(16-X*X-Y*Y-Z*Z)/8;
+WW1=sqrt(W1*W1);
+WC=A+0.5-WW1;
+
+W2=(6.25-(X+4)*(X+4)-Z*Z)/5;
+WW2=sqrt(W2*W2);
+WWR=(-sqrt(Y*Y))&(-WW2);
+WRT=A+0.3+WWR;
+
+W3=(Z+2-(RO-2.1)*(RO-2.1)*(RO-2.1)/15)/sqrt(1+(RO-2.1)*
+    (RO-2.1)*(RO-2.1)*(RO-2.1)/25);
+W33=sqrt(W3*W3);
+WW3=(-sqrt(Y*Y))&(-W33);
+WN=(A+1+WW3)&X;
+WN1=(0.2+WW3)&X;
+WW33=WN&(2.8-Z);
+
+W4=(0.09-XT1*XT1-(Z-2.8)*(Z-2.8)-YT1*YT1)/0.6;
+W5=(1-XT*XT-(Z+3.5)*(Z+3.5)-YT*YT)/2;
+W6=(XT2*XT2+YT2*YT2+(Z+3)*(Z+3)-0.36)/1.2;
+
+WKR=(((16-RO*RO-(Z-2)*(Z-2))/8)&(Z-3))|(1-RO*RO/0.25-(Z-6.5)*(Z-6.5));
+W  =(((((WC|W4|W5)&W6)|WRT|WW33)&(-WN1))&(-W1))&((3-Z)*(Z+4.3))|WKR;
+
+return W;

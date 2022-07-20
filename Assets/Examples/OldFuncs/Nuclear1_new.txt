@@ -1,0 +1,16 @@
+ARGUMENT X,Y,Z;
+
+//x : 4 ; y : 4 ; z : 2
+
+CONSTANT R=2;
+CONSTANT r=4;
+
+VARIABLE P1 = SQRT(X^2 + Y^2) - r;
+VARIABLE P2 = r*ARCTAN(Y/X);
+
+VARIABLE W1 = P1*COS(P2) + Z*SIN(P2);
+VARIABLE W2 = -P1*SIN(P2) + Z*COS(P2);
+
+VARIABLE W=R^2 - W1^2 - W2^2 ;
+
+RETURN W;

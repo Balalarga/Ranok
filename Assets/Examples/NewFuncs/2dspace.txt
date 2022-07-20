@@ -1,0 +1,10 @@
+args X(5), Y(5);
+
+W1=(4-(X*X));
+W2=(4-(Y*Y));
+W=W2&W1;
+
+r = 2;
+var circle = r^2 - x^2 - y^2;
+
+return circle;

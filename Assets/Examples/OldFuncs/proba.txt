@@ -1,0 +1,29 @@
+ARGUMENT X0,Y0,Z0;
+
+VARIABLE x=X0+5;
+VARIABLE y=Y0+5;
+VARIABLE z=Z0+5;
+
+//Прямое преобразование 
+
+CONSTANT s=0.1;
+
+VARIABLE x1= (1 + (z  /  SQRT( x*x + y*y +s*s)))*x;
+VARIABLE y1 = (1 + (z /   SQRT(x*x + y*y +s*s)))*y;
+VARIABLE z1 = (s*z / SQRT( x*x + y*y +s*s));
+
+//Второе преобразование: 
+
+CONSTANT a1=1, b1=2, c1=7, d1=15;
+CONSTANT a2=1, b2=3, c2=9, d2=23;
+CONSTANT a3=1, b3=5, c3=11, d3=21;
+
+VARIABLE  x2 = a1*x + b1*y + c1*z + d1;
+VARIABLE  y2 = a2*x + b2*y + c2*z + d2; 
+VARIABLE  z2 = a3*x + b3*y + c3*z + d3;
+  
+//Расстояние определяется:
+
+VARIABLE D= SQRT((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1) + (z2 - z1)*(z2 - z1));
+
+RETURN D;

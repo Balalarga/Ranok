@@ -1,0 +1,46 @@
+ARGUMENT X1,Y1,Z1;
+CONSTANT Pi=3.14159;
+CONSTANT F=5;
+CONSTANT Xn=2, Yn=0, Zn=0;
+VARIABLE Ra=SQRT((X1-Xn)*(X1-Xn)+(Y1-Yn)*(Y1-Yn)+(Z1-Zn)*(Z1-Zn));
+VARIABLE Ro=SQRT((Z1-Zn)*(Z1-Zn)+(Y1-Yn)*(Y1-Yn));
+VARIABLE CPhi=(Y1-Yn)/(Ra);
+VARIABLE SPhi=SQRT(1.-CPhi*CPhi);
+VARIABLE CAl=(Z1-Zn)/(Ro);
+VARIABLE SAl=SQRT(1.-CAl*CAl);
+
+VARIABLE SigmX=F*(CPhi*CPhi)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra);
+VARIABLE SigmY=F*(CPhi*SPhi*SAl)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra); 
+VARIABLE SigmZ=F*(CPhi*SPhi*CAl)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra);
+
+//VARIABLE SigmX=F/(1+4/SQRT(Pi)*Ro+4*Pi*Ro*Ro);
+//VARIABLE SigmY=F/(1+4/SQRT(Pi)*Ro+4*Pi*Ro*Ro); 
+//VARIABLE SigmZ=F/(1+4/SQRT(Pi)*Ro+4*Pi*Ro*Ro);
+
+VARIABLE TettaX=F*(SPhi*SPhi)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra);
+VARIABLE TettaY=F*(SPhi*CPhi*SAl)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra); 
+VARIABLE TettaZ=F*(SPhi*CPhi*CAl)/(1+4/SQRT(Pi)*Ra+4*Pi*Ra*Ra);
+
+VARIABLE X=X1+SigmX+TettaX;
+VARIABLE Y=Y1+SigmY+TettaY;
+VARIABLE Z=Z1+SigmZ+TettaZ;
+
+//VARIABLE X=X1+TettaX;
+//VARIABLE Y=Y1+TettaY;
+//VARIABLE Z=Z1+TettaZ;
+
+//VARIABLE X=X1+SigmX;
+//VARIABLE Y=Y1+SigmY;
+//VARIABLE Z=Z1+SigmZ;
+
+VARIABLE W1=(4-(X*X))/8-Z;
+VARIABLE W2=(4-(Y*Y))/8-Z;
+VARIABLE W3=W2&W1;
+VARIABLE W6=(0.00001-Z1*Z1); 
+
+VARIABLE W= W3|W6;
+
+VARIABLE W7=SQRT(SigmX*SigmX+SigmY*SigmY)-Z1;
+
+
+RETURN W;

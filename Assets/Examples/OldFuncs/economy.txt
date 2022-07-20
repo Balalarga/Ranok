@@ -1,0 +1,23 @@
+ARGUMENT X,Y,Z;
+
+//X=[0;7] Y=[0;7] Z=[0;7]
+
+VARIABLE f=X+7;
+VARIABLE  i=Y+7; 
+VARIABLE k=Z+7;
+ 
+CONSTANT a=3, b=1;
+VARIABLE W1=a*f^b;
+ 
+CONSTANT d=2, c=0.5;
+VARIABLE W2=d*i^c;
+ 
+CONSTANT e=2, g=1;
+VARIABLE W3=e*k+g;
+ 
+VARIABLE W4=W1&W2&W3;
+//VARIABLE W5=W1¦W2¦W3;
+ 
+VARIABLE W=W4;
+ 
+RETURN W;

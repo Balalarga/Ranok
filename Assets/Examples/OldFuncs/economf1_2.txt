@@ -1,0 +1,21 @@
+ARGUMENT X,Y,Z;
+
+VARIABLE f=X;
+VARIABLE i=Y;
+VARIABLE k=Z;
+
+//Вторая подсистема
+
+CONSTANT a2=0.6, b2=0.2;
+VARIABLE W21=a2*f^b2;
+ 
+CONSTANT d2=2, c2=0.5;
+VARIABLE W22=d2*i^c2;
+ 
+CONSTANT e2=1, g2=1;
+VARIABLE W23=e2*k+g2;
+ 
+VARIABLE W25=W21&W22&W23; 
+
+ 
+RETURN W25;

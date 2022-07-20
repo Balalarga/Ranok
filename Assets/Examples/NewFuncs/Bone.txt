@@ -1,0 +1,56 @@
+args X0(4), Y0(4), Z0(4);
+
+var X=X0;
+var Y=Y0;
+var Z=Z0;
+
+var S=16-X^2-Y^2-Z^2;
+
+var A=3-ABS(X);
+var B=3-ABS(Y);
+var C=3-ABS(Z);
+var K=A&B&C;
+
+var SH=S&K;
+var z13 = (Z-1.3)^2;
+var z13p = (Z+1.3)^2;
+var y13 = (Y-1.3)^2;
+var y13p = (Y+1.3)^2;
+var z3p = (Z+3)^2;
+var z3 = (Z-3)^2;
+var x3 = (X+3)^2;
+var x13 = (X-1.3)^2;
+var y3 = (Y+3)^2;
+var x13p = (X+1.3)^2;
+
+var T11 = 0.3 - (X-3)^2 - Y^2 - Z^2;
+
+var T21 = 0.3 - x13 - (Y-3)^2 - z13;
+var T22 = 0.3 - x13p - (Y-3)^2 - z13p;
+
+var T31 = 0.3 - x13 - y13 - z3;
+var T32 = 0.3 - X^2 - Y^2 - z3;
+var T33 = 0.3 - x13p - y13p - z3;
+
+var T41 = 0.3 - x13 - y13 - z3p;
+var T42 = 0.3 - x13p - y13 - z3p;
+var T43 = 0.3 - x13 - y13p - z3p;
+var T44 = 0.3 - x13p - y13p - z3p;
+
+var T51 = 0.3 - X^2 - y3 - Z^2;
+var T52 = 0.3 - x13 - y3 - z13;
+var T53 = 0.3 - x13 - y3 - z13p;
+var T54 = 0.3 - x13p - y3 - z13;
+var T55 = 0.3 - x13p - y3 - z13p;
+
+var T61 = 0.3 - x3 - y13 - z13;
+var T62 = 0.3 - x3 - Y^2 - z13;
+var T63 = 0.3 - x3 - y13p - z13;
+var T64 = 0.3 - x3 - y13 - z13p;
+var T65 = 0.3 - x3 - Y^2 - z13p;
+var T66 = 0.3 - x3 - y13p - z13p;
+
+
+var W=SH&(-T11)&(-T21)&(-T22)&(-T31)&(-T32)&(-T33)&(-T41)&(-T42)&(-T43)&(-T44)&(-T51)&(-T52)&(-T53)&(-T54)&(-T55)&(-T61)&(-T62)&(-T63)&(-T64)&(-T65)&(-T66);
+
+RETURN W;

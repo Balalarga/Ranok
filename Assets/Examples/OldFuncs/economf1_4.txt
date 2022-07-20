@@ -1,0 +1,21 @@
+ARGUMENT X,Y,Z;
+
+VARIABLE f=X;
+VARIABLE i=Y;
+VARIABLE k=Z;
+
+
+//Четвёртая подсистема
+
+CONSTANT a4=0.2, b4=0.2;
+VARIABLE W41=a4*f^b4;
+ 
+CONSTANT d4=3, c4=0.4;
+VARIABLE W42=d4*i^c4;
+ 
+CONSTANT e4=4, g4=3;
+VARIABLE W43=e4*k+g4;
+
+VARIABLE W45=W41&W42&W43;
+
+RETURN W45;

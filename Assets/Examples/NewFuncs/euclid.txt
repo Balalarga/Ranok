@@ -1,0 +1,23 @@
+arg x(3), y(5), z(3);
+
+r = 5;
+z0 = r;
+
+var sphere = r^2 - x^2 - y^2 - (z0 - z)^2;
+
+// Треугольник
+const x1=-2, y1=0, x2=2, y2=0, x3=0, y3=4;
+var ww1=(y1-y2)*x-(x1-x2)*y+(y2*x1-y1*x2);
+var ww2=(y2-y3)*x-(x2-x3)*y+(y3*x2-y2*x3);
+var ww3=(y3-y1)*x-(x3-x1)*y+(y1*x3-y3*x1);
+var ww=ww1&ww2&ww3;
+
+// Ломаный треугольник
+const x1=-2, y1=0, x2=2, y2=0, x3=0, y3=2, x4=0, y4=4;
+var www1=(y1-y2)*x-(x1-x2)*y+(y2*x1-y1*x2);
+var www2=(y2-y3)*x-(x2-x3)*y+(y3*x2-y2*x3);
+var www3=(y3-y4)*x-(x3-x4)*y+(y4*x3-y3*x4);
+var www4=(y4-y1)*x-(x4-x1)*y+(y1*x4-y4*x1);
+var www=www1&(www2|www3)&www4;
+
+return ww & sphere;

@@ -1,8 +1,8 @@
 [submodule "ThirdParty/RanokCalculator"]
 	path = ThirdParty/RanokCalculator
 	url = https://github.com/Balalarga/RanokCalculator.git
-[submodule "ThirdParty/NodeEditor"]
-	path = ThirdParty/NodeEditor
+[submodule "ThirdParty/"]
+	path = ThirdParty/NodeENodeEditorditor
 	url = https://github.com/Balalarga/imgui-node-editor.git
 [submodule "ThirdParty/ImGui"]
 	path = ThirdParty/ImGui

@@ -1,0 +1,20 @@
+ARGUMENT XARG,YARG,ZARG;
+
+//x : 4 ; y :4.5 ; z : 4
+
+VARIABLE X=XARG;
+VARIABLE Y=YARG + 4.5;
+VARIABLE Z=ZARG;
+
+VARIABLE E1 = ((SQRT(X*X + Z*Z) -4)*(SQRT(X*X + Z*Z) -4)*7/16) - Y;
+VARIABLE E2 = 9 - X*X - Z*Z;
+VARIABLE E3 = Y*(7 - Y);
+VARIABLE E4 = 1 - X*X - Z*Z - (7 - Y)*(7 - Y);
+VARIABLE E5 = 2 - X*X - Z*Z - 9*(6 - Y)*(6 - Y);
+
+VARIABLE w1 = E1 + E2 - SQRT(E1*E1 + E2*E2);    //E1&E2
+VARIABLE w2 = w1 + E3 - SQRT(w1*w1 + E3*E3);   //E1&E2&E3
+VARIABLE w3 = E4 + E5 + SQRT(E4*E4 + E5*E5);   //E4|E5
+VARIABLE E = w2 + w3 + SQRT(w2*w2 + w3*w3);         //(E1&E2&E3)|(E4|E5)
+
+RETURN E;

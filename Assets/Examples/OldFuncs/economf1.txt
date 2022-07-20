@@ -1,0 +1,96 @@
+ARGUMENT X,Y,Z;
+
+VARIABLE f=X;
+VARIABLE i=Y;
+VARIABLE k=Z;
+
+//Первая подсистема 
+
+CONSTANT a1=3, b1=1;
+VARIABLE W11=a1*f^b1;
+ 
+CONSTANT d1=2, c1=0.5;
+VARIABLE W12=d1*i^c1;
+ 
+CONSTANT e1=2, g1=1;
+VARIABLE W13=e1*k+g1;
+ 
+VARIABLE W15=W11&W12&W13;
+
+//Вторая подсистема
+
+CONSTANT a2=0.6, b2=0.2;
+VARIABLE W21=a2*f^b2;
+ 
+CONSTANT d2=2, c2=0.5;
+VARIABLE W22=d2*i^c2;
+ 
+CONSTANT e2=1, g2=1;
+VARIABLE W23=e2*k+g2;
+ 
+VARIABLE W25=W21&W22&W23; 
+
+//Третья подсистема
+
+CONSTANT a3=0.2, b3=0.2;
+VARIABLE W31=a3*f^b3;
+ 
+CONSTANT d3=4, c3=1;
+VARIABLE W32=d3*i^c3;
+ 
+CONSTANT e3=2, g3=1;
+VARIABLE W33=e3*k+g3;
+
+CONSTANT m3=0.25, l3=0.2;
+VARIABLE W34=m3*i^l3;
+ 
+VARIABLE W35=W31&W32&W33&W34;
+
+//Четвёртая подсистема
+
+CONSTANT a4=0.2, b4=0.2;
+VARIABLE W41=a4*f^b4;
+ 
+CONSTANT d4=3, c4=0.4;
+VARIABLE W42=d4*i^c4;
+ 
+CONSTANT e4=4, g4=3;
+VARIABLE W43=e4*k+g4;
+
+VARIABLE W45=W41&W42&W43;
+
+//Пятая подсистема
+
+CONSTANT a5=2, b5=0.4;
+VARIABLE W51=a5*f^b5;
+ 
+CONSTANT d5=3, c5=0.7;
+VARIABLE W52=d5*i^c5;
+ 
+CONSTANT e5=2, g5=1;
+VARIABLE W53=e5*k+g5;
+
+CONSTANT m5=3, l5=0.2;
+VARIABLE W54=m5*i^l5;
+ 
+VARIABLE W55=W51&W52&W53&W54;
+
+//Шестая подсистема
+
+CONSTANT a6=1, b6=0.8;
+VARIABLE W61=a6*f^b6;
+ 
+CONSTANT d6=1, c6=0.2;
+VARIABLE W62=d6*i^c6;
+ 
+CONSTANT e6=1, g6=0;
+VARIABLE W63=e6*k+g6;
+
+CONSTANT m6=1, l6=0.2;
+VARIABLE W64=m6*i^l6;
+ 
+VARIABLE W65=W61&W62&W63&W64;
+ 
+VARIABLE W=W15&W25&W35&W45&W55&W65;
+ 
+RETURN W;

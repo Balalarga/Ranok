@@ -1,0 +1,6 @@
+ARGUMENT X,Y,Z;
+
+//x : 6.5 ; y : 6.5 ; z : 6.5
+
+VARIABLE W=10*SQRT(X*X+Y*Y)-(X*X+Y*Y+Z*Z)-24;
+RETURN W;
