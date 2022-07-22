@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include "Language/Lexer.h"
+#include "Language/Parser.h"
 
 using namespace std;
 
@@ -15,6 +16,9 @@ int main(int argc, char** argv)
 	)";
 	
 	Lexer lexer(text);
+	Parser parser;
+	ActionTree tree = parser.Parse(lexer);
+	ActionNode* last = tree.Last<DoubleNumberNode>();
 	
 	while (!lexer.IsEmpty())
 	{
