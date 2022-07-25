@@ -14,7 +14,10 @@ public:
 	}
 
 	template<class T = ActionNode>
-	std::enable_if_t<std::derived_from<T, ActionNode>, T*> Last() const { return dynamic_cast<T>(_nodes.back().get()); }
+	std::enable_if_t<std::derived_from<T, ActionNode>, T*> Last() const
+	{
+		return _nodes.empty() ? nullptr : dynamic_cast<T*>(_nodes.back().get());
+	}
 	
 	
 private:
