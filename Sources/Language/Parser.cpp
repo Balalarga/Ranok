@@ -1,19 +1,21 @@
 ﻿#include "Parser.h"
 
-#include "../../ThirdParty/fmt/include/fmt/compile.h"
-
+const std::vector<ActionNode*(Parser::*)(Lexer&, ActionTree&)> Parser::PriorityFunctions{
+	&Parser::GetParentheses,
+	&Parser::GetExponents,
+	&Parser::GetMulOrDiv,
+	&Parser::GetAddOrSub,
+	&Parser::GetCrossOrUnion,
+};
 
 ActionTree Parser::Parse(Lexer lexer)
 {
 	_errors.clear();
 	
 	ActionTree tree;
-	
 	while (!lexer.IsEmpty())
 	{
-		if (!IsParentheses(lexer) && !IsExponents(lexer) &&
-			!IsMulOrDiv(lexer) && !IsAddOrSub(lexer) &&
-			!IsCrossOrUnion(lexer))
+		if (!RecursiveParsing(lexer, tree))
 		{
 			_errors.push_back("Token " + lexer.Peek().string+" (" + std::to_string(lexer.Peek().line)+": " +
 				std::to_string(lexer.Peek().column) + ") not processed");
@@ -24,32 +26,43 @@ ActionTree Parser::Parse(Lexer lexer)
 	return tree;
 }
 
-bool Parser::IsParentheses(Lexer& lexer)
+ActionNode* Parser::RecursiveParsing(Lexer& lexer, ActionTree& tree)
+{
+	for (auto& func : PriorityFunctions)
+	{
+		if (ActionNode* node = (this->*func)(lexer, tree))
+			return node;
+	}
+	return nullptr;
+}
+
+ActionNode* Parser::GetParentheses(Lexer& lexer, ActionTree& tree)
 {
 	const Token& top = lexer.Peek();
 	if (top.type == Token::Type::OpenParenthesis)
 	{
-		
+		lexer.Pop();
+		RecursiveParsing(lexer, tree);
 	}
-	return false;
+	return nullptr;
 }
 
-bool Parser::IsExponents(Lexer& lexer)
+ActionNode* Parser::GetExponents(Lexer& lexer, ActionTree& tree)
 {
-	return false;
+	return nullptr;
 }
 
-bool Parser::IsMulOrDiv(Lexer& lexer)
+ActionNode* Parser::GetMulOrDiv(Lexer& lexer, ActionTree& tree)
 {
-	return false;
+	return nullptr;
 }
 
-bool Parser::IsAddOrSub(Lexer& lexer)
+ActionNode* Parser::GetAddOrSub(Lexer& lexer, ActionTree& tree)
 {
-	return false;
+	return nullptr;
 }
 
-bool Parser::IsCrossOrUnion(Lexer& lexer)
+ActionNode* Parser::GetCrossOrUnion(Lexer& lexer, ActionTree& tree)
 {
-	return false;
+	return nullptr;
 }

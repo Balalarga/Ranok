@@ -23,13 +23,19 @@ int main(int argc, char** argv)
 	if (parser.HasErrors())
 		for (const string& error : parser.Errors())
 			cout << error << endl;
-	
-	// while (!lexer.IsEmpty())
-	// {
-		// cout << lexer.Peek().TypeToString() << " = " << "\"" << lexer.Peek().string <<"\"";
-		// cout << " (" << lexer.Peek().line << " : " << lexer.Peek().column << ")" << endl;
-		// lexer.Pop();
-	// }
+
+	cout << "\nWalking\n";
+	std::queue<ActionNode*> walkQueue = tree.Last()->WalkDown();
+	while (!walkQueue.empty())
+	{
+		ActionNode* top = walkQueue.front();
+		
+		cout << top->GetToken().string;
+		if (auto casted = dynamic_cast<DoubleNumberNode*>(top))
+			cout << " = " << casted->Value();
+		cout << endl;
+		walkQueue.pop();
+	}
 	
 	return 0;
 }

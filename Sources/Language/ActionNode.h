@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <queue>
-#include <string>
 
 #include "Token.h"
 
@@ -15,6 +14,7 @@ public:
 	
 	const Token& GetToken() const { return _token; }
 	
+	
 private:
 	Token _token;
 };
@@ -23,33 +23,33 @@ private:
 class DoubleNumberNode: public ActionNode
 {
 public:
-	DoubleNumberNode(Token token, double value);
+	DoubleNumberNode(const Token& token);
 	
 	double Value() const { return _value; }
 	
 	
 private:
-	double _value;
+	double _value = 0.0;
 };
 
 
 class IntNumberNode: public ActionNode
 {
 public:
-	IntNumberNode(Token token, int value);
+	IntNumberNode(const Token& token);
 	
 	int Value() const { return _value; }
 	
 	
 private:
-	int _value;
+	int _value = 0;
 };
 
 
 class ArrayNode: public ActionNode
 {
 public:
-	ArrayNode(Token token, std::vector<ActionNode*> values);
+	ArrayNode(const Token& token, std::vector<ActionNode*> values);
 	
 	const std::vector<ActionNode*>& Value() const { return _values; }
 	
@@ -62,7 +62,7 @@ private:
 class UnaryNode: public ActionNode
 {
 public:
-	UnaryNode(Token token, ActionNode* child);
+	UnaryNode(const Token& token, ActionNode* child);
 	
 	std::queue<ActionNode*> WalkDown() override;
 	
@@ -77,7 +77,7 @@ private:
 class BinaryNode: public ActionNode
 {
 public:
-	BinaryNode(Token token, ActionNode* left, ActionNode* right);
+	BinaryNode(const Token& token, ActionNode* left, ActionNode* right);
 	
 	std::queue<ActionNode*> WalkDown() override;
 	
@@ -93,7 +93,7 @@ private:
 class FunctionNode: public ActionNode
 {
 public:
-	FunctionNode(Token token, std::vector<ActionNode*> arguments, ActionNode* result);
+	FunctionNode(const Token& token, std::vector<ActionNode*> arguments, ActionNode* result);
 
 	std::queue<ActionNode*> WalkDown() override;
 	

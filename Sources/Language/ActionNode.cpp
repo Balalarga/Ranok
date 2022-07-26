@@ -1,7 +1,6 @@
 ﻿#include "ActionNode.h"
 
-#include <any>
-#include <utility>
+#include <string>
 
 ActionNode::ActionNode(Token token):
 	_token(std::move(token))
@@ -13,20 +12,20 @@ std::queue<ActionNode*> ActionNode::WalkDown()
 	return {};
 }
 
-DoubleNumberNode::DoubleNumberNode(Token token, double value):
-	ActionNode(std::move(token)),
-	_value(value)
+DoubleNumberNode::DoubleNumberNode(const Token& token):
+	ActionNode(token),
+	_value(std::stod(token.string))
 {
 }
 
-IntNumberNode::IntNumberNode(Token token, int value):
-	ActionNode(std::move(token)),
-	_value(value)
+IntNumberNode::IntNumberNode(const Token& token):
+	ActionNode(token),
+	_value(std::stoi(token.string))
 {
 }
 
-UnaryNode::UnaryNode(Token token, ActionNode* child):
-	ActionNode(std::move(token)),
+UnaryNode::UnaryNode(const Token& token, ActionNode* child):
+	ActionNode(token),
 	_child(child)
 {
 }
@@ -36,8 +35,8 @@ std::queue<ActionNode*> UnaryNode::WalkDown()
 	return std::queue<ActionNode*>({ _child });
 }
 
-BinaryNode::BinaryNode(Token token, ActionNode* left, ActionNode* right):
-	ActionNode(std::move(token)),
+BinaryNode::BinaryNode(const Token& token, ActionNode* left, ActionNode* right):
+	ActionNode(token),
 	_left(left),
 	_right(right)
 {
@@ -48,8 +47,8 @@ std::queue<ActionNode*> BinaryNode::WalkDown()
 	return std::queue<ActionNode*>({ _left, _right });
 }
 
-FunctionNode::FunctionNode(Token token, std::vector<ActionNode*> arguments, ActionNode* result):
-	ActionNode(std::move(token)),
+FunctionNode::FunctionNode(const Token& token, std::vector<ActionNode*> arguments, ActionNode* result):
+	ActionNode(token),
 	_arguments(std::move(arguments)),
 	_result(result)
 {

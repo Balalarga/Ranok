@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <functional>
+
 #include "ActionTree.h"
 #include "Lexer.h"
 
@@ -16,13 +18,16 @@ public:
 	
 	
 protected:
-	bool IsParentheses(Lexer& lexer);
-	bool IsExponents(Lexer& lexer);
-	bool IsMulOrDiv(Lexer& lexer);
-	bool IsAddOrSub(Lexer& lexer);
-	bool IsCrossOrUnion(Lexer& lexer);
+	ActionNode* RecursiveParsing(Lexer& lexer, ActionTree& tree);
+	
+	ActionNode* GetParentheses(Lexer& lexer, ActionTree& tree);
+	ActionNode* GetExponents(Lexer& lexer, ActionTree& tree);
+	ActionNode* GetMulOrDiv(Lexer& lexer, ActionTree& tree);
+	ActionNode* GetAddOrSub(Lexer& lexer, ActionTree& tree);
+	ActionNode* GetCrossOrUnion(Lexer& lexer, ActionTree& tree);
 	
 	
 private:
 	std::vector<std::string> _errors;
+	static const std::vector<ActionNode*(Parser::*)(Lexer&, ActionTree&)> PriorityFunctions;
 };
