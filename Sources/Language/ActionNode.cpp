@@ -1,64 +1,84 @@
 ﻿#include "ActionNode.h"
 
-#include <string>
 
-ActionNode::ActionNode(Token token):
-	_token(std::move(token))
-{
-}
-
-std::queue<ActionNode*> ActionNode::WalkDown()
+std::queue<ActionNode*> ActionNode::WalkDown() const
 {
 	return {};
 }
 
-DoubleNumberNode::DoubleNumberNode(const Token& token):
-	ActionNode(token),
-	_value(std::stod(token.string))
+DoubleNumberNode::DoubleNumberNode(double number):
+	_value(number)
 {
 }
 
-IntNumberNode::IntNumberNode(const Token& token):
-	ActionNode(token),
-	_value(std::stoi(token.string))
+IntNumberNode::IntNumberNode(int number):
+	_value(number)
 {
 }
 
-UnaryNode::UnaryNode(const Token& token, ActionNode* child):
-	ActionNode(token),
+ArrayGetterNode::ArrayGetterNode(const std::string& name, ActionNode* id):
+	_name(name),
+	_id(id)
+{
+}
+
+ArrayDeclarationNode::ArrayDeclarationNode(const std::string& name, std::vector<ActionNode*> values):
+	_name(name),
+	_values(values)
+{
+}
+
+VariableNode::VariableNode(const std::string& name):
+	_name(name)
+{
+}
+
+UnaryNode::UnaryNode(const std::string& name, ActionNode* child):
+	_name(name),
 	_child(child)
 {
 }
 
-std::queue<ActionNode*> UnaryNode::WalkDown()
+std::queue<ActionNode*> UnaryNode::WalkDown() const
 {
 	return std::queue<ActionNode*>({ _child });
 }
 
-BinaryNode::BinaryNode(const Token& token, ActionNode* left, ActionNode* right):
-	ActionNode(token),
+BinaryNode::BinaryNode(const std::string& name, ActionNode* left, ActionNode* right):
+	_name(name),
 	_left(left),
 	_right(right)
 {
 }
 
-std::queue<ActionNode*> BinaryNode::WalkDown()
+std::queue<ActionNode*> BinaryNode::WalkDown() const
 {
 	return std::queue<ActionNode*>({ _left, _right });
 }
 
-FunctionNode::FunctionNode(const Token& token, std::vector<ActionNode*> arguments, ActionNode* result):
-	ActionNode(token),
+FunctionCallNode::FunctionCallNode(const std::string& name, std::vector<ActionNode*> arguments):
 	_arguments(std::move(arguments)),
-	_result(result)
+	_name(name)
 {
 }
 
-std::queue<ActionNode*> FunctionNode::WalkDown()
+std::queue<ActionNode*> FunctionCallNode::WalkDown() const
 {
 	std::queue<ActionNode*> queue;
 	for (auto& argument: _arguments)
 		queue.push(argument);
-	queue.push(_result);
 	return queue;
 }
+
+FunctionSignature::FunctionSignature(const std::string& name, const std::vector<std::string>& args):
+	_name(name),
+	_arguments(args)
+{
+}
+
+FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body):
+	_signature(signature),
+	_body(body)
+{
+}
+

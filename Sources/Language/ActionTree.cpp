@@ -8,6 +8,27 @@ ActionTree::ActionTree()
 
 void ActionTree::InitGlobalConstants()
 {
-	Add<UnaryNode>(Token{Token::Type::Word, "PI"},
-		Add<DoubleNumberNode>(Token(Token::Type::Number, "3.141592")));
+	
+}
+
+void ActionTree::IterateNodes(void(* func)(ActionNode*))
+{
+	for (std::unique_ptr<ActionNode>& node : _nodes)
+	{
+		if (node)
+			func(node.get());
+	}
+}
+
+void ActionTree::SetRoot(ActionNode* node)
+{
+	if (_root)
+		_root = node;
+}
+
+void ActionTree::AddFunction(FunctionDeclarationNode* func)
+{
+	std::vector<FunctionDeclarationNode*>::iterator it = std::find(_functions.begin(), _functions.end(), func);
+	if (it == _functions.end())
+		_functions.push_back(func);
 }

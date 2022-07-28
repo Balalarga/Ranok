@@ -17,8 +17,8 @@ const std::map<char, Token::Type> Lexer::SymbolTypes
 	{ '|', Token::Type::Pipe },
 	{ '/', Token::Type::Slash },
 	{ '\\', Token::Type::BackSlash },
-	{ '(', Token::Type::OpenParenthesis },
-	{ ')', Token::Type::CloseParenthesis },
+	{ '(', Token::Type::ParenthesisOpen },
+	{ ')', Token::Type::ParenthesisClose },
 	{ '[', Token::Type::BracketOpen },
 	{ ']', Token::Type::BracketClose },
 	{ '{', Token::Type::BraceOpen },
@@ -82,7 +82,7 @@ void Lexer::FillQueue(std::string_view code)
 			code = code.substr(wordLen);
 			continue;
 		}
-
+		
 		auto symbolIter = SymbolTypes.find(code[0]);
 		if (symbolIter != SymbolTypes.end())
 		{
@@ -91,13 +91,26 @@ void Lexer::FillQueue(std::string_view code)
 			code = code.substr(1);
 			continue;
 		}
-
+		
 		if (isdigit(code[0]))
 		{
 			int digitLen = 0;
-			while (isdigit(code[++digitLen]));
-
-			_lexemes.push({Token::Type::Number, std::string(code.substr(0, digitLen)), lineCounter, columnCounter});
+			bool bIsDouble = false;
+			while (isdigit(code[digitLen]))
+			{
+				if (code[++digitLen] == '.')
+				{
+					bIsDouble = true;
+					++digitLen;
+				}
+			}
+			
+			_lexemes.push({
+				bIsDouble ? Token::Type::DoubleNumber : Token::Type::IntNumber,
+				std::string(code.substr(0, digitLen)),
+				lineCounter,
+				columnCounter
+			});
 			columnCounter += digitLen;
 			code = code.substr(digitLen);
 			continue;
