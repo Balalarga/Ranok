@@ -10,7 +10,7 @@ class ActionTree
 {
 public:
 	ActionTree();
-
+	
 	void InitGlobalConstants();
 	
 	template<class T, class ...TArgs>
@@ -20,7 +20,15 @@ public:
 		return static_cast<T*>(_nodes.back().get());
 	}
 	
-	void IterateNodes(void(*func)(ActionNode*));
+	template<class T>
+	void IterateNodes(T&& func)
+	{
+		for (std::unique_ptr<ActionNode>& node : _nodes)
+		{
+			if (node)
+				func(node.get());
+		}
+	}
 	
 	template<class T>
 	ActionNode* FindBy(T&& func)
@@ -32,17 +40,20 @@ public:
 		}
 		return nullptr;
 	}
-
+	
 	const ActionNode* Root() { return _root; }
 	void SetRoot(ActionNode* node);
-
-	void AddFunction(FunctionDeclarationNode* func);
-	void 
+	
+	bool AddFunction(FunctionDeclarationNode* func);
+	FunctionDeclarationNode* GetFunction(const std::string& name) const;
+	
+	void AddVariable(VariableDeclarationNode* var);
+	VariableDeclarationNode* GetVariable(const std::string& name) const;
 	
 private:
 	ActionNode* _root{};
 	
 	std::vector<std::unique_ptr<ActionNode>> _nodes;
-
-	std::vector<FunctionDeclarationNode*> _functions;
+	std::map<std::string, FunctionDeclarationNode*> _functions;
+	std::map<std::string, VariableDeclarationNode*> _variables;
 };

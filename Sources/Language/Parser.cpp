@@ -1,6 +1,6 @@
 ﻿#include "Parser.h"
 
-std::map<Token::Type, int> Parser::_OperationPriorities
+const std::map<Token::Type, int> Parser::_operationPriorities
 {
 	{ Token::Type::Pipe, 1 },
 	{ Token::Type::Ampersand, 1 },
@@ -16,35 +16,64 @@ ActionTree Parser::Parse(Lexer lexer)
 	_errors.clear();
 	
 	ActionTree tree;
-
+	
 	auto insensitiveCompare = [](const std::string& a, const std::string& b)
 	{
 		return std::ranges::equal(a, b, [](char a, char b) { return tolower(a) == tolower(b); });
 	};
-
-	while (!lexer.IsEmpty())
+	
+	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (lexer.Peek().type == Token::Type::Word)
+		if (CheckToken(lexer.Peek(), Token::Type::Word))
 		{
 			if (insensitiveCompare(lexer.Peek().string, "def"))
 			{
-				ParseFunction(lexer, tree);
+				lexer.Pop();
+				if (FunctionDeclarationNode* func = ParseFunction(lexer, tree))
+					tree.AddFunction(func);
+				else
+					break;
 			}
-			else if ()
+			else if (insensitiveCompare(lexer.Peek().string, "return"))
+			{
+				lexer.Pop();
+				if (ActionNode* result = ParseExpression(lexer, tree))
+					tree.SetRoot(result);
+				else
+					break;
+			}
+			else if (insensitiveCompare(lexer.Peek().string, "var"))
+			{
+				lexer.Pop();
+				if (VariableDeclarationNode* var = ParseVariableDeclaration(lexer, tree))
+					tree.AddVariable(var);
+				else
+					break;
+			}
+			else
+			{
+				if (VariableDeclarationNode* var = ParseVariableDeclaration(lexer, tree))
+					tree.AddVariable(var);
+				else
+					break;
+			}
+			
+			if (lexer.Peek().type == Token::Type::Semicolon)
+				lexer.Pop();
+		}
+		else
+		{
+			break;
 		}
 	}
-
-
-	
-	tree.SetRoot(ParseExpression(lexer, tree));
 	
 	return tree;
 }
 
 int Parser::GetOperationPriority(Token::Type type)
 {
-	auto it = _OperationPriorities.find(type);
-	if (it == _OperationPriorities.end())
+	auto it = _operationPriorities.find(type);
+	if (it == _operationPriorities.end())
 		return -1;
 	
 	return it->second;
@@ -94,6 +123,20 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, ActionTree& tree,
 	}
 }
 
+VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, ActionTree& tree)
+{
+	Token var = lexer.Take();
+	if (!CheckToken(lexer.Peek(), Token::Type::Assign))
+		return nullptr;
+	
+	lexer.Pop();
+	ActionNode* val = ParseExpression(lexer, tree);
+	if (!val)
+		return nullptr;
+	
+	return tree.Create<VariableDeclarationNode>(var.string, val);
+}
+
 std::optional<FunctionSignature> Parser::ParseFunctionSignature(Lexer& lexer, ActionTree& tree)
 {
 	if (lexer.Peek().type != Token::Type::Word)
@@ -107,8 +150,8 @@ std::optional<FunctionSignature> Parser::ParseFunctionSignature(Lexer& lexer, Ac
 	while (lexer.Peek().type == Token::Type::Word)
 	{
 		args.push_back(lexer.Take().string);
-		if (!CheckToken(lexer.Take(), Token::Type::Comma))
-			return {};
+		if (lexer.Peek().type == Token::Type::Comma)
+			lexer.Pop();
 	}
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisClose))
 		return {};
@@ -118,10 +161,6 @@ std::optional<FunctionSignature> Parser::ParseFunctionSignature(Lexer& lexer, Ac
 
 FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, ActionTree& tree)
 {
-	lexer.Pop();
-	if (!CheckToken(lexer.Take(), Token::Type::Word))
-		return nullptr;
-	
 	std::optional<FunctionSignature> signature = ParseFunctionSignature(lexer, tree);
 	if (!signature || !CheckToken(lexer.Take(), Token::Type::BraceOpen))
 		return nullptr;
@@ -187,7 +226,10 @@ ActionNode* Parser::ParseWord(Lexer& lexer, ActionTree& tree)
 		return tree.Create<ArrayGetterNode>(name.string, node);
 	}
 	
-	return tree.Create<VariableNode>(name.string);
+	if (VariableDeclarationNode* var = tree.GetVariable(name.string))
+		return tree.Create<VariableNode>(name.string, var);
+	
+	return nullptr;
 }
 
 ActionNode* Parser::ParseParentheses(Lexer& lexer, ActionTree& tree)

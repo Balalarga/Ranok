@@ -1,5 +1,13 @@
 ﻿#include "ActionNode.h"
 
+#include <utility>
+
+
+ActionNode::ActionNode(const std::string& name):
+	_name(name)
+{
+	
+}
 
 std::queue<ActionNode*> ActionNode::WalkDown() const
 {
@@ -7,34 +15,61 @@ std::queue<ActionNode*> ActionNode::WalkDown() const
 }
 
 DoubleNumberNode::DoubleNumberNode(double number):
+	ActionNode(std::to_string(number)),
 	_value(number)
 {
 }
 
 IntNumberNode::IntNumberNode(int number):
+	ActionNode(std::to_string(number)),
 	_value(number)
 {
 }
 
 ArrayGetterNode::ArrayGetterNode(const std::string& name, ActionNode* id):
-	_name(name),
+	ActionNode(name),
 	_id(id)
 {
 }
 
 ArrayDeclarationNode::ArrayDeclarationNode(const std::string& name, std::vector<ActionNode*> values):
-	_name(name),
-	_values(values)
+	ActionNode(name),
+	_values(std::move(values))
 {
 }
 
-VariableNode::VariableNode(const std::string& name):
-	_name(name)
+std::queue<ActionNode*> ArrayDeclarationNode::WalkDown() const
 {
+	std::queue<ActionNode*> queue;
+	for (ActionNode* val : _values)
+		queue.push(val);
+	return queue;
+}
+
+VariableNode::VariableNode(const std::string& name, VariableDeclarationNode* decl):
+	ActionNode(name),
+	_declaration(decl)
+{
+}
+
+std::queue<ActionNode*> VariableNode::WalkDown() const
+{
+	return _declaration->WalkDown();
+}
+
+VariableDeclarationNode::VariableDeclarationNode(const std::string& name, ActionNode* value):
+	ActionNode(name),
+	_value(value)
+{
+}
+
+std::queue<ActionNode*> VariableDeclarationNode::WalkDown() const
+{
+	return std::queue<ActionNode*>{ { _value } };
 }
 
 UnaryNode::UnaryNode(const std::string& name, ActionNode* child):
-	_name(name),
+	ActionNode(name),
 	_child(child)
 {
 }
@@ -45,7 +80,7 @@ std::queue<ActionNode*> UnaryNode::WalkDown() const
 }
 
 BinaryNode::BinaryNode(const std::string& name, ActionNode* left, ActionNode* right):
-	_name(name),
+	ActionNode(name),
 	_left(left),
 	_right(right)
 {
@@ -57,8 +92,8 @@ std::queue<ActionNode*> BinaryNode::WalkDown() const
 }
 
 FunctionCallNode::FunctionCallNode(const std::string& name, std::vector<ActionNode*> arguments):
-	_arguments(std::move(arguments)),
-	_name(name)
+	ActionNode(name),
+	_arguments(std::move(arguments))
 {
 }
 
@@ -77,6 +112,7 @@ FunctionSignature::FunctionSignature(const std::string& name, const std::vector<
 }
 
 FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body):
+	ActionNode(signature.Name()),
 	_signature(signature),
 	_body(body)
 {

@@ -7,9 +7,16 @@
 class ActionNode
 {
 public:
+	ActionNode(const std::string& name);
 	virtual ~ActionNode() = default;
 	
 	virtual std::queue<ActionNode*> WalkDown() const;
+	
+	const std::string& Name() const { return _name; }
+	
+	
+protected:
+	const std::string _name;
 };
 
 
@@ -43,9 +50,9 @@ class ArrayGetterNode: public ActionNode
 {
 public:
 	ArrayGetterNode(const std::string& name, ActionNode* id);
-
+	
+	
 private:
-	std::string _name;
 	ActionNode* _id;
 };
 
@@ -54,25 +61,37 @@ class ArrayDeclarationNode: public ActionNode
 public:
 	ArrayDeclarationNode(const std::string& name, std::vector<ActionNode*> values);
 	
+	virtual std::queue<ActionNode*> WalkDown() const override;
+	
 	const std::vector<ActionNode*>& Values() const { return _values; }
 	
 	
 private:
-	std::string _name;
 	std::vector<ActionNode*> _values;
+};
+
+
+class VariableDeclarationNode: public ActionNode
+{
+public:
+	VariableDeclarationNode(const std::string& name, ActionNode* value);
+	
+	virtual std::queue<ActionNode*> WalkDown() const override;
+	
+private:
+	ActionNode* _value;
 };
 
 
 class VariableNode: public ActionNode
 {
 public:
-	VariableNode(const std::string& name);
+	VariableNode(const std::string& name, VariableDeclarationNode* decl);
 	
-	const std::string& Name() const { return _name; }
-	
+	virtual std::queue<ActionNode*> WalkDown() const override;
 	
 private:
-	std::string _name;
+	VariableDeclarationNode* _declaration;
 };
 
 
@@ -84,11 +103,9 @@ public:
 	std::queue<ActionNode*> WalkDown() const override;
 	
 	ActionNode* Child() const { return _child; }
-	const std::string& Name() const { return _name; }
 	
 	
 private:
-	std::string _name;
 	ActionNode* _child;
 };
 
@@ -102,11 +119,9 @@ public:
 	
 	ActionNode* Left() const { return _left; }
 	ActionNode* Right() const { return _right; }
-	const std::string& Name() const { return _name; }
 	
 	
 private:
-	std::string _name;
 	ActionNode* _left, *_right;
 };
 
@@ -119,12 +134,10 @@ public:
 	std::queue<ActionNode*> WalkDown() const override;
 	
 	const std::vector<ActionNode*>& Arguments() const { return _arguments; }
-	const std::string& Name() const { return _name; }
 	
 	
 private:
 	std::vector<ActionNode*> _arguments;
-	std::string _name;
 };
 
 
@@ -132,6 +145,9 @@ class FunctionSignature
 {
 public:
 	FunctionSignature(const std::string& name, const std::vector<std::string>& args);
+
+	const std::string& Name() const { return _name; }
+	const std::vector<std::string>& Args() const { return _arguments; }
 	
 	
 private:

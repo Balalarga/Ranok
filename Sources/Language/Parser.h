@@ -30,6 +30,8 @@ protected:
 	ActionNode* ParseDoubleNumber(Lexer& lexer, ActionTree& tree);
 	
 	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, ActionTree& tree, int priority = 0);
+
+	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, ActionTree& tree);
 	
 	std::optional<FunctionSignature> ParseFunctionSignature(Lexer& lexer, ActionTree& tree);
 	FunctionDeclarationNode* ParseFunction(Lexer& lexer, ActionTree& tree);
@@ -40,5 +42,5 @@ protected:
 	
 private:
 	std::vector<std::string> _errors;
-	static std::map<Token::Type, int> _OperationPriorities;
+	static const std::map<Token::Type, int> _operationPriorities;
 };

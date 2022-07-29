@@ -11,3 +11,5 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 file(GLOB_RECURSE PROJECT_SOURCES ./*.cpp ./*.h ./*.hpp)
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC fmt)
