@@ -2,30 +2,32 @@
 
 #include <cctype>
 
+namespace Ranok
+{
 const std::map<char, Token::Type> Lexer::SymbolTypes
 {
-	{ '\0', Token::Type::EndFile },
-	{ '\n', Token::Type::NewLine },
-	{ '=', Token::Type::Assign },
-	{ ',', Token::Type::Comma },
-	{ '.', Token::Type::Dot },
-	{ '^', Token::Type::Hat },
-	{ '*', Token::Type::Star },
-	{ '+', Token::Type::Plus },
-	{ '-', Token::Type::Minus },
-	{ '&', Token::Type::Ampersand },
-	{ '|', Token::Type::Pipe },
-	{ '/', Token::Type::Slash },
-	{ '\\', Token::Type::BackSlash },
-	{ '(', Token::Type::ParenthesisOpen },
-	{ ')', Token::Type::ParenthesisClose },
-	{ '[', Token::Type::BracketOpen },
-	{ ']', Token::Type::BracketClose },
-	{ '{', Token::Type::BraceOpen },
-	{ '}', Token::Type::BraceClose },
-	{ ':', Token::Type::Colon },
-	{ ';', Token::Type::Semicolon },
-};
+		{ '\0', Token::Type::EndFile },
+		{ '\n', Token::Type::NewLine },
+		{ '=', Token::Type::Assign },
+		{ ',', Token::Type::Comma },
+		{ '.', Token::Type::Dot },
+		{ '^', Token::Type::Hat },
+		{ '*', Token::Type::Star },
+		{ '+', Token::Type::Plus },
+		{ '-', Token::Type::Minus },
+		{ '&', Token::Type::Ampersand },
+		{ '|', Token::Type::Pipe },
+		{ '/', Token::Type::Slash },
+		{ '\\', Token::Type::BackSlash },
+		{ '(', Token::Type::ParenthesisOpen },
+		{ ')', Token::Type::ParenthesisClose },
+		{ '[', Token::Type::BracketOpen },
+		{ ']', Token::Type::BracketClose },
+		{ '{', Token::Type::BraceOpen },
+		{ '}', Token::Type::BraceClose },
+		{ ':', Token::Type::Colon },
+		{ ';', Token::Type::Semicolon },
+	};
 
 
 Lexer::Lexer(std::string_view code):
@@ -121,4 +123,5 @@ void Lexer::FillQueue(std::string_view code)
 		code = code.substr(1);
 	}
 	_lexemes.push({Token::Type::EndFile, "", lineCounter, columnCounter});
+}
 }

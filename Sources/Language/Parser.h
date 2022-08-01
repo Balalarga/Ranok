@@ -4,6 +4,8 @@
 #include "ActionTree.h"
 #include "Lexer.h"
 
+namespace Ranok
+{
 /**
  * \brief  Convert lexer queue into AST
  */
@@ -21,20 +23,21 @@ public:
 	
 	
 protected:
-	ActionNode* ParseExpression(Lexer& lexer, ActionTree& tree);
-
-	ActionNode* ParsePrimary(Lexer& lexer, ActionTree& tree);
-	ActionNode* ParseWord(Lexer& lexer, ActionTree& tree);
-	ActionNode* ParseParentheses(Lexer& lexer, ActionTree& tree);
-	ActionNode* ParseIntNumber(Lexer& lexer, ActionTree& tree);
-	ActionNode* ParseDoubleNumber(Lexer& lexer, ActionTree& tree);
+	ActionNode* ParseExpression(Lexer& lexer, ActionNodeFactory& factory);
 	
-	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, ActionTree& tree, int priority = 0);
-
-	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, ActionTree& tree);
+	ActionNode* ParsePrimary(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseWord(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseParentheses(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseIntNumber(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseDoubleNumber(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseBody(Lexer& lexer, ActionNodeFactory& factory);
 	
-	std::optional<FunctionSignature> ParseFunctionSignature(Lexer& lexer, ActionTree& tree);
-	FunctionDeclarationNode* ParseFunction(Lexer& lexer, ActionTree& tree);
+	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, ActionNodeFactory& factory, int priority = 0);
+	
+	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, ActionNodeFactory& factory);
+	
+	std::optional<FunctionSignature> ParseFunctionSignature(Lexer& lexer);
+	FunctionDeclarationNode* ParseFunction(Lexer& lexer, ActionNodeFactory& factory);
 	
 	
 	bool CheckToken(const Token& token, Token::Type expected);
@@ -44,3 +47,4 @@ private:
 	std::vector<std::string> _errors;
 	static const std::map<Token::Type, int> _operationPriorities;
 };
+}

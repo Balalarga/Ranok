@@ -5,6 +5,8 @@
 
 #include "Token.h"
 
+namespace Ranok
+{
 /**
  * Split input text into queue of basic tokens
  * don't produce errors, only Unexpected symbols
@@ -31,3 +33,4 @@ private:
 	std::string_view _basicText;
 	std::queue<Token> _lexemes;
 };
+}

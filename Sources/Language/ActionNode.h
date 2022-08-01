@@ -1,8 +1,76 @@
 ﻿#pragma once
+#include <map>
+#include <memory>
 #include <queue>
 
 #include "Token.h"
 
+namespace Ranok
+{
+class FunctionSignature;
+class FunctionDeclarationNode;
+class ActionNode;
+class VariableDeclarationNode;
+
+
+class ActionNodeFactory
+{
+	friend struct Commitable;
+public:
+	template<class T>
+	struct Commitable
+	{
+		~Commitable()
+		{
+			if (bCommit)
+			{
+				auto it = _parentContainer.find();
+				if ()
+			}
+				
+		}
+		void SetCommitState(bool bState)
+		{
+			bCommit = bState;
+		}
+		
+	private:
+		bool bCommit = false;
+		friend ActionNodeFactory;
+		ActionNodeFactory& _parent;
+		std::map<std::string, T*>& ActionNodeFactory*::_parentContainer;
+		
+		Commitable(ActionNodeFactory& factory, std::map<std::string, T*>& ActionNodeFactory*::container):
+			_parent(factory),
+			_parentContainer(container)
+		{}
+	};
+	
+	
+	template<class T, class ...TArgs>
+	std::enable_if_t<std::derived_from<T, ActionNode>, T*> Create(TArgs&& ...args)
+	{
+		_nodes.push_back(std::make_unique<T>(args...));
+		return static_cast<T*>(_nodes.back().get());
+	}
+
+	ActionNodeFactory operator+(const ActionNodeFactory& oth);
+	
+	VariableDeclarationNode* CreateVariable(const std::string& name, ActionNode* value = nullptr);
+	FunctionDeclarationNode* CreateFunction(const FunctionSignature& signature, ActionNode* body = nullptr);
+
+	VariableDeclarationNode* FindVariable(const std::string& name) const;
+	FunctionDeclarationNode* FindFunction(const std::string& name) const;
+	
+	std::vector<std::unique_ptr<ActionNode>>& Nodes() { return _nodes; }
+	std::map<std::string, FunctionDeclarationNode*>& Functions() { return _functions; }
+	std::map<std::string, VariableDeclarationNode*>& Variables() { return _variables; }
+	
+private:
+	std::vector<std::unique_ptr<ActionNode>> _nodes;
+	std::map<std::string, FunctionDeclarationNode*> _functions;
+	std::map<std::string, VariableDeclarationNode*> _variables;
+};
 
 class ActionNode
 {
@@ -145,7 +213,7 @@ class FunctionSignature
 {
 public:
 	FunctionSignature(const std::string& name, const std::vector<std::string>& args);
-
+	
 	const std::string& Name() const { return _name; }
 	const std::vector<std::string>& Args() const { return _arguments; }
 	
@@ -160,8 +228,15 @@ class FunctionDeclarationNode: public ActionNode
 public:
 	FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body);
 	
+	ActionNodeFactory& Factory() { return _factory; }
+	
+	ActionNode* Body() { return _body; }
+	void SetBody(ActionNode* body) { _body = body; }
+	
 	
 private:
 	FunctionSignature _signature;
 	ActionNode* _body;
+	ActionNodeFactory _factory;
 };
+}

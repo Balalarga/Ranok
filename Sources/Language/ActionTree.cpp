@@ -1,14 +1,9 @@
 ﻿#include "ActionTree.h"
 
-
+namespace Ranok
+{
 ActionTree::ActionTree()
 {
-	InitGlobalConstants();
-}
-
-void ActionTree::InitGlobalConstants()
-{
-	
 }
 
 void ActionTree::SetRoot(ActionNode* node)
@@ -17,37 +12,38 @@ void ActionTree::SetRoot(ActionNode* node)
 		_root = node;
 }
 
-bool ActionTree::AddFunction(FunctionDeclarationNode* func)
+bool ActionTree::AddGlobalFunction(FunctionDeclarationNode* func)
 {
-	if (!GetFunction(func->Name()))
+	if (!GetGlobalFunction(func->Name()))
 	{
-		_functions[func->Name()] = func;
+		_globalFunctions[func->Name()] = func;
 		return true;
 	}
 	
 	return false;
 }
 
-FunctionDeclarationNode* ActionTree::GetFunction(const std::string& name) const
+FunctionDeclarationNode* ActionTree::GetGlobalFunction(const std::string& name) const
 {
-	auto it = _functions.find(name);
-	if (it != _functions.end())
+	auto it = _globalFunctions.find(name);
+	if (it != _globalFunctions.end())
 		return it->second;
 	
 	return nullptr;
 }
 
-void ActionTree::AddVariable(VariableDeclarationNode* var)
+void ActionTree::AddGlobalVariable(VariableDeclarationNode* var)
 {
-	if (!GetVariable(var->Name()))
-		_variables[var->Name()] = var;
+	if (!GetGlobalVariable(var->Name()))
+		_globalVariables[var->Name()] = var;
 }
 
-VariableDeclarationNode* ActionTree::GetVariable(const std::string& name) const
+VariableDeclarationNode* ActionTree::GetGlobalVariable(const std::string& name) const
 {
-	auto it = _variables.find(name);
-	if (it != _variables.end())
+	auto it = _globalVariables.find(name);
+	if (it != _globalVariables.end())
 		return it->second;
 	
 	return nullptr;
+}
 }

@@ -1,7 +1,49 @@
 ﻿#include "ActionNode.h"
-
 #include <utility>
 
+namespace Ranok
+{
+ActionNodeFactory ActionNodeFactory::operator+(const ActionNodeFactory& oth)
+{
+	ActionNodeFactory factory;
+	for (auto& node: _nodes)
+		factory._nodes.push_back();
+	
+	return *this;
+}
+
+VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& name, ActionNode* value)
+{
+	if (VariableDeclarationNode* var = FindVariable(name))
+		return var;
+	
+	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;	
+}
+
+FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
+{
+	if (FunctionDeclarationNode* func = FindFunction(signature.Name()))
+		return func;
+	
+	return _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
+}
+
+VariableDeclarationNode* ActionNodeFactory::FindVariable(const std::string& name) const
+{
+	auto it = _variables.find(name);
+	if (it == _variables.end())
+		return nullptr;
+	
+	return it->second;
+}
+FunctionDeclarationNode* ActionNodeFactory::FindFunction(const std::string& name) const
+{
+	auto it = _functions.find(name);
+	if (it == _functions.end())
+		return nullptr;
+	
+	return it->second;
+}
 
 ActionNode::ActionNode(const std::string& name):
 	_name(name)
@@ -117,4 +159,4 @@ FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signat
 	_body(body)
 {
 }
-
+}

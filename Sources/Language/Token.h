@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace Ranok
+{
 struct Token
 {
 	enum class Type
@@ -80,3 +82,4 @@ struct Token
 		return TypeString(type);
 	}
 };
+}

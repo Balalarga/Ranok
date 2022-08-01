@@ -2,7 +2,7 @@
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 using namespace std;
-
+using namespace Ranok;
 
 void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string& depthDelim = "_", int depth = 0)
 {
@@ -33,10 +33,12 @@ int main(int argc, char** argv)
 	std::string text = R"(
 	// asgqwegqaweg
 	// agawgaesg
-	def s2(s3) { return s3 * 5; }
-    var s = (2 + 3) * 4;
-	return s +  5;
-	)";
+	def main(x, y, z)
+	{
+		def s2(s3) { return s3 * 5; }
+	    var s = (2 + 3) * 4;
+		return s +  5;
+	})";
 	
 	Lexer lexer(text);
 	Parser parser;
