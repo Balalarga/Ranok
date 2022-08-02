@@ -1,15 +1,20 @@
 ﻿#include "ActionNode.h"
-#include <utility>
 
 namespace Ranok
 {
 ActionNodeFactory ActionNodeFactory::operator+(const ActionNodeFactory& oth)
 {
 	ActionNodeFactory factory;
-	for (auto& node: _nodes)
-		factory._nodes.push_back();
+	// for (auto& node: _nodes)
+		// factory._nodes.push_back();
 	
-	return *this;
+	return factory;
+}
+
+std::shared_ptr<ActionNodeFactory::Commitable<FunctionDeclarationNode>> ActionNodeFactory::TempCreateFunction(
+	const FunctionSignature& signature)
+{
+	return std::make_shared<Commitable<FunctionDeclarationNode>>(signature.Name(), new FunctionDeclarationNode(signature, nullptr), _functions);
 }
 
 VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& name, ActionNode* value)
@@ -17,7 +22,7 @@ VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& na
 	if (VariableDeclarationNode* var = FindVariable(name))
 		return var;
 	
-	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;	
+	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
 }
 
 FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
@@ -88,8 +93,8 @@ std::queue<ActionNode*> ArrayDeclarationNode::WalkDown() const
 	return queue;
 }
 
-VariableNode::VariableNode(const std::string& name, VariableDeclarationNode* decl):
-	ActionNode(name),
+VariableNode::VariableNode(VariableDeclarationNode* decl):
+	ActionNode(decl->Name()),
 	_declaration(decl)
 {
 }
@@ -133,8 +138,9 @@ std::queue<ActionNode*> BinaryNode::WalkDown() const
 	return std::queue<ActionNode*>({ _left, _right });
 }
 
-FunctionCallNode::FunctionCallNode(const std::string& name, std::vector<ActionNode*> arguments):
-	ActionNode(name),
+FunctionCallNode::FunctionCallNode(FunctionDeclarationNode* root, std::vector<ActionNode*> arguments):
+	ActionNode("Call_" + root->Name()),
+	_root(root),
 	_arguments(std::move(arguments))
 {
 }
@@ -147,7 +153,7 @@ std::queue<ActionNode*> FunctionCallNode::WalkDown() const
 	return queue;
 }
 
-FunctionSignature::FunctionSignature(const std::string& name, const std::vector<std::string>& args):
+FunctionSignature::FunctionSignature(const std::string& name, const std::vector<ActionNode*>& args):
 	_name(name),
 	_arguments(args)
 {
@@ -158,5 +164,10 @@ FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signat
 	_signature(signature),
 	_body(body)
 {
+}
+
+std::queue<ActionNode*> FunctionDeclarationNode::WalkDown() const
+{
+	return std::queue<ActionNode*>{{_body}};
 }
 }

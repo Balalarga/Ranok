@@ -15,35 +15,36 @@ class VariableDeclarationNode;
 
 class ActionNodeFactory
 {
-	friend struct Commitable;
 public:
 	template<class T>
 	struct Commitable
 	{
+		Commitable(const std::string& name, T* val, std::map<std::string, T*>& container):
+			_name(name),
+			_val(val),
+			_parentContainer(container)
+		{
+		}
+		
 		~Commitable()
 		{
 			if (bCommit)
 			{
-				auto it = _parentContainer.find();
-				if ()
+				auto it = _parentContainer.find(_name);
+				if (it == _parentContainer.end())
+					_parentContainer.insert({_name, _val});
+				else
+					delete _val;
 			}
-				
 		}
-		void SetCommitState(bool bState)
-		{
-			bCommit = bState;
-		}
+		T* Commit() { bCommit = true; return _val; }
+		T* Get() { return _val; }
 		
 	private:
 		bool bCommit = false;
-		friend ActionNodeFactory;
-		ActionNodeFactory& _parent;
-		std::map<std::string, T*>& ActionNodeFactory*::_parentContainer;
-		
-		Commitable(ActionNodeFactory& factory, std::map<std::string, T*>& ActionNodeFactory*::container):
-			_parent(factory),
-			_parentContainer(container)
-		{}
+		std::string _name;
+		T* _val;
+		std::map<std::string, T*>& _parentContainer;
 	};
 	
 	
@@ -53,18 +54,21 @@ public:
 		_nodes.push_back(std::make_unique<T>(args...));
 		return static_cast<T*>(_nodes.back().get());
 	}
-
+	
 	ActionNodeFactory operator+(const ActionNodeFactory& oth);
+	
+	std::shared_ptr<Commitable<FunctionDeclarationNode>> TempCreateFunction(const FunctionSignature& signature);
 	
 	VariableDeclarationNode* CreateVariable(const std::string& name, ActionNode* value = nullptr);
 	FunctionDeclarationNode* CreateFunction(const FunctionSignature& signature, ActionNode* body = nullptr);
-
+	
 	VariableDeclarationNode* FindVariable(const std::string& name) const;
 	FunctionDeclarationNode* FindFunction(const std::string& name) const;
 	
 	std::vector<std::unique_ptr<ActionNode>>& Nodes() { return _nodes; }
 	std::map<std::string, FunctionDeclarationNode*>& Functions() { return _functions; }
 	std::map<std::string, VariableDeclarationNode*>& Variables() { return _variables; }
+	
 	
 private:
 	std::vector<std::unique_ptr<ActionNode>> _nodes;
@@ -154,7 +158,7 @@ private:
 class VariableNode: public ActionNode
 {
 public:
-	VariableNode(const std::string& name, VariableDeclarationNode* decl);
+	VariableNode(VariableDeclarationNode* decl);
 	
 	virtual std::queue<ActionNode*> WalkDown() const override;
 	
@@ -197,14 +201,18 @@ private:
 class FunctionCallNode: public ActionNode
 {
 public:
-	FunctionCallNode(const std::string& name, std::vector<ActionNode*> arguments);
+	FunctionCallNode(FunctionDeclarationNode* root, std::vector<ActionNode*> arguments);
 	
 	std::queue<ActionNode*> WalkDown() const override;
 	
 	const std::vector<ActionNode*>& Arguments() const { return _arguments; }
 	
+	FunctionDeclarationNode* Root() const { return _root; }
+	FunctionDeclarationNode* Root() { return _root; } 
+	
 	
 private:
+	FunctionDeclarationNode* _root;
 	std::vector<ActionNode*> _arguments;
 };
 
@@ -212,15 +220,17 @@ private:
 class FunctionSignature
 {
 public:
-	FunctionSignature(const std::string& name, const std::vector<std::string>& args);
+	FunctionSignature(const std::string& name, const std::vector<ActionNode*>& args = {});
 	
 	const std::string& Name() const { return _name; }
-	const std::vector<std::string>& Args() const { return _arguments; }
+	
+	std::vector<ActionNode*>& Args() { return _arguments; }
+	const std::vector<ActionNode*>& Args() const { return _arguments; }
 	
 	
 private:
 	std::string _name;
-	std::vector<std::string> _arguments;
+	std::vector<ActionNode*> _arguments;
 };
 
 class FunctionDeclarationNode: public ActionNode
@@ -228,7 +238,13 @@ class FunctionDeclarationNode: public ActionNode
 public:
 	FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body);
 	
+	std::queue<ActionNode*> WalkDown() const override;
+	
 	ActionNodeFactory& Factory() { return _factory; }
+	const ActionNodeFactory& Factory() const { return _factory; }
+	
+	FunctionSignature& Signature() { return _signature; }
+	const FunctionSignature& Signature() const { return _signature; }
 	
 	ActionNode* Body() { return _body; }
 	void SetBody(ActionNode* body) { _body = body; }

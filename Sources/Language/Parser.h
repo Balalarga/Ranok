@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <optional>
+#include <stack>
 
 #include "ActionTree.h"
 #include "Lexer.h"
@@ -23,22 +23,17 @@ public:
 	
 	
 protected:
-	ActionNode* ParseExpression(Lexer& lexer, ActionNodeFactory& factory);
+	ActionNode* ParseExpression(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParsePrimary(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseParentheses(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseIntNumber(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseDoubleNumber(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseBody(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, std::stack<ActionNodeFactory*>& factories, int priority = 0);
 	
-	ActionNode* ParsePrimary(Lexer& lexer, ActionNodeFactory& factory);
-	ActionNode* ParseWord(Lexer& lexer, ActionNodeFactory& factory);
-	ActionNode* ParseParentheses(Lexer& lexer, ActionNodeFactory& factory);
-	ActionNode* ParseIntNumber(Lexer& lexer, ActionNodeFactory& factory);
-	ActionNode* ParseDoubleNumber(Lexer& lexer, ActionNodeFactory& factory);
-	ActionNode* ParseBody(Lexer& lexer, ActionNodeFactory& factory);
-	
-	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, ActionNodeFactory& factory, int priority = 0);
-	
-	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, ActionNodeFactory& factory);
-	
-	std::optional<FunctionSignature> ParseFunctionSignature(Lexer& lexer);
-	FunctionDeclarationNode* ParseFunction(Lexer& lexer, ActionNodeFactory& factory);
-	
+	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, std::stack<ActionNodeFactory*>& factory);
+	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
 	
 	bool CheckToken(const Token& token, Token::Type expected);
 	
