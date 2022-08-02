@@ -21,50 +21,77 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 	{
 		coutPrefix();
 		cout << node->Name();
-		if (auto casted = dynamic_cast<const DoubleNumberNode*>(node))
+		if (dynamic_cast<const IntNumberNode*>(node))
 		{
-			cout << " = " << casted->Value();
+			cout << " (int)\n";
+			return;
 		}
-		else if (auto casted = dynamic_cast<const VariableNode*>(node))
+		else if (dynamic_cast<const DoubleNumberNode*>(node))
 		{
-			cout << " (var)";
+			cout << " (double)\n";
+			return;
 		}
-		else if (auto casted = dynamic_cast<const VariableDeclarationNode*>(node))
+		else if (dynamic_cast<const ArrayNode*>(node))
 		{
-			cout << " = varDecl: " << casted->Name() << "";
+			cout << " (array)";
+			return;
 		}
-		else if (auto casted = dynamic_cast<const FunctionDeclarationNode*>(node))
+		else if (auto castedVar = dynamic_cast<const VariableNode*>(node))
 		{
-			cout << " = funcDecl: " << casted->Name() << "(";
-			for (size_t i = 0; i < casted->Signature().Args().size(); ++i)
+			if (auto arrDecl = dynamic_cast<const ArrayDeclarationNode*>(castedVar->Declaration()))
 			{
-				cout << casted->Signature().Args()[i]->Name();
-				if (i+1 < casted->Signature().Args().size())
+				cout << "[" << arrDecl->Array()->Values().size() << "]\n";
+				return;
+			}
+			cout << " (var)\n";
+		}
+		else if (auto castedVarDecl = dynamic_cast<const VariableDeclarationNode*>(node))
+		{
+			cout << " = varDecl: " << castedVarDecl->Name();
+		}
+		else if (auto castedFunc = dynamic_cast<const FunctionDeclarationNode*>(node))
+		{
+			cout << " = funcDecl: " << castedFunc->Name() << "(";
+			for (size_t i = 0; i < castedFunc->Signature().Args().size(); ++i)
+			{
+				cout << castedFunc->Signature().Args()[i]->Name();
+				if (auto arr = dynamic_cast<ArrayDeclarationNode*>(castedFunc->Signature().Args()[i]))
+					cout << "[" << arr->Array()->Values().size() << "]";
+				if (i+1 < castedFunc->Signature().Args().size())
 					cout << ", ";
 			}
 			cout << ")";
 		}
-		else if (auto casted = dynamic_cast<const FunctionCallNode*>(node))
+		else if (auto castedFuncCall = dynamic_cast<const FunctionCallNode*>(node))
 		{
-			cout << "{" << casted->Root()->Name() << "(";
-			for (size_t i = 0; i < casted->Root()->Signature().Args().size(); ++i)
-			{
-				cout << casted->Root()->Signature().Args()[i]->Name();
-				if (i+1 < casted->Root()->Signature().Args().size())
-					cout << ", ";
-			}
-			cout << ")}\n";
+			cout << endl;
 			coutPrefix();
-			cout << "(";
-			std::queue<ActionNode*> children = node->WalkDown();
+			cout << "(\n";
+			std::queue<ActionNode*> children = castedFuncCall->WalkDown();
 			while (!children.empty())
 			{
-				cout << endl;
 				PrintNode(children.front(), depthDelimStep, depthDelim, depth + depthDelimStep);
 				children.pop();
 			}
 			coutPrefix();
 			cout << ")";
+			return;
+		}
+		else if (auto castedArr = dynamic_cast<const ArrayDeclarationNode*>(node))
+		{
+			cout << " = [" << castedArr->Array()->Values().size() << "]";
+			return;
+		}
+		else if (auto castedArrGet = dynamic_cast<const ArrayGetterNode*>(node))
+		{
+			cout << endl;
+			coutPrefix();
+			cout << "[\n";
+			std::queue<ActionNode*> children = castedArrGet->WalkDown();
+			if (!children.empty())
+				PrintNode(children.front(), depthDelimStep, depthDelim, depth + depthDelimStep);
+			coutPrefix();
+			cout << "]";
 			return;
 		}
 		
@@ -78,6 +105,7 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 			}
 			children.pop();
 		}
+		return;
 	}
 	else
 	{
@@ -89,7 +117,7 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 int main(int argc, char** argv)
 {
 	std::string filepath = RESOURCE_DIR"/NewCodeExample/CodeExample1.txt";
-	auto code = Ranok::Files::ReadFile(filepath);
+	std::optional<std::string> code = Files::ReadFile(filepath);
 	if (!code)
 	{
 		cout << RESOURCE_DIR << endl;
@@ -97,30 +125,24 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	
-	std::string text = R"(
-	// asgqwegqaweg
-	def s(se)
-	{
-		return se;
-	}
-	def main(space[3])
-	{
-		x = 5;
-		def sw(e) { return e + x }
-	    var s3 = s(2 + 3) * sw(4+5)
-		return s3 + x;
-	})";
-	
-	Lexer lexer(text);
+	Lexer lexer(code.value());
 	Parser parser;
 	ActionTree tree = parser.Parse(lexer);
 	if (parser.HasErrors())
 		for (const string& error : parser.Errors())
 			cout << error << endl;
+
+	for (auto& func: tree.GlobalFactory().Functions())
+	{
+		if (func.first == "main")
+			continue;
+		PrintNode(func.second);
+		cout << "\n\n";
+	}
 	
 	if (!tree.Root())
 	{
-		cout << "Root is empty\n";
+		cout << "No main function founded\n";
 		return 0;
 	}
 	cout << "Program:\n";

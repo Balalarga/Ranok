@@ -25,12 +25,28 @@ VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& na
 	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
 }
 
+ArrayDeclarationNode* ActionNodeFactory::CreateArrayVariable(const std::string& name, ArrayNode* arr)
+{
+	if (ArrayDeclarationNode* existed = FindArrayVariable(name))
+		return existed;
+	
+	return static_cast<ArrayDeclarationNode*>(_variables.insert({name, Create<ArrayDeclarationNode>(name, arr)}).first->second);
+}
+
 FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
 {
 	if (FunctionDeclarationNode* func = FindFunction(signature.Name()))
 		return func;
 	
 	return _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
+}
+
+ArrayDeclarationNode* ActionNodeFactory::FindArrayVariable(const std::string& name)
+{
+	if (auto var = dynamic_cast<ArrayDeclarationNode*>(FindVariable(name)))
+		return var;
+	
+	return nullptr;
 }
 
 VariableDeclarationNode* ActionNodeFactory::FindVariable(const std::string& name) const
@@ -53,7 +69,6 @@ FunctionDeclarationNode* ActionNodeFactory::FindFunction(const std::string& name
 ActionNode::ActionNode(const std::string& name):
 	_name(name)
 {
-	
 }
 
 std::queue<ActionNode*> ActionNode::WalkDown() const
@@ -73,19 +88,31 @@ IntNumberNode::IntNumberNode(int number):
 {
 }
 
-ArrayGetterNode::ArrayGetterNode(const std::string& name, ActionNode* id):
-	ActionNode(name),
+ArrayGetterNode::ArrayGetterNode(ArrayDeclarationNode* array, ActionNode* id):
+	ActionNode("ArrGetter_" + array->Name()),
+	_array(array),
 	_id(id)
 {
 }
 
-ArrayDeclarationNode::ArrayDeclarationNode(const std::string& name, std::vector<ActionNode*> values):
-	ActionNode(name),
-	_values(std::move(values))
+std::queue<ActionNode*> ArrayGetterNode::WalkDown() const
+{
+	return std::queue<ActionNode*>{ { _id } };
+}
+
+ArrayDeclarationNode::ArrayDeclarationNode(const std::string& name, ArrayNode* array):
+	VariableDeclarationNode(name, array)
 {
 }
 
-std::queue<ActionNode*> ArrayDeclarationNode::WalkDown() const
+ArrayNode::ArrayNode(const std::string& name, const std::vector<ActionNode*>& values):
+	ActionNode(name),
+	_values(values)
+{
+	
+}
+
+std::queue<ActionNode*> ArrayNode::WalkDown() const
 {
 	std::queue<ActionNode*> queue;
 	for (ActionNode* val : _values)

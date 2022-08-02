@@ -97,18 +97,13 @@ void Lexer::FillQueue(std::string_view code)
 		if (isdigit(code[0]))
 		{
 			int digitLen = 0;
-			bool bIsDouble = false;
 			while (isdigit(code[digitLen]))
 			{
 				if (code[++digitLen] == '.')
-				{
-					bIsDouble = true;
 					++digitLen;
-				}
 			}
 			
-			_lexemes.push({
-				bIsDouble ? Token::Type::DoubleNumber : Token::Type::IntNumber,
+			_lexemes.push({Token::Type::Number,
 				std::string(code.substr(0, digitLen)),
 				lineCounter,
 				columnCounter

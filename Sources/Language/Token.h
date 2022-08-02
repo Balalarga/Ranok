@@ -11,8 +11,7 @@ struct Token
 		EndFile,
 		NewLine,
 		Word,
-		IntNumber,
-		DoubleNumber,
+		Number,
 		Assign,
 		Comma,
 		Dot,
@@ -51,8 +50,7 @@ struct Token
 		case Type::EndFile: return "EndFile";
 		case Type::NewLine: return "NewLine";
 		case Type::Word: return "Word";
-		case Type::IntNumber: return "IntNumber";
-		case Type::DoubleNumber: return "FloatNumber";
+		case Type::Number: return "Number";
 		case Type::Assign: return "Assign";
 		case Type::Comma: return "Comma";
 		case Type::Dot: return "Dot";

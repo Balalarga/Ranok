@@ -1,13 +1,15 @@
 // asgqwegqaweg
-def s(se)
+
+
+def s(se[3])
 {
     return se;
 }
 
 def main(space[3])
 {
-    x = 5;
+    x = 2;
     def sw(e) { return e + x }
-    var s3 = s(2 + 3) * sw(4+5)
-    return s3 + x;
-};
+    var s3 = s(2 + 3) * sw(space);
+    return s3 + space[4];
+}

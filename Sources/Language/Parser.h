@@ -36,6 +36,7 @@ protected:
 	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
 	
 	bool CheckToken(const Token& token, Token::Type expected);
+	std::string DumpToken(const Token& token);
 	
 	
 private:
