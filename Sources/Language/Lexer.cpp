@@ -97,11 +97,7 @@ void Lexer::FillQueue(std::string_view code)
 		if (isdigit(code[0]))
 		{
 			int digitLen = 0;
-			while (isdigit(code[digitLen]))
-			{
-				if (code[++digitLen] == '.')
-					++digitLen;
-			}
+			while (isdigit(code[++digitLen]));
 			
 			_lexemes.push({Token::Type::Number,
 				std::string(code.substr(0, digitLen)),
