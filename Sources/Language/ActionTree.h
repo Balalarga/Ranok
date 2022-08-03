@@ -8,25 +8,17 @@ namespace Ranok
 class ActionTree
 {
 public:
-	ActionTree();
+	ActionTree() = default;
 	
-	const ActionNode* Root() { return _root; }
-	void SetRoot(ActionNode* node);
-	
-	bool AddGlobalFunction(FunctionDeclarationNode* func);
-	FunctionDeclarationNode* GetGlobalFunction(const std::string& name) const;
-	
-	void AddGlobalVariable(VariableDeclarationNode* var);
-	VariableDeclarationNode* GetGlobalVariable(const std::string& name) const;
+	const ActionNode* Root() const { return _root; }
+	void SetRoot(ActionNode* node) { if (node) _root = node; }
 	
 	ActionNodeFactory& GlobalFactory() { return _globalFactory; }
+	const ActionNodeFactory& GlobalFactory() const { return _globalFactory; }
 	
 	
 private:
 	ActionNodeFactory _globalFactory;
 	ActionNode* _root{};
-	
-	std::map<std::string, FunctionDeclarationNode*> _globalFunctions;
-	std::map<std::string, VariableDeclarationNode*> _globalVariables;
 };
 }

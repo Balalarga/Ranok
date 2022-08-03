@@ -294,8 +294,9 @@ public:
 	
 	FunctionSignature& Signature() { return _signature; }
 	const FunctionSignature& Signature() const { return _signature; }
-	
+
 	ActionNode* Body() { return _body; }
+	const ActionNode* Body() const { return _body; }
 	void SetBody(ActionNode* body) { _body = body; }
 	
 	

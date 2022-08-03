@@ -38,24 +38,18 @@ ActionTree Parser::Parse(Lexer lexer)
 			if (StringUtils::Compare(lexer.Peek().string, "def"))
 			{
 				lexer.Pop();
-				if (FunctionDeclarationNode* func = ParseFunction(lexer, factoryStack))
-					tree.AddGlobalFunction(func);
-				else
+				if (!ParseFunction(lexer, factoryStack))
 					break;
 			}
 			else if (StringUtils::Compare(lexer.Peek().string, "var"))
 			{
 				lexer.Pop();
-				if (VariableDeclarationNode* var = ParseVariableDeclaration(lexer, factoryStack))
-					tree.AddGlobalVariable(var);
-				else
+				if (!ParseVariableDeclaration(lexer, factoryStack))
 					break;
 			}
 			else
 			{
-				if (VariableDeclarationNode* var = ParseVariableDeclaration(lexer, factoryStack))
-					tree.AddGlobalVariable(var);
-				else
+				if (!ParseVariableDeclaration(lexer, factoryStack))
 					break;
 			}
 			
@@ -71,7 +65,7 @@ ActionTree Parser::Parse(Lexer lexer)
 	if (!factoryStack.empty())
 		_errors.push_back("Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size()));
 	
-	if (FunctionDeclarationNode* mainFunc = tree.GetGlobalFunction("main"))
+	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction("main"))
 		tree.SetRoot(mainFunc);
 	
 	return tree;

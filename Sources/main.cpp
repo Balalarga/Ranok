@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
+#include "Language/Generators/IGenerator.h"
 #include "Utils/FileUtils.h"
 using namespace std;
 using namespace Ranok;
@@ -11,7 +12,7 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 	{
 		for (int i = 0; i < depth; ++i)
 		{
-			if (i % depthDelimStep == 0)
+		if (i % depthDelimStep == 0)
 				cout << "|";
 			else
 				cout << depthDelim;
@@ -121,22 +122,25 @@ int main(int argc, char** argv)
 	if (parser.HasErrors())
 		for (const string& error : parser.Errors())
 			cout << error << endl;
-
-	for (auto& func: tree.GlobalFactory().Functions())
-	{
-		if (func.first == "main")
-			continue;
-		PrintNode(func.second);
-		cout << "\n\n";
-	}
-	
 	if (!tree.Root())
 	{
 		cout << "No main function founded\n";
-		return 0;
+		return -1;
 	}
-	cout << "Program:\n";
-	PrintNode(tree.Root());
+	// for (auto& func: tree.GlobalFactory().Functions())
+	// {
+		// if (func.first == "main")
+			// continue;
+		// PrintNode(func.second);
+		// cout << "\n\n";
+	// }
+	// cout << "Program:\n";
+	// PrintNode(tree.Root());
+
+	CppGenerator gen;
+	auto res =  gen.Generate(tree);
+	if (res.has_value())
+		cout << res.value();
 	
 	return 0;
 }
