@@ -175,7 +175,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 			if (!CheckToken(lexer.Take(), Token::Type::BracketClose))
 				return nullptr;
 			
-			func->Get()->Signature().Args().push_back(funcFactory.CreateArrayVariable(argName.string, funcFactory.Create<ArrayNode>(argName.string, std::vector<ActionNode*>(arrSize, nullptr))));
+			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName.string, funcFactory.Create<ArrayNode>(argName.string, std::vector<ActionNode*>(arrSize, nullptr))));
 		}
 	}
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisClose) || !CheckToken(lexer.Take(), Token::Type::BraceOpen))
@@ -268,7 +268,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 			args.push_back(arg);
 			if (lexer.Peek().type == Token::Type::ParenthesisClose)
 				break;
-
+			
 			CheckToken(lexer.Take(), Token::Type::Comma);
 		}
 		lexer.Pop();
@@ -278,6 +278,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 			if (FunctionDeclarationNode* funcDecl = (*i)->FindFunction(name.string))
 				return factories.top()->Create<FunctionCallNode>(funcDecl, args);
 		}
+		_errors.push_back("Function "+ name.string +" not found");
 		return nullptr;
 	}
 	
@@ -294,9 +295,11 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 		std::deque<ActionNodeFactory*> factoriesRaw = factories._Get_container();
 		for (auto i = factoriesRaw.rbegin(); i != factoriesRaw.rend(); ++i)
 		{
-			if (ArrayDeclarationNode* arrDecl = dynamic_cast<ArrayDeclarationNode*>((*i)->FindVariable(name.string)))
-				return factories.top()->Create<ArrayGetterNode>(arrDecl, node);
+			VariableDeclarationNode* var = (*i)->FindVariable(name.string);
+			if (var && var->Type() == VariableType::Array)
+				return factories.top()->Create<ArrayGetterNode>(var, node);
 		}
+		_errors.push_back("Array variable "+ name.string +" not found");
 		return nullptr;
 	}
 	
@@ -307,6 +310,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 			return factories.top()->Create<VariableNode>(varDecl);
 	}
 	
+	_errors.push_back("Variable "+ name.string +" not found");
 	return nullptr;
 }
 

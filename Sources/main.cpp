@@ -31,18 +31,13 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 			cout << " (double)\n";
 			return;
 		}
-		else if (dynamic_cast<const ArrayNode*>(node))
+		else if (auto arr = dynamic_cast<const ArrayNode*>(node))
 		{
-			cout << " (array)";
+			cout << " [" << arr->Values().size() << "]\n";
 			return;
 		}
 		else if (auto castedVar = dynamic_cast<const VariableNode*>(node))
 		{
-			if (auto arrDecl = dynamic_cast<const ArrayDeclarationNode*>(castedVar->Declaration()))
-			{
-				cout << "[" << arrDecl->Array()->Values().size() << "]\n";
-				return;
-			}
 			cout << " (var)\n";
 		}
 		else if (auto castedVarDecl = dynamic_cast<const VariableDeclarationNode*>(node))
@@ -55,8 +50,8 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 			for (size_t i = 0; i < castedFunc->Signature().Args().size(); ++i)
 			{
 				cout << castedFunc->Signature().Args()[i]->Name();
-				if (auto arr = dynamic_cast<ArrayDeclarationNode*>(castedFunc->Signature().Args()[i]))
-					cout << "[" << arr->Array()->Values().size() << "]";
+				if (ArrayNode* arr = castedFunc->Signature().Args()[i]->As<ArrayNode>())
+					cout << "[" << arr->Values().size() << "]";
 				if (i+1 < castedFunc->Signature().Args().size())
 					cout << ", ";
 			}
@@ -75,11 +70,6 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 			}
 			coutPrefix();
 			cout << ")";
-			return;
-		}
-		else if (auto castedArr = dynamic_cast<const ArrayDeclarationNode*>(node))
-		{
-			cout << " = [" << castedArr->Array()->Values().size() << "]";
 			return;
 		}
 		else if (auto castedArrGet = dynamic_cast<const ArrayGetterNode*>(node))

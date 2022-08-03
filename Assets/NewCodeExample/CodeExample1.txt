@@ -11,5 +11,5 @@ def main(space[3])
     x = 2;
     def sw(e) { return e + x }
     var s3 = s(2 + 3) * sw(space);
-    return s3 + space[4];
+    return s3 + space[2];
 }

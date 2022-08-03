@@ -25,14 +25,6 @@ VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& na
 	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
 }
 
-ArrayDeclarationNode* ActionNodeFactory::CreateArrayVariable(const std::string& name, ArrayNode* arr)
-{
-	if (ArrayDeclarationNode* existed = FindArrayVariable(name))
-		return existed;
-	
-	return static_cast<ArrayDeclarationNode*>(_variables.insert({name, Create<ArrayDeclarationNode>(name, arr)}).first->second);
-}
-
 FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
 {
 	if (FunctionDeclarationNode* func = FindFunction(signature.Name()))
@@ -41,9 +33,9 @@ FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignatu
 	return _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
 }
 
-ArrayDeclarationNode* ActionNodeFactory::FindArrayVariable(const std::string& name)
+ArrayNode* ActionNodeFactory::FindArrayVariable(const std::string& name)
 {
-	if (auto var = dynamic_cast<ArrayDeclarationNode*>(FindVariable(name)))
+	if (auto var = dynamic_cast<ArrayNode*>(FindVariable(name)->Value()))
 		return var;
 	
 	return nullptr;
@@ -88,9 +80,9 @@ IntNumberNode::IntNumberNode(int number):
 {
 }
 
-ArrayGetterNode::ArrayGetterNode(ArrayDeclarationNode* array, ActionNode* id):
-	ActionNode("ArrGetter_" + array->Name()),
-	_array(array),
+ArrayGetterNode::ArrayGetterNode(VariableDeclarationNode* var, ActionNode* id):
+	ActionNode(var->Name()),
+	_var(var),
 	_id(id)
 {
 }
@@ -100,16 +92,10 @@ std::queue<ActionNode*> ArrayGetterNode::WalkDown() const
 	return std::queue<ActionNode*>{ { _id } };
 }
 
-ArrayDeclarationNode::ArrayDeclarationNode(const std::string& name, ArrayNode* array):
-	VariableDeclarationNode(name, array)
-{
-}
-
 ArrayNode::ArrayNode(const std::string& name, const std::vector<ActionNode*>& values):
 	ActionNode(name),
 	_values(values)
 {
-	
 }
 
 std::queue<ActionNode*> ArrayNode::WalkDown() const
@@ -135,6 +121,29 @@ VariableDeclarationNode::VariableDeclarationNode(const std::string& name, Action
 	ActionNode(name),
 	_value(value)
 {
+	if (dynamic_cast<ArrayNode*>(_value))
+	{
+		_type = VariableType::Array;
+	}
+	else if (dynamic_cast<DoubleNumberNode*>(_value))
+	{
+		_type = VariableType::Double;
+	}
+	else
+	{
+		auto queue = _value->WalkDown();
+		while(!queue.empty())
+		{
+			if (dynamic_cast<ArrayNode*>(queue.front()))
+			{
+				_type = VariableType::Array;
+				break;
+			}
+			if (dynamic_cast<DoubleNumberNode*>(queue.front()))
+				_type = VariableType::Double;
+			queue.pop();
+		}
+	}
 }
 
 std::queue<ActionNode*> VariableDeclarationNode::WalkDown() const
@@ -166,7 +175,7 @@ std::queue<ActionNode*> BinaryNode::WalkDown() const
 }
 
 FunctionCallNode::FunctionCallNode(FunctionDeclarationNode* root, std::vector<ActionNode*> arguments):
-	ActionNode("Call_" + root->Name()),
+	ActionNode(root->Name()),
 	_root(root),
 	_arguments(std::move(arguments))
 {
@@ -180,7 +189,7 @@ std::queue<ActionNode*> FunctionCallNode::WalkDown() const
 	return queue;
 }
 
-FunctionSignature::FunctionSignature(const std::string& name, const std::vector<ActionNode*>& args):
+FunctionSignature::FunctionSignature(const std::string& name, const std::vector<VariableDeclarationNode*>& args):
 	_name(name),
 	_arguments(args)
 {

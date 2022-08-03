@@ -8,7 +8,6 @@
 namespace Ranok
 {
 class ArrayNode;
-class ArrayDeclarationNode;
 class FunctionSignature;
 class FunctionDeclarationNode;
 class ActionNode;
@@ -60,11 +59,10 @@ public:
 	
 	std::shared_ptr<Commitable<FunctionDeclarationNode>> TempCreateFunction(const FunctionSignature& signature);
 	
-	ArrayDeclarationNode* CreateArrayVariable(const std::string& name, ArrayNode* arr = nullptr);
 	VariableDeclarationNode* CreateVariable(const std::string& name, ActionNode* value = nullptr);
 	FunctionDeclarationNode* CreateFunction(const FunctionSignature& signature, ActionNode* body = nullptr);
 	
-	ArrayDeclarationNode* FindArrayVariable(const std::string& name);
+	ArrayNode* FindArrayVariable(const std::string& name);
 	VariableDeclarationNode* FindVariable(const std::string& name) const;
 	FunctionDeclarationNode* FindFunction(const std::string& name) const;
 	
@@ -120,19 +118,6 @@ private:
 	int _value = 0;
 };
 
-class VariableDeclarationNode: public ActionNode
-{
-public:
-	VariableDeclarationNode(const std::string& name, ActionNode* value);
-	
-	virtual std::queue<ActionNode*> WalkDown() const override;
-
-	const ActionNode* Value() const { return _value; }
-	
-private:
-	ActionNode* _value;
-};
-
 class ArrayNode: public ActionNode
 {
 public:
@@ -147,30 +132,71 @@ private:
 	std::vector<ActionNode*> _values;
 };
 
-class ArrayDeclarationNode: public VariableDeclarationNode
+enum class VariableType
+{
+	None, Int, Double, Array
+};
+
+class VariableDeclarationNode: public ActionNode
 {
 public:
-	ArrayDeclarationNode(const std::string& name, ArrayNode* array);
+	VariableDeclarationNode(const std::string& name, ActionNode* value);
 	
-	const ArrayNode* Array() const { return static_cast<const ArrayNode*>(Value()); }
+	virtual std::queue<ActionNode*> WalkDown() const override;
+
+	template<class T>
+	T* As() const
+	{
+		return nullptr;
+	}
+	template<>
+	ArrayNode* As() const
+	{
+		if (_type == VariableType::Array)
+			return static_cast<ArrayNode*>(_value);
+		return nullptr;
+	}
+	template<>
+	DoubleNumberNode* As() const
+	{
+		if (_type == VariableType::Double)
+			return static_cast<DoubleNumberNode*>(_value);
+		return nullptr;
+	}
+	template<>
+	IntNumberNode* As() const
+	{
+		if (_type == VariableType::Int)
+			return static_cast<IntNumberNode*>(_value);
+		return nullptr;
+	}
+	
+	const ActionNode* Value() const { return _value; }
+	ActionNode* Value() { return _value; }
+	
+	VariableType Type() const { return _type; }
+	
+private:
+	ActionNode* _value;
+	VariableType _type;
 };
 
 class ArrayGetterNode: public ActionNode
 {
 public:
-	ArrayGetterNode(ArrayDeclarationNode* array, ActionNode* id);
+	ArrayGetterNode(VariableDeclarationNode* var, ActionNode* id);
 	
 	virtual std::queue<ActionNode*> WalkDown() const override;
 	
 	ActionNode* Id() { return _id; }
 	const ActionNode* Id() const { return _id; }
 	
-	ArrayDeclarationNode* Array() { return _array; }
-	const ArrayDeclarationNode* Array() const { return _array; }
+	VariableDeclarationNode* Var() { return _var; }
+	const VariableDeclarationNode* Var() const { return _var; }
 	
 	
 private:
-	ArrayDeclarationNode* _array;
+	VariableDeclarationNode* _var;
 	ActionNode* _id;
 };
 
@@ -243,17 +269,17 @@ private:
 class FunctionSignature
 {
 public:
-	FunctionSignature(const std::string& name, const std::vector<ActionNode*>& args = {});
+	FunctionSignature(const std::string& name, const std::vector<VariableDeclarationNode*>& args = {});
 	
 	const std::string& Name() const { return _name; }
 	
-	std::vector<ActionNode*>& Args() { return _arguments; }
-	const std::vector<ActionNode*>& Args() const { return _arguments; }
+	std::vector<VariableDeclarationNode*>& Args() { return _arguments; }
+	const std::vector<VariableDeclarationNode*>& Args() const { return _arguments; }
 	
 	
 private:
 	std::string _name;
-	std::vector<ActionNode*> _arguments;
+	std::vector<VariableDeclarationNode*> _arguments;
 };
 
 class FunctionDeclarationNode: public ActionNode
