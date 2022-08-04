@@ -195,6 +195,8 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 			
 			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName.string, funcFactory.Create<ArrayNode>(argName.string, std::vector<ActionNode*>(arrSize, nullptr))));
 		}
+		if (lexer.Peek().type == Token::Type::Comma)
+			lexer.Pop();
 	}
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisClose) || !CheckToken(lexer.Take(), Token::Type::BraceOpen))
 		return nullptr;

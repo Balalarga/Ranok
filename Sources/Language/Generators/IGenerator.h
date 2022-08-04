@@ -22,72 +22,20 @@ public:
 		}
         
 		std::stringstream code;
-		std::stack<const ActionNodeFactory*> scopeStack{ {&tree.GlobalFactory()} };
-		PreprocessNode(tree.Root(), scopeStack);
-		while (!_declarationStack.empty())
+		std::queue<const std::vector<ActionNode*>*> declarationOrder({&tree.GlobalFactory().DeclarationOrder()});
+		while (!declarationOrder.empty())
 		{
-			ProcessNode(code, _declarationStack.top(), scopeStack);
-			_declarationStack.pop();
+			for (ActionNode* const& node : *declarationOrder.front())
+				ProcessNode(code, node);
+			declarationOrder.pop();
 		}
-		return code.str();
-		ProcessNode(code, tree.Root(), scopeStack);
-		scopeStack.pop();
-		
-		if (HasErrors() || !scopeStack.empty())
-			return {};
-		
 		return code.str();
 	}
 	
 	const std::vector<std::string>& Errors() const { return _errors; }
 	bool HasErrors() const { return !_errors.empty(); }
-    
 	
-	void PreprocessNode(const ActionNode* node, std::stack<const ActionNodeFactory*>& factories)
-	{
-		if (auto var = dynamic_cast<const VariableNode*>(node))
-		{
-			PreprocessNode(var->Declaration(), factories);
-		}
-		else if (auto varDecl = dynamic_cast<const VariableDeclarationNode*>(node))
-		{
-			if (!_declarationSet.contains(varDecl))
-			{
-				_declarationSet.emplace(varDecl);
-				_declarationStack.push(varDecl);
-			}
-		}
-		else if (auto func = dynamic_cast<const FunctionCallNode*>(node))
-		{
-			factories.push(&func->Root()->Factory());
-			PreprocessNode(func->Root(), factories);
-			for (ActionNode* const& arg : func->Arguments())
-				PreprocessNode(arg, factories);
-			factories.pop();
-		}
-		else if (auto funcDecl = dynamic_cast<const FunctionDeclarationNode*>(node))
-		{
-			if (!_declarationSet.contains(funcDecl))
-			{
-				_declarationSet.emplace(funcDecl);
-				_declarationStack.push(funcDecl);
-				factories.push(&funcDecl->Factory());
-				PreprocessNode(funcDecl->Body(), factories);
-				factories.pop();
-			}
-		}
-		else
-		{
-			auto children = node->WalkDown();
-			while (!children.empty())
-			{
-				PreprocessNode(children.front(), factories);
-				children.pop();
-			}
-		}
-	}
-	
-	virtual void ProcessNode(std::stringstream& outCode, const ActionNode* node, std::stack<const ActionNodeFactory*>& factories) = 0;
+	virtual void ProcessNode(std::stringstream& outCode, const ActionNode* node) = 0;
 	
 	
 protected:
@@ -96,46 +44,88 @@ protected:
 	
 private:
 	std::vector<std::string> _errors;
-	std::set<std::string> _declaredNodes;
-	std::stack<const ActionNode*> _declarationStack;
-	std::set<const ActionNode*> _declarationSet;
 };
 
 
 class CppGenerator: public IGenerator
 {
 public:
-	void ProcessNode(std::stringstream& outCode, const ActionNode* node, std::stack<const ActionNodeFactory*>& factories) override
+	void ProcessNode(std::stringstream& outCode, const ActionNode* node) override
 	{
-		if (auto var = dynamic_cast<const VariableDeclarationNode*>(node))
+		if (!node)
 		{
-			if (var->Type() == VariableType::Int)
+			outCode << "0";
+			return;
+		}
+		else if (auto varDecl = dynamic_cast<const VariableDeclarationNode*>(node))
+		{
+			if (varDecl->Type() == VariableType::Int)
 			{
-				outCode << fmt::format("int {} = ", var->Name());
+				outCode << fmt::format("int {}", varDecl->Name());
 			}
-			else if (var->Type() == VariableType::Double)
+			else if (varDecl->Type() == VariableType::Double)
 			{
-				outCode << fmt::format("double {} = ", var->Name());
+				outCode << fmt::format("double {}", varDecl->Name());
 			}
-			else if (auto asArr = var->As<ArrayNode>())
+			else if (auto asArr = varDecl->As<ArrayNode>())
 			{
-				outCode << fmt::format("double {}[{}] = ", asArr->Name(), asArr->Values().size());
+				outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
 			}
+
+			if (varDecl->Value() != nullptr)
+			{
+				outCode << " = ";
+				ProcessNode(outCode, varDecl->Value());
+				outCode << ";\n";
+			}
+		}
+		else if (auto arr = dynamic_cast<const ArrayNode*>(node))
+		{
+			outCode << "{";
+			for (size_t i = 0; i < arr->Values().size(); ++i)
+			{
+				ProcessNode(outCode, arr->Values()[i]);
+				if (i+1 != arr->Values().size())
+					outCode << ", ";
+			}
+			outCode << "}";
 		}
 		else if (auto func = dynamic_cast<const FunctionDeclarationNode*>(node))
 		{
 			outCode << fmt::format("double {}(", func->Name());
 			for (size_t i = 0; i < func->Signature().Args().size(); ++i)
 			{
-				outCode << func->Signature().Args()[i]->Name();
+				if (func->Signature().Args()[i]->Type() == VariableType::Int)
+				{
+					outCode << fmt::format("int {}", func->Signature().Args()[i]->Name());
+				}
+				else if (func->Signature().Args()[i]->Type() == VariableType::Double)
+				{
+					outCode << fmt::format("double {}", func->Signature().Args()[i]->Name());
+				}
+				else if (auto asArr = func->Signature().Args()[i]->As<ArrayNode>())
+				{
+					outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
+				}
 				if (i+1 != func->Signature().Args().size())
 					outCode << ", ";
 			}
 			outCode << ")\n{\n";
-			factories.push(&func->Factory());
-			ProcessNode(outCode, func->Body(), factories);
-			factories.pop();
-			outCode << "}";
+			for (size_t i = func->Signature().Args().size(); i < func->Factory().DeclarationOrder().size(); ++i)
+				ProcessNode(outCode, func->Factory().DeclarationOrder()[i]);
+			outCode << "return ";
+			ProcessNode(outCode, func->Body());
+			outCode << ";\n}\n";
+		}
+		else
+		{
+			outCode << node->Name();
+			std::queue<ActionNode*> queue = node->WalkDown();
+			while (!queue.empty())
+			{
+				ProcessNode(outCode, queue.front());
+				queue.pop();
+			}
 		}
 	}
 };

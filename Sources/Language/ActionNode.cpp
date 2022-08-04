@@ -2,35 +2,41 @@
 
 namespace Ranok
 {
-ActionNodeFactory ActionNodeFactory::operator+(const ActionNodeFactory& oth)
-{
-	ActionNodeFactory factory;
-	// for (auto& node: _nodes)
-		// factory._nodes.push_back();
-	
-	return factory;
-}
-
 std::shared_ptr<ActionNodeFactory::Commitable<FunctionDeclarationNode>> ActionNodeFactory::TempCreateFunction(
 	const FunctionSignature& signature)
 {
-	return std::make_shared<Commitable<FunctionDeclarationNode>>(signature.Name(), new FunctionDeclarationNode(signature, nullptr), _functions);
+	return std::make_shared<Commitable<FunctionDeclarationNode>>(
+		signature.Name(),
+		new FunctionDeclarationNode(signature, nullptr),
+		[this](const std::string& name, FunctionDeclarationNode* func)
+		{
+			if (_functions.end() != _functions.find(name))
+				return true;
+			
+			_functions.insert({name, func});
+			_declarationOrder.push_back(func);
+			return false;
+		});
 }
 
 VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& name, ActionNode* value)
 {
 	if (VariableDeclarationNode* var = FindVariable(name))
 		return var;
-	
-	return _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
+
+	VariableDeclarationNode* var = _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
+	_declarationOrder.push_back(var);
+	return var;
 }
 
 FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
 {
 	if (FunctionDeclarationNode* func = FindFunction(signature.Name()))
 		return func;
-	
-	return _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
+
+	FunctionDeclarationNode* func = _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
+	_declarationOrder.push_back(func);
+	return func;
 }
 
 ArrayNode* ActionNodeFactory::FindArrayVariable(const std::string& name)
