@@ -1,7 +1,11 @@
+
 *.user*
+
+.idea
+.cache
+
 build/
 release/
-.idea
 VsProject/
 Debug/
 Release/
