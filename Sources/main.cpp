@@ -6,15 +6,17 @@
 using namespace std;
 using namespace Ranok;
 
+int maxDepth = 3;
+
 void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string& depthDelim = " ", int depth = 0)
 {
 	auto coutPrefix = [&]
 	{
 		for (int i = 0; i < depth; ++i)
 		{
-		if (i % depthDelimStep == 0)
+		    if (i % depthDelimStep == 0)
 				cout << "|";
-			else
+            else
 				cout << depthDelim;
 		}
 	};
@@ -22,24 +24,26 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 	{
 		coutPrefix();
 		cout << node->Name();
-		if (dynamic_cast<const IntNumberNode*>(node))
-		{
-			cout << " (int)\n";
-			return;
-		}
-		else if (dynamic_cast<const DoubleNumberNode*>(node))
+		if (dynamic_cast<const DoubleNumberNode*>(node))
 		{
 			cout << " (double)\n";
 			return;
 		}
 		else if (auto arr = dynamic_cast<const ArrayNode*>(node))
 		{
-			cout << " [" << arr->Values().size() << "]\n";
+			cout << " [" << arr->Values().size() << "]:\n";
+			for (auto& i: arr->Values())
+			{
+				PrintNode(i, depthDelimStep, depthDelim, depth + depthDelimStep);
+				cout << ", ";
+			}
 			return;
 		}
 		else if (auto castedVar = dynamic_cast<const VariableNode*>(node))
 		{
 			cout << " (var)\n";
+			if (depth >= maxDepth)
+				return;
 		}
 		else if (auto castedVarDecl = dynamic_cast<const VariableDeclarationNode*>(node))
 		{
@@ -51,8 +55,12 @@ void PrintNode(const ActionNode* node, int depthDelimStep = 2, const std::string
 			for (size_t i = 0; i < castedFunc->Signature().Args().size(); ++i)
 			{
 				cout << castedFunc->Signature().Args()[i]->Name();
-				if (ArrayNode* arr = castedFunc->Signature().Args()[i]->As<ArrayNode>())
+
+				if (castedFunc->Signature().Args()[i]->Type() == VariableType::Array)
+                {
+                    const ArrayNode* arr = static_cast<const ArrayNode*>(castedFunc->Signature().Args()[i]->Value());
 					cout << "[" << arr->Values().size() << "]";
+                }
 				if (i+1 < castedFunc->Signature().Args().size())
 					cout << ", ";
 			}
@@ -111,7 +119,6 @@ int main(int argc, char** argv)
 	std::optional<std::string> code = Files::ReadFile(filepath);
 	if (!code)
 	{
-		cout << RESOURCE_DIR << endl;
 		cout << "File at " << filepath << " not found\n";
 		return -1;
 	}
@@ -127,20 +134,23 @@ int main(int argc, char** argv)
 		cout << "No main function founded\n";
 		return -1;
 	}
-	// for (auto& func: tree.GlobalFactory().Functions())
-	// {
-		// if (func.first == "main")
-			// continue;
-		// PrintNode(func.second);
-		// cout << "\n\n";
-	// }
-	// cout << "Program:\n";
-	// PrintNode(tree.Root());
+	for (auto& func: tree.GlobalFactory().Functions())
+	{
+		if (func.first == "main")
+			continue;
+		PrintNode(func.second);
+		cout << "\n\n";
+	}
+	cout << "Program:\n";
+	PrintNode(tree.Root());
+	cout << "\n\n\n";
 
 	CppGenerator gen;
 	auto res =  gen.Generate(tree);
 	if (res.has_value())
-		cout << res.value();
+		cout << "Result:\n" << res.value() << endl;
+    else
+        cout << "Generation failed\n";
 	
 	return 0;
 }

@@ -80,12 +80,6 @@ DoubleNumberNode::DoubleNumberNode(double number):
 {
 }
 
-IntNumberNode::IntNumberNode(int number):
-	ActionNode(std::to_string(number)),
-	_value(number)
-{
-}
-
 ArrayGetterNode::ArrayGetterNode(VariableDeclarationNode* var, ActionNode* id):
 	ActionNode(var->Name()),
 	_var(var),

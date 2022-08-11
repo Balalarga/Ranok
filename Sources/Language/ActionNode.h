@@ -107,19 +107,6 @@ private:
 	double _value = 0.0;
 };
 
-
-class IntNumberNode: public ActionNode
-{
-public:
-	IntNumberNode(int number);
-	
-	int Value() const { return _value; }
-	
-	
-private:
-	int _value = 0;
-};
-
 class ArrayNode: public ActionNode
 {
 public:
@@ -136,7 +123,7 @@ private:
 
 enum class VariableType
 {
-	None, Int, Double, Array
+	Double, Array
 };
 
 class VariableDeclarationNode: public ActionNode
@@ -145,33 +132,6 @@ public:
 	VariableDeclarationNode(const std::string& name, ActionNode* value);
 	
 	virtual std::queue<ActionNode*> WalkDown() const override;
-
-	template<class T>
-	T* As() const
-	{
-		return nullptr;
-	}
-	template<>
-	ArrayNode* As() const
-	{
-		if (_type == VariableType::Array)
-			return static_cast<ArrayNode*>(_value);
-		return nullptr;
-	}
-	template<>
-	DoubleNumberNode* As() const
-	{
-		if (_type == VariableType::Double)
-			return static_cast<DoubleNumberNode*>(_value);
-		return nullptr;
-	}
-	template<>
-	IntNumberNode* As() const
-	{
-		if (_type == VariableType::Int)
-			return static_cast<IntNumberNode*>(_value);
-		return nullptr;
-	}
 	
 	const ActionNode* Value() const { return _value; }
 	ActionNode* Value() { return _value; }
@@ -307,4 +267,5 @@ private:
 	ActionNode* _body;
 	ActionNodeFactory _factory;
 };
+
 }

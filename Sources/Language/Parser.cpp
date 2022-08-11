@@ -30,7 +30,7 @@ ActionTree Parser::Parse(Lexer lexer)
 	_errors.clear();
 	
 	ActionTree tree;
-	std::stack<ActionNodeFactory*> factoryStack( {&tree.GlobalFactory()} );
+	std::deque<ActionNodeFactory*> factoryStack( {&tree.GlobalFactory()} );
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
 		if (CheckToken(lexer.Peek(), Token::Type::Word))
@@ -61,7 +61,7 @@ ActionTree Parser::Parse(Lexer lexer)
 			break;
 		}
 	}
-	factoryStack.pop();
+	factoryStack.pop_front();
 	if (!factoryStack.empty())
 		_errors.push_back("Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size()));
 	
@@ -106,17 +106,17 @@ bool Parser::CheckToken(const Token& token, Token::Type expected)
 
 void Parser::DumpTokenError(const std::string& errFormat, const Token& token)
 {
-	_errors.push_back(fmt::format(errFormat, fmt::arg("name", token.string), fmt::arg("line", token.line), fmt::arg("column", token.column)));
+	_errors.push_back(fmt::format(fmt::runtime(errFormat), fmt::arg("name", token.string), fmt::arg("line", token.line), fmt::arg("column", token.column)));
 }
 
-ActionNode* Parser::ParseExpression(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParseExpression(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	if (ActionNode* node = ParsePrimary(lexer, factories))
 		return ParseBinary(node, lexer, factories);
 	return nullptr;
 }
 
-ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::stack<ActionNodeFactory*>& factories, int priority)
+ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<ActionNodeFactory*>& factories, int priority)
 {
 	while (true)
 	{
@@ -138,25 +138,42 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::stack<Action
 				return nullptr;
 		}
 		
-		lhs = factories.top()->Create<BinaryNode>(operation.string, lhs, rhs);
+		lhs = factories.front()->Create<BinaryNode>(operation.string, lhs, rhs);
 	}
 }
 
-VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	Token var = lexer.Take();
+	
+	if (lexer.Peek().type == Token::Type::BracketOpen)
+	{
+		lexer.Pop();
+		CheckToken(lexer.Take(), Token::Type::BracketClose);
+		
+		if (!CheckToken(lexer.Peek(), Token::Type::Assign))
+			return nullptr;
+		lexer.Pop();
+		
+		ActionNode* val = ParseExpression(lexer, factories);
+		if (!val)
+			return nullptr;
+		
+		return factories.front()->CreateVariable(var.string, val);
+	}
+
 	if (!CheckToken(lexer.Peek(), Token::Type::Assign))
 		return nullptr;
-	
 	lexer.Pop();
+
 	ActionNode* val = ParseExpression(lexer, factories);
 	if (!val)
 		return nullptr;
 	
-	return factories.top()->CreateVariable(var.string, val);
+	return factories.front()->CreateVariable(var.string, val);
 }
 
-FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	if (lexer.Peek().type != Token::Type::Word)
 		return nullptr;
@@ -165,7 +182,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisOpen))
 		return nullptr;
 	
-	auto func = factories.top()->TempCreateFunction(FunctionSignature(name.string));
+	auto func = factories.front()->TempCreateFunction(FunctionSignature(name.string));
 	ActionNodeFactory& funcFactory = func->Get()->Factory();
 	std::vector<ActionNode*> args;
 	while (lexer.Peek().type == Token::Type::Word)
@@ -201,7 +218,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisClose) || !CheckToken(lexer.Take(), Token::Type::BraceOpen))
 		return nullptr;
 	
-	factories.push(&funcFactory);
+	factories.push_front(&funcFactory);
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
 		if (CheckToken(lexer.Peek(), Token::Type::Word))
@@ -251,7 +268,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 			break;
 		}
 	}
-	factories.pop();
+	factories.pop_front();
 	
 	if (!func->Get()->Body())
 		return nullptr;
@@ -259,7 +276,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::stack<ActionNo
 	return func->Commit();
 }
 
-ActionNode* Parser::ParsePrimary(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	if (lexer.Peek().type == Token::Type::Word)
 		return ParseWord(lexer, factories);
@@ -270,10 +287,13 @@ ActionNode* Parser::ParsePrimary(Lexer& lexer, std::stack<ActionNodeFactory*>& f
 	if (lexer.Peek().type == Token::Type::ParenthesisOpen)
 		return ParseParentheses(lexer, factories);
 	
+	if (lexer.Peek().type == Token::Type::BraceOpen)
+		return ParseArrayValues(lexer, factories);
+
 	return nullptr;
 }
 
-ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	if (_reservedWords.contains(lexer.Peek().string))
 	{
@@ -299,11 +319,10 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 			CheckToken(lexer.Take(), Token::Type::Comma);
 		}
 		lexer.Pop();
-		std::deque<ActionNodeFactory*> factoriesRaw = factories._Get_container();
-		for (auto i = factoriesRaw.rbegin(); i != factoriesRaw.rend(); ++i)
+		for (auto i = factories.rbegin(); i != factories.rend(); ++i)
 		{
 			if (FunctionDeclarationNode* funcDecl = (*i)->FindFunction(name.string))
-				return factories.top()->Create<FunctionCallNode>(funcDecl, args);
+				return factories.front()->Create<FunctionCallNode>(funcDecl, args);
 		}
 		DumpTokenError("Function \"{name}\" not found ({line}: {column})", name);
 		return nullptr;
@@ -319,29 +338,27 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& fact
 		
 		CheckToken(lexer.Take(), Token::Type::BracketClose);
 		
-		std::deque<ActionNodeFactory*> factoriesRaw = factories._Get_container();
-		for (auto i = factoriesRaw.rbegin(); i != factoriesRaw.rend(); ++i)
+		for (auto i = factories.rbegin(); i != factories.rend(); ++i)
 		{
 			VariableDeclarationNode* var = (*i)->FindVariable(name.string);
 			if (var && var->Type() == VariableType::Array)
-				return factories.top()->Create<ArrayGetterNode>(var, node);
+				return factories.front()->Create<ArrayGetterNode>(var, node);
 		}
 		DumpTokenError("Array variable \"{name}\" not found ({line}: {column})", name);
 		return nullptr;
 	}
 	
-	std::deque<ActionNodeFactory*> factoriesRaw = factories._Get_container();
-	for (auto i = factoriesRaw.rbegin(); i != factoriesRaw.rend(); ++i)
+	for (auto i = factories.rbegin(); i != factories.rend(); ++i)
 	{
 		if (VariableDeclarationNode* varDecl = (*i)->FindVariable(name.string))
-			return factories.top()->Create<VariableNode>(varDecl);
+			return factories.front()->Create<VariableNode>(varDecl);
 	}
 	
 	DumpTokenError("Variable \"{name}\" not found ({line}: {column})", name);
 	return nullptr;
 }
 
-ActionNode* Parser::ParseParentheses(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParseParentheses(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	lexer.Pop();
 	Token top = lexer.Peek();
@@ -350,18 +367,37 @@ ActionNode* Parser::ParseParentheses(Lexer& lexer, std::stack<ActionNodeFactory*
 		return nullptr;
 	
 	CheckToken(lexer.Take(), Token::Type::ParenthesisClose);
-	
 	return node;
 }
 
-ActionNode* Parser::ParseNumber(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParseArrayValues(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
+{
+	lexer.Pop();
+	Token top = lexer.Peek();
+	std::vector<ActionNode*> components;
+	while (lexer.Peek().type != Token::Type::BraceClose)
+	{
+		ActionNode* node = ParseExpression(lexer, factories);
+		if (!node)
+			return nullptr;
+
+		if (lexer.Peek().type != Token::Type::BraceClose)
+			CheckToken(lexer.Take(), Token::Type::Comma);
+		
+		components.push_back(node);
+	}
+	lexer.Pop();
+	return factories.front()->Create<ArrayNode>(_unnamePrefix + std::to_string(++_unnamedCounter), components);
+}
+
+ActionNode* Parser::ParseNumber(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	Token number = lexer.Take();
 	
 	if(number.type == Token::Type::Dot)
 	{
 		if (lexer.Peek().type == Token::Type::Number)
-			return factories.top()->Create<DoubleNumberNode>(std::stod("0." + lexer.Take().string));
+			return factories.front()->Create<DoubleNumberNode>(std::stod("0." + lexer.Take().string));
 		return nullptr;
 	}
 	
@@ -371,15 +407,15 @@ ActionNode* Parser::ParseNumber(Lexer& lexer, std::stack<ActionNodeFactory*>& fa
 		if (lexer.Peek().type == Token::Type::Number)
 		{
 			Token floatPart = lexer.Take();
-			return factories.top()->Create<DoubleNumberNode>(std::stod(number.string + '.' + floatPart.string));
+			return factories.front()->Create<DoubleNumberNode>(std::stod(number.string + '.' + floatPart.string));
 		}
-		return factories.top()->Create<DoubleNumberNode>(std::stod(number.string));
+		return factories.front()->Create<DoubleNumberNode>(std::stod(number.string));
 	}
 	
-	return factories.top()->Create<IntNumberNode>(std::stoi(number.string));
+	return factories.front()->Create<DoubleNumberNode>(std::stoi(number.string));
 }
 
-ActionNode* Parser::ParseBody(Lexer& lexer, std::stack<ActionNodeFactory*>& factories)
+ActionNode* Parser::ParseBody(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{

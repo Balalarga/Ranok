@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <stack>
+#include <deque>
 #include <set>
 
 #include "ActionTree.h"
@@ -24,16 +24,17 @@ public:
 	
 	
 protected:
-	ActionNode* ParseExpression(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParsePrimary(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParseWord(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParseParentheses(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParseNumber(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParseBody(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
-	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, std::stack<ActionNodeFactory*>& factories, int priority = 0);
+	ActionNode* ParseExpression(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseParentheses(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseNumber(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseBody(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseArrayValues(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
+	ActionNode* ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<ActionNodeFactory*>& factories, int priority = 0);
 	
-	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, std::stack<ActionNodeFactory*>& factory);
-	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::stack<ActionNodeFactory*>& factories);
+	VariableDeclarationNode* ParseVariableDeclaration(Lexer& lexer, std::deque<ActionNodeFactory*>& factory);
+	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
 	
 	bool CheckToken(const Token& token, Token::Type expected);
 	
@@ -49,6 +50,8 @@ protected:
 	
 	
 private:
+	const std::string _unnamePrefix = "__unnamedVar__";
+	long _unnamedCounter = 0;
 	std::vector<std::string> _errors;
 	static const std::map<Token::Type, int> _operationPriorities;
 	static const std::set<std::string> _reservedWords;
