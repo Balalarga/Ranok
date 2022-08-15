@@ -1,10 +1,16 @@
 #include "IGenerator.h"
+#include "fmt/format.h"
+
+#include <sstream>
+
+#include "Language/Parser.h"
+
 
 namespace Ranok
 {
 bool IGenerator::IsArray(const ActionNode* node)
 {
-	if (auto arr = dynamic_cast<const ArrayNode*>(node))
+	if (dynamic_cast<const ArrayNode*>(node))
 		return true;
 
 	if (auto var = dynamic_cast<const VariableNode*>(node))
@@ -39,10 +45,11 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 {
 	if (!node)
 	{
-		outCode << "0";
+		outCode << "nullptr";
 		return;
 	}
-	else if (auto num = dynamic_cast<const DoubleNumberNode*>(node))
+	
+	if (auto num = dynamic_cast<const DoubleNumberNode*>(node))
 	{
 		ProcessNode(outCode, num);
 	}
@@ -78,45 +85,52 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 
 
 // --------------------------------------CppGenerator-------------------------------------
-void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node, int priority)
 {
-	double intpart;
-	if (modf(node->Value(), &intpart) == 0.0)
+	double intPart;
+	if (modf(node->Value(), &intPart) == 0.0)
 		outCode << static_cast<int>(node->Value());
 	else
 		outCode << node->Value();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayNode* node, int priority)
 {
 	outCode << node->Name();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* node, int priority)
 {
 	outCode << node->Name();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* node, int priority)
 {
+	bool needParenthesis = priority < Parser::GetOperationPriority(node->GetToken().type);
+
+	if (needParenthesis)
+		outCode << "(";
 	Process(outCode, node->Left());
 	outCode << " " << node->Name() << " ";
 	Process(outCode, node->Right());
+	
+	if (needParenthesis)
+		outCode << ")";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node, int priority)
 {
 	outCode << node->Name() << "[";
 	Process(outCode, node->Id());
 	outCode << "]";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node, int priority)
 {
 	if (node->Type() == VariableType::Array)
 	{
 		auto asArr = static_cast<const ArrayNode*>(node->Value());
-		outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
+		outCode << fmt::format("double {}[{}]", node->Name(), asArr->Values().size());
 	}
 	else
 	{
@@ -145,41 +159,43 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclara
 	}
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, int priority)
 {
 	outCode << node->Name() << "(";
-	for (size_t i = 0; i < node->Arguments().size(); ++i)
+	const std::vector<ActionNode*>& args = node->Arguments();
+	for (size_t i = 0; i < args.size(); ++i)
 	{
-		Process(outCode, node->Arguments()[i]);
-		if (i < node->Arguments().size()-1)
+		Process(outCode, args[i]);
+		if (i < args.size()-1)
 			outCode << ", ";
 	}
 	outCode << ")";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node, int priority)
 {
+	const std::vector<VariableDeclarationNode*>& sigArgs = node->Signature().Args();
 	if (IsArray(node->Body()))
 	{
 		constexpr const char* outVarName = "__out__name";
 		outCode << fmt::format("void {}(", node->Name());
-		for (size_t i = 0; i < node->Signature().Args().size(); ++i)
+		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
-			if (node->Signature().Args()[i]->Type() == VariableType::Array)
+			if (sigArgs[i]->Type() == VariableType::Array)
 			{
-				auto asArr = static_cast<const ArrayNode*>(node->Signature().Args()[i]->Value());
+				auto asArr = static_cast<const ArrayNode*>(sigArgs[i]->Value());
 				outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
 			}
 			else
 			{
-				outCode << fmt::format("double {}", node->Signature().Args()[i]->Name());
+				outCode << fmt::format("double {}", sigArgs[i]->Name());
 			}
-			if (i+1 != node->Signature().Args().size())
+			if (i+1 != sigArgs.size())
 				outCode << ", ";
 		}
 		outCode << ", double* " << outVarName;
 		outCode << ")\n{\n";
-		for (size_t i = node->Signature().Args().size(); i < node->Factory().DeclarationOrder().size(); ++i)
+		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
 		
 		outCode << outVarName << " = ";
@@ -189,22 +205,22 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 	else
 	{
 		outCode << fmt::format("double {}(", node->Name());
-		for (size_t i = 0; i < node->Signature().Args().size(); ++i)
+		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
-			if (node->Signature().Args()[i]->Type() == VariableType::Array)
+			if (sigArgs[i]->Type() == VariableType::Array)
 			{
-				auto asArr = static_cast<const ArrayNode*>(node->Signature().Args()[i]->Value());
-				outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
+				auto asArr = static_cast<const ArrayNode*>(sigArgs[i]->Value());
+				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), asArr->Values().size());
 			}
 			else
 			{
-				outCode << fmt::format("double {}", node->Signature().Args()[i]->Name());
+				outCode << fmt::format("double {}", sigArgs[i]->Name());
 			}
-			if (i+1 != node->Signature().Args().size())
+			if (i+1 != sigArgs.size())
 				outCode << ", ";
 		}
 		outCode << ")\n{\n";
-		for (size_t i = node->Signature().Args().size(); i < node->Factory().DeclarationOrder().size(); ++i)
+		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
 		outCode << "return ";
 		Process(outCode, node->Body());
@@ -212,9 +228,10 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 	}
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const UnaryNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const UnaryNode* node, int priority)
 {
-	outCode << node->Name();
+	outCode << "(" << node->Name();
 	Process(outCode, node->Child());
+	outCode << ")";
 }
 }

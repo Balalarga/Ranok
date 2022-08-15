@@ -134,16 +134,16 @@ int main(int argc, char** argv)
 		cout << "No main function founded\n";
 		return -1;
 	}
-	for (auto& func: tree.GlobalFactory().Functions())
-	{
-		if (func.first == "main")
-			continue;
-		PrintNode(func.second);
-		cout << "\n\n";
-	}
-	cout << "Program:\n";
-	PrintNode(tree.Root());
-	cout << "\n\n\n";
+	// for (auto& func: tree.GlobalFactory().Functions())
+	// {
+		// if (func.first == "main")
+			// continue;
+		// PrintNode(func.second);
+		// cout << "\n\n";
+	// }
+	// cout << "Program:\n";
+	// PrintNode(tree.Root());
+	// cout << "\n\n\n";
 
 	CppGenerator gen;
 	auto res =  gen.Generate(tree);

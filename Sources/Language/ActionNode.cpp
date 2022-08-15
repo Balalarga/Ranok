@@ -6,7 +6,7 @@ std::shared_ptr<ActionNodeFactory::Commitable<FunctionDeclarationNode>> ActionNo
 	const FunctionSignature& signature)
 {
 	return std::make_shared<Commitable<FunctionDeclarationNode>>(
-		signature.Name(),
+		signature.GetToken().string,
 		new FunctionDeclarationNode(signature, nullptr),
 		[this](const std::string& name, FunctionDeclarationNode* func)
 		{
@@ -19,22 +19,22 @@ std::shared_ptr<ActionNodeFactory::Commitable<FunctionDeclarationNode>> ActionNo
 		});
 }
 
-VariableDeclarationNode* ActionNodeFactory::CreateVariable(const std::string& name, ActionNode* value)
+VariableDeclarationNode* ActionNodeFactory::CreateVariable(const Token& name, ActionNode* value)
 {
-	if (VariableDeclarationNode* var = FindVariable(name))
+	if (VariableDeclarationNode* var = FindVariable(name.string))
 		return var;
 
-	VariableDeclarationNode* var = _variables.insert({name, Create<VariableDeclarationNode>(name, value)}).first->second;
+	VariableDeclarationNode* var = _variables.insert({name.string, Create<VariableDeclarationNode>(name, value)}).first->second;
 	_declarationOrder.push_back(var);
 	return var;
 }
 
 FunctionDeclarationNode* ActionNodeFactory::CreateFunction(const FunctionSignature& signature, ActionNode* body)
 {
-	if (FunctionDeclarationNode* func = FindFunction(signature.Name()))
+	if (FunctionDeclarationNode* func = FindFunction(signature.GetToken().string))
 		return func;
 
-	FunctionDeclarationNode* func = _functions.insert({signature.Name(), Create<FunctionDeclarationNode>(signature, body)}).first->second;
+	FunctionDeclarationNode* func = _functions.insert({signature.GetToken().string, Create<FunctionDeclarationNode>(signature, body)}).first->second;
 	_declarationOrder.push_back(func);
 	return func;
 }
@@ -64,8 +64,8 @@ FunctionDeclarationNode* ActionNodeFactory::FindFunction(const std::string& name
 	return it->second;
 }
 
-ActionNode::ActionNode(const std::string& name):
-	_name(name)
+ActionNode::ActionNode(const Token& token):
+	_token(token)
 {
 }
 
@@ -74,14 +74,14 @@ std::queue<ActionNode*> ActionNode::WalkDown() const
 	return {};
 }
 
-DoubleNumberNode::DoubleNumberNode(double number):
-	ActionNode(std::to_string(number)),
+DoubleNumberNode::DoubleNumberNode(const Token& token, double number):
+	ActionNode(token),
 	_value(number)
 {
 }
 
 ArrayGetterNode::ArrayGetterNode(VariableDeclarationNode* var, ActionNode* id):
-	ActionNode(var->Name()),
+	ActionNode(var->GetToken()),
 	_var(var),
 	_id(id)
 {
@@ -92,10 +92,15 @@ std::queue<ActionNode*> ArrayGetterNode::WalkDown() const
 	return std::queue<ActionNode*>{ { _id } };
 }
 
-ArrayNode::ArrayNode(const std::string& name, const std::vector<ActionNode*>& values):
-	ActionNode(name),
+ArrayNode::ArrayNode(const Token& token, const std::vector<ActionNode*>& values):
+	ActionNode(token),
 	_values(values)
 {
+}
+
+const std::string& ArrayNode::Name() const
+{
+	return ActionNode::Name();
 }
 
 std::queue<ActionNode*> ArrayNode::WalkDown() const
@@ -107,7 +112,7 @@ std::queue<ActionNode*> ArrayNode::WalkDown() const
 }
 
 VariableNode::VariableNode(VariableDeclarationNode* decl):
-	ActionNode(decl->Name()),
+	ActionNode(decl->GetToken()),
 	_declaration(decl)
 {
 }
@@ -117,8 +122,8 @@ std::queue<ActionNode*> VariableNode::WalkDown() const
 	return _declaration->WalkDown();
 }
 
-VariableDeclarationNode::VariableDeclarationNode(const std::string& name, ActionNode* value):
-	ActionNode(name),
+VariableDeclarationNode::VariableDeclarationNode(const Token& token, ActionNode* value):
+	ActionNode(token),
 	_value(value)
 {
 	if (dynamic_cast<ArrayNode*>(_value))
@@ -151,8 +156,8 @@ std::queue<ActionNode*> VariableDeclarationNode::WalkDown() const
 	return std::queue<ActionNode*>{ { _value } };
 }
 
-UnaryNode::UnaryNode(const std::string& name, ActionNode* child):
-	ActionNode(name),
+UnaryNode::UnaryNode(const Token& token, ActionNode* child):
+	ActionNode(token),
 	_child(child)
 {
 }
@@ -162,8 +167,8 @@ std::queue<ActionNode*> UnaryNode::WalkDown() const
 	return std::queue<ActionNode*>({ _child });
 }
 
-BinaryNode::BinaryNode(const std::string& name, ActionNode* left, ActionNode* right):
-	ActionNode(name),
+BinaryNode::BinaryNode(const Token& token, ActionNode* left, ActionNode* right):
+	ActionNode(token),
 	_left(left),
 	_right(right)
 {
@@ -175,7 +180,7 @@ std::queue<ActionNode*> BinaryNode::WalkDown() const
 }
 
 FunctionCallNode::FunctionCallNode(FunctionDeclarationNode* root, std::vector<ActionNode*> arguments):
-	ActionNode(root->Name()),
+	ActionNode(root->GetToken()),
 	_root(root),
 	_arguments(std::move(arguments))
 {
@@ -189,14 +194,14 @@ std::queue<ActionNode*> FunctionCallNode::WalkDown() const
 	return queue;
 }
 
-FunctionSignature::FunctionSignature(const std::string& name, const std::vector<VariableDeclarationNode*>& args):
-	_name(name),
+FunctionSignature::FunctionSignature(const Token& token, const std::vector<VariableDeclarationNode*>& args):
+	_token(token),
 	_arguments(args)
 {
 }
 
 FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body):
-	ActionNode(signature.Name()),
+	ActionNode(signature.GetToken()),
 	_signature(signature),
 	_body(body)
 {

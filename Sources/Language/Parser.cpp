@@ -138,7 +138,7 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<Action
 				return nullptr;
 		}
 		
-		lhs = factories.front()->Create<BinaryNode>(operation.string, lhs, rhs);
+		lhs = factories.front()->Create<BinaryNode>(operation, lhs, rhs);
 	}
 }
 
@@ -159,7 +159,7 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 		if (!val)
 			return nullptr;
 		
-		return factories.front()->CreateVariable(var.string, val);
+		return factories.front()->CreateVariable(var, val);
 	}
 
 	if (!CheckToken(lexer.Peek(), Token::Type::Assign))
@@ -170,7 +170,7 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 	if (!val)
 		return nullptr;
 	
-	return factories.front()->CreateVariable(var.string, val);
+	return factories.front()->CreateVariable(var, val);
 }
 
 FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
@@ -182,7 +182,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 	if (!CheckToken(lexer.Take(), Token::Type::ParenthesisOpen))
 		return nullptr;
 	
-	auto func = factories.front()->TempCreateFunction(FunctionSignature(name.string));
+	auto func = factories.front()->TempCreateFunction(FunctionSignature(name));
 	ActionNodeFactory& funcFactory = func->Get()->Factory();
 	std::vector<ActionNode*> args;
 	while (lexer.Peek().type == Token::Type::Word)
@@ -190,12 +190,12 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 		Token argName = lexer.Take();
 		if (lexer.Peek().type == Token::Type::Comma)
 		{
-			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName.string, funcFactory.Create<DoubleNumberNode>(0)));
+			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName, funcFactory.Create<DoubleNumberNode>(argName, 0)));
 			lexer.Pop();
 		}
 		else if(lexer.Peek().type == Token::Type::ParenthesisClose)
 		{
-			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName.string, funcFactory.Create<DoubleNumberNode>(0)));
+			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName, funcFactory.Create<DoubleNumberNode>(argName, 0)));
 		}
 		else if (lexer.Peek().type == Token::Type::BracketOpen)
 		{
@@ -210,7 +210,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 			if (!CheckToken(lexer.Take(), Token::Type::BracketClose))
 				return nullptr;
 			
-			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName.string, funcFactory.Create<ArrayNode>(argName.string, std::vector<ActionNode*>(arrSize, nullptr))));
+			func->Get()->Signature().Args().push_back(funcFactory.CreateVariable(argName, funcFactory.Create<ArrayNode>(argName, std::vector<ActionNode*>(arrSize, nullptr))));
 		}
 		if (lexer.Peek().type == Token::Type::Comma)
 			lexer.Pop();
@@ -387,7 +387,8 @@ ActionNode* Parser::ParseArrayValues(Lexer& lexer, std::deque<ActionNodeFactory*
 		components.push_back(node);
 	}
 	lexer.Pop();
-	return factories.front()->Create<ArrayNode>(_unnamePrefix + std::to_string(++_unnamedCounter), components);
+	// top.string = _unnamePrefix + std::to_string(++_unnamedCounter);
+	return factories.front()->Create<ArrayNode>(top, components);
 }
 
 ActionNode* Parser::ParseNumber(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
@@ -397,7 +398,10 @@ ActionNode* Parser::ParseNumber(Lexer& lexer, std::deque<ActionNodeFactory*>& fa
 	if(number.type == Token::Type::Dot)
 	{
 		if (lexer.Peek().type == Token::Type::Number)
-			return factories.front()->Create<DoubleNumberNode>(std::stod("0." + lexer.Take().string));
+		{
+			Token num = lexer.Take();
+			return factories.front()->Create<DoubleNumberNode>(num, std::stod("0." + num.string));
+		}
 		return nullptr;
 	}
 	
@@ -407,12 +411,12 @@ ActionNode* Parser::ParseNumber(Lexer& lexer, std::deque<ActionNodeFactory*>& fa
 		if (lexer.Peek().type == Token::Type::Number)
 		{
 			Token floatPart = lexer.Take();
-			return factories.front()->Create<DoubleNumberNode>(std::stod(number.string + '.' + floatPart.string));
+			return factories.front()->Create<DoubleNumberNode>(number, std::stod(number.string + '.' + floatPart.string));
 		}
-		return factories.front()->Create<DoubleNumberNode>(std::stod(number.string));
+		return factories.front()->Create<DoubleNumberNode>(number, std::stod(number.string));
 	}
 	
-	return factories.front()->Create<DoubleNumberNode>(std::stoi(number.string));
+	return factories.front()->Create<DoubleNumberNode>(number, std::stoi(number.string));
 }
 
 ActionNode* Parser::ParseBody(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)

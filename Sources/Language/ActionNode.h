@@ -52,7 +52,7 @@ public:
 	
 	std::shared_ptr<Commitable<FunctionDeclarationNode>> TempCreateFunction(const FunctionSignature& signature);
 	
-	VariableDeclarationNode* CreateVariable(const std::string& name, ActionNode* value = nullptr);
+	VariableDeclarationNode* CreateVariable(const Token& name, ActionNode* value = nullptr);
 	FunctionDeclarationNode* CreateFunction(const FunctionSignature& signature, ActionNode* body = nullptr);
 	
 	ArrayNode* FindArrayVariable(const std::string& name);
@@ -82,23 +82,23 @@ private:
 class ActionNode
 {
 public:
-	ActionNode(const std::string& name);
+	ActionNode(const Token& token);
 	virtual ~ActionNode() = default;
 	
 	virtual std::queue<ActionNode*> WalkDown() const;
 	
-	const std::string& Name() const { return _name; }
-	
+	virtual const std::string& Name() const { return _token.string; }
+	const Token& GetToken() const { return _token; }
 	
 protected:
-	const std::string _name;
+	const Token _token;
 };
 
 
 class DoubleNumberNode: public ActionNode
 {
 public:
-	DoubleNumberNode(double number);
+	DoubleNumberNode(const Token& token, double number);
 	
 	double Value() const { return _value; }
 	
@@ -110,8 +110,9 @@ private:
 class ArrayNode: public ActionNode
 {
 public:
-	ArrayNode(const std::string& name, const std::vector<ActionNode*>& values);
-	
+	ArrayNode(const Token& token, const std::vector<ActionNode*>& values);
+
+	virtual const std::string& Name() const;
 	virtual std::queue<ActionNode*> WalkDown() const override;
 	
 	const std::vector<ActionNode*>& Values() const { return _values; }
@@ -129,7 +130,7 @@ enum class VariableType
 class VariableDeclarationNode: public ActionNode
 {
 public:
-	VariableDeclarationNode(const std::string& name, ActionNode* value);
+	VariableDeclarationNode(const Token& token, ActionNode* value);
 	
 	virtual std::queue<ActionNode*> WalkDown() const override;
 	
@@ -181,7 +182,7 @@ private:
 class UnaryNode: public ActionNode
 {
 public:
-	UnaryNode(const std::string& name, ActionNode* child);
+	UnaryNode(const Token& token, ActionNode* child);
 	
 	std::queue<ActionNode*> WalkDown() const override;
 	
@@ -196,7 +197,7 @@ private:
 class BinaryNode: public ActionNode
 {
 public:
-	BinaryNode(const std::string& name, ActionNode* left, ActionNode* right);
+	BinaryNode(const Token& token, ActionNode* left, ActionNode* right);
 	
 	std::queue<ActionNode*> WalkDown() const override;
 	
@@ -231,16 +232,16 @@ private:
 class FunctionSignature
 {
 public:
-	FunctionSignature(const std::string& name, const std::vector<VariableDeclarationNode*>& args = {});
+	FunctionSignature(const Token& token, const std::vector<VariableDeclarationNode*>& args = {});
 	
-	const std::string& Name() const { return _name; }
+	const Token& GetToken() const { return _token; }
 	
 	std::vector<VariableDeclarationNode*>& Args() { return _arguments; }
 	const std::vector<VariableDeclarationNode*>& Args() const { return _arguments; }
 	
 	
 private:
-	std::string _name;
+	Token _token;
 	std::vector<VariableDeclarationNode*> _arguments;
 };
 
