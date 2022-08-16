@@ -144,34 +144,33 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode
 void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
 {
 	if (node->Type() == VariableType::Array)
-{
 		outCode << fmt::format("double {}[{}]", node->Name(), GetArraySize(node->Value()));
+	else
+		outCode << fmt::format("double {}", node->Name());
+
+	if (auto arrNode = dynamic_cast<const ArrayNode*>(node->Value()))
+	{
+		outCode << " = ";
+		outCode << "{";
+		for (size_t i = 0; i < arrNode->Values().size(); ++i)
+		{
+			Process(outCode, arrNode->Values()[i]);
+			if (i < arrNode->Values().size()-1)
+				outCode << ", ";
+		}
+		outCode << "}";
+	}
+	else if (dynamic_cast<const FunctionCallNode*>(node->Value()) && node->Type() == VariableType::Array )
+	{
+		outCode << "; ";
+		Process(outCode, node->Value());
 	}
 	else
 	{
-		outCode << fmt::format("double {}", node->Name());
-	}
-
-	if (node->Value() != nullptr)
-	{
 		outCode << " = ";
-		if (auto arrNode = dynamic_cast<const ArrayNode*>(node->Value()))
-		{
-			outCode << "{";
-			for (size_t i = 0; i < arrNode->Values().size(); ++i)
-			{
-				Process(outCode, arrNode->Values()[i]);
-				if (i < arrNode->Values().size()-1)
-					outCode << ", ";
-			}
-			outCode << "}";
-		}
-		else
-		{
-			Process(outCode, node->Value());
-		}
-		outCode << ";\n";
+		Process(outCode, node->Value());
 	}
+	outCode << ";\n";
 }
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node)
@@ -197,14 +196,9 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
 			if (sigArgs[i]->Type() == VariableType::Array)
-			{
-				auto asArr = static_cast<const ArrayNode*>(sigArgs[i]->Value());
-				outCode << fmt::format("double {}[{}]", asArr->Name(), asArr->Values().size());
-			}
+				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), GetArraySize(sigArgs[i]->Value()));
 			else
-			{
 				outCode << fmt::format("double {}", sigArgs[i]->Name());
-			}
 			outCode << ", ";
 		}
 		outCode << "double* " << outVarName;
