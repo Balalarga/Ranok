@@ -52,15 +52,17 @@ protected:
 	
 	
 private:
-	const std::string _unnamePrefix = "__unnamedVar__";
-	long _unnamedCounter = 0;
-	std::vector<std::string> _errors;
-	static const std::map<Token::Type, int> _operationPriorities;
-
 	enum class ReservedNameTypes: uint8_t
 	{
 		MainFunc, ReturnStatement, FunctionDef, VariableDef
 	};
+	static const std::map<Token::Type, int> _operationPriorities;
 	static const std::map<ReservedNameTypes, std::string> _reservedWords;
+
+	/// TODO: for now nested functions not allowed, because of generation problems
+	bool bAllowInnerFunctionDeclarations = false;
+	const std::string _unnamePrefix = "__unnamedVar__";
+	long _unnamedCounter = 0;
+	std::vector<std::string> _errors;
 };
 }

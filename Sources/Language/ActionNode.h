@@ -15,6 +15,10 @@ class ActionNode;
 class VariableDeclarationNode;
 
 
+bool IsArray(const ActionNode* node);
+size_t GetArraySize(const ActionNode* node);
+
+
 class ActionNodeFactory
 {
 public:
@@ -87,7 +91,7 @@ public:
 	
 	virtual std::queue<ActionNode*> WalkDown() const;
 	
-	virtual const std::string& Name() const { return _token.string; }
+	const std::string& Name() const { return _token.string; }
 	const Token& GetToken() const { return _token; }
 	
 protected:
@@ -112,7 +116,6 @@ class ArrayNode: public ActionNode
 public:
 	ArrayNode(const Token& token, const std::vector<ActionNode*>& values);
 
-	virtual const std::string& Name() const;
 	virtual std::queue<ActionNode*> WalkDown() const override;
 	
 	const std::vector<ActionNode*>& Values() const { return _values; }

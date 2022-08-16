@@ -136,10 +136,10 @@ int main(int argc, char** argv)
 	}
 	// for (auto& func: tree.GlobalFactory().Functions())
 	// {
-		// if (func.first == "main")
-			// continue;
-		// PrintNode(func.second);
-		// cout << "\n\n";
+	// 	if (func.first == "main")
+	// 		continue;
+	// 	PrintNode(func.second);
+	// 	cout << "\n\n";
 	// }
 	// cout << "Program:\n";
 	// PrintNode(tree.Root());

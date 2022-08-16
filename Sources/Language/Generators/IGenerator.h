@@ -12,7 +12,6 @@ public:
 	const std::vector<std::string>& Errors() const { return _errors; }
 	bool HasErrors() const { return !_errors.empty(); }
 	
-	bool IsArray(const ActionNode* node);
 	virtual std::optional<std::string> Generate(const ActionTree& tree);
 	
 	

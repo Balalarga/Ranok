@@ -159,7 +159,16 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 	
 	if (lexer.Peek().type == Token::Type::BracketOpen)
 	{
+		size_t size = 0;
 		lexer.Pop();
+		if (lexer.Peek().type == Token::Type::Number)
+		{
+			ActionNode* val = ParseExpression(lexer, factories);
+			DoubleNumberNode* num = val ? dynamic_cast<DoubleNumberNode*>(val) : nullptr;
+			if (!num)
+				return nullptr;
+			size = static_cast<size_t>(num->Value());
+		}
 		CheckToken(lexer.Take(), Token::Type::BracketClose);
 		
 		if (!CheckToken(lexer.Peek(), Token::Type::Assign))
@@ -169,6 +178,12 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 		ActionNode* val = ParseExpression(lexer, factories);
 		if (!val)
 			return nullptr;
+		
+		if (size && size != GetArraySize(val))
+		{
+			DumpTokenError("Array variable size is different from it's value ({line}: {column})", var);
+			return nullptr;
+		}
 		
 		return factories.front()->CreateVariable(var, val);
 	}
@@ -186,6 +201,12 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 
 FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
+	if (!bAllowInnerFunctionDeclarations && factories.size() > 1)
+	{
+		DumpTokenError("Nested functions not supported for a while ({line}: {column})", lexer.Peek());
+		return nullptr;
+	}
+	
 	if (lexer.Peek().type != Token::Type::Word)
 		return nullptr;
 	
@@ -230,6 +251,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 		return nullptr;
 	
 	factories.push_front(&funcFactory);
+	
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
 		if (CheckToken(lexer.Peek(), Token::Type::Word))
@@ -304,7 +326,10 @@ ActionNode* Parser::ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& f
 	if (lexer.Peek().type == Token::Type::Minus)
 	{
 		Token minus = lexer.Take();
-		return factories.front()->Create<UnaryNode>(minus, ParsePrimary(lexer, factories));
+		ActionNode* child = ParsePrimary(lexer, factories);
+		if (child && !IsArray(child))
+			return factories.front()->Create<UnaryNode>(minus, child);
+		DumpTokenError("Couldn't apply unary operator to array value at ({line}: {column})", minus);
 	}
 	
 	return nullptr;
@@ -404,7 +429,7 @@ ActionNode* Parser::ParseArrayValues(Lexer& lexer, std::deque<ActionNodeFactory*
 		components.push_back(node);
 	}
 	lexer.Pop();
-	// top.string = _unnamePrefix + std::to_string(++_unnamedCounter);
+	top.string = _unnamePrefix + std::to_string(++_unnamedCounter);
 	return factories.front()->Create<ArrayNode>(top, components);
 }
 

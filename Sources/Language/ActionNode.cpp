@@ -69,6 +69,34 @@ ActionNode::ActionNode(const Token& token):
 {
 }
 
+bool IsArray(const ActionNode* node)
+{
+	if (dynamic_cast<const ArrayNode*>(node))
+		return true;
+	
+	if (auto var = dynamic_cast<const VariableNode*>(node))
+		return IsArray(var->Declaration()->Value());
+	
+	if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
+		return IsArray(funcCall->Root()->Body());
+	
+	return false;
+}
+
+size_t GetArraySize(const ActionNode* node)
+{
+	if (auto arr = dynamic_cast<const ArrayNode*>(node))
+		return arr->Values().size();
+	
+	if (auto var = dynamic_cast<const VariableNode*>(node))
+		return GetArraySize(var->Declaration()->Value());
+	
+	if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
+		return GetArraySize(funcCall->Root()->Body());
+	
+	return 0;
+}
+
 std::queue<ActionNode*> ActionNode::WalkDown() const
 {
 	return {};
@@ -98,11 +126,6 @@ ArrayNode::ArrayNode(const Token& token, const std::vector<ActionNode*>& values)
 {
 }
 
-const std::string& ArrayNode::Name() const
-{
-	return ActionNode::Name();
-}
-
 std::queue<ActionNode*> ArrayNode::WalkDown() const
 {
 	std::queue<ActionNode*> queue;
@@ -126,29 +149,10 @@ VariableDeclarationNode::VariableDeclarationNode(const Token& token, ActionNode*
 	ActionNode(token),
 	_value(value)
 {
-	if (dynamic_cast<ArrayNode*>(_value))
-	{
+	if (IsArray(value))
 		_type = VariableType::Array;
-	}
-	else if (dynamic_cast<DoubleNumberNode*>(_value))
-	{
-		_type = VariableType::Double;
-	}
 	else
-	{
-		auto queue = _value->WalkDown();
-		while(!queue.empty())
-		{
-			if (dynamic_cast<ArrayNode*>(queue.front()))
-			{
-				_type = VariableType::Array;
-				break;
-			}
-			if (dynamic_cast<DoubleNumberNode*>(queue.front()))
-				_type = VariableType::Double;
-			queue.pop();
-		}
-	}
+		_type = VariableType::Double;
 }
 
 std::queue<ActionNode*> VariableDeclarationNode::WalkDown() const

@@ -8,19 +8,6 @@
 
 namespace Ranok
 {
-bool IGenerator::IsArray(const ActionNode* node)
-{
-	if (dynamic_cast<const ArrayNode*>(node))
-		return true;
-
-	if (auto var = dynamic_cast<const VariableNode*>(node))
-		return IsArray(var->Declaration()->Value());
-
-	if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
-		return IsArray(funcCall->Root()->Body());
-	
-	return false;
-}
 
 std::optional<std::string> IGenerator::Generate(const ActionTree& tree)
 {
@@ -100,7 +87,14 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNod
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayNode* node)
 {
-	outCode << node->Name();
+	outCode << "{";
+	for (size_t i = 0; i < node->Values().size(); ++i)
+	{
+		Process(outCode, node->Values()[i]);
+		if (i < node->Values().size()-1)
+			outCode << ", ";
+	}
+	outCode << "}";
 }
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* node)
@@ -118,7 +112,9 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* nod
 	
 	if (needLeftParent)
 	{
-		outCode << "("; Process(outCode, node->Left()); outCode << ")";
+		outCode << "(";
+		Process(outCode, node->Left());
+		outCode << ")";
 	}
 	else
 	{
@@ -128,7 +124,9 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* nod
 	outCode << " " << node->Name() << " ";
 	if (needRightParent)
 	{
-		outCode << "("; Process(outCode, node->Right()); outCode << ")";
+		outCode << "(";
+		Process(outCode, node->Right());
+		outCode << ")";
 	}
 	else
 	{
@@ -146,9 +144,8 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode
 void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
 {
 	if (node->Type() == VariableType::Array)
-	{
-		auto asArr = static_cast<const ArrayNode*>(node->Value());
-		outCode << fmt::format("double {}[{}]", node->Name(), asArr->Values().size());
+{
+		outCode << fmt::format("double {}[{}]", node->Name(), GetArraySize(node->Value()));
 	}
 	else
 	{
@@ -208,10 +205,9 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 			{
 				outCode << fmt::format("double {}", sigArgs[i]->Name());
 			}
-			if (i+1 != sigArgs.size())
-				outCode << ", ";
+			outCode << ", ";
 		}
-		outCode << ", double* " << outVarName;
+		outCode << "double* " << outVarName;
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
