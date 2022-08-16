@@ -37,6 +37,8 @@ protected:
 	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
 	
 	bool CheckToken(const Token& token, Token::Type expected);
+
+	static std::set<std::string> GetReservedWords();
 	
 	/**
 	 * \brief Create error message from token with optional format args:\n
@@ -54,6 +56,11 @@ private:
 	long _unnamedCounter = 0;
 	std::vector<std::string> _errors;
 	static const std::map<Token::Type, int> _operationPriorities;
-	static const std::set<std::string> _reservedWords;
+
+	enum class ReservedNameTypes: uint8_t
+	{
+		MainFunc, ReturnStatement, FunctionDef, VariableDef
+	};
+	static const std::map<ReservedNameTypes, std::string> _reservedWords;
 };
 }

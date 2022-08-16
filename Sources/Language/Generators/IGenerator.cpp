@@ -61,6 +61,10 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 	{
 		ProcessNode(outCode, var);
 	}
+	else if (auto unary = dynamic_cast<const UnaryNode*>(node))
+	{
+		ProcessNode(outCode, unary);
+	}
 	else if (auto bin = dynamic_cast<const BinaryNode*>(node))
 	{
 		ProcessNode(outCode, bin);
