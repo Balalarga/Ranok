@@ -10,6 +10,7 @@ def main(space[3], x, y, z)
 {
     def sw(e) { return e + x }
     var s3 = s(.3 + 3.3) * sw(space);
-    s2[] = {1, space[2]*2, 3*(s3+2)};
+    k = -s3;
+    s2[] = {1, space[2]*2, 3+s3*2+2};
     return s2 + space[2];
 }

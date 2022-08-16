@@ -85,7 +85,7 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 
 
 // --------------------------------------CppGenerator-------------------------------------
-void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node)
 {
 	double intPart;
 	if (modf(node->Value(), &intPart) == 0.0)
@@ -94,38 +94,52 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNod
 		outCode << node->Value();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayNode* node)
 {
 	outCode << node->Name();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* node)
 {
 	outCode << node->Name();
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* node)
 {
-	bool needParenthesis = priority < Parser::GetOperationPriority(node->GetToken().type);
-
-	if (needParenthesis)
-		outCode << "(";
-	Process(outCode, node->Left());
-	outCode << " " << node->Name() << " ";
-	Process(outCode, node->Right());
+	int currPriority = Parser::GetOperationPriority(node->GetToken().type);
+	int lPriority = Parser::GetOperationPriority(node->Left()->GetToken().type);
+	int rPriority = Parser::GetOperationPriority(node->Right()->GetToken().type);
+	bool needLeftParent = lPriority != -1 && lPriority < currPriority;
+	bool needRightParent = rPriority != -1 && rPriority < currPriority;
 	
-	if (needParenthesis)
-		outCode << ")";
+	if (needLeftParent)
+	{
+		outCode << "("; Process(outCode, node->Left()); outCode << ")";
+	}
+	else
+	{
+		Process(outCode, node->Left());
+	}
+	
+	outCode << " " << node->Name() << " ";
+	if (needRightParent)
+	{
+		outCode << "("; Process(outCode, node->Right()); outCode << ")";
+	}
+	else
+	{
+		Process(outCode, node->Right());
+	}
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node)
 {
 	outCode << node->Name() << "[";
 	Process(outCode, node->Id());
 	outCode << "]";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
 {
 	if (node->Type() == VariableType::Array)
 	{
@@ -159,7 +173,7 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclara
 	}
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node)
 {
 	outCode << node->Name() << "(";
 	const std::vector<ActionNode*>& args = node->Arguments();
@@ -172,7 +186,7 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNod
 	outCode << ")";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node)
 {
 	const std::vector<VariableDeclarationNode*>& sigArgs = node->Signature().Args();
 	if (IsArray(node->Body()))
@@ -228,7 +242,7 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 	}
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const UnaryNode* node, int priority)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const UnaryNode* node)
 {
 	outCode << "(" << node->Name();
 	Process(outCode, node->Child());
