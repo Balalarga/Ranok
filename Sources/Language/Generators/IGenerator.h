@@ -25,7 +25,7 @@ protected:
 	virtual void ProcessNode(std::stringstream& outCode, const VariableNode* node) = 0;
 	virtual void ProcessNode(std::stringstream& outCode, const UnaryNode* node) = 0;
 	virtual void ProcessNode(std::stringstream& outCode, const BinaryNode* node) = 0;
-	virtual void ProcessNode(std::stringstream& outCode, const FunctionCallNode* node) = 0;
+	virtual void ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, const ActionNode* result = nullptr) = 0;
 	virtual void ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node) = 0;
 	
 	void AddError(const std::string& error) { _errors.push_back(error); }
@@ -45,7 +45,7 @@ public:
 	void ProcessNode(std::stringstream& outCode, const BinaryNode* node) override;
 	void ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node) override;
 	void ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node) override;
-	void ProcessNode(std::stringstream& outCode, const FunctionCallNode* node) override;
+	void ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, const ActionNode* result = nullptr) override;
 	void ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node) override;
 	void ProcessNode(std::stringstream& outCode, const UnaryNode* node) override;
 };

@@ -15,10 +15,6 @@ class ActionNode;
 class VariableDeclarationNode;
 
 
-bool IsArray(const ActionNode* node);
-size_t GetArraySize(const ActionNode* node);
-
-
 class ActionNodeFactory
 {
 public:
@@ -86,6 +82,10 @@ private:
 class ActionNode
 {
 public:
+	/// Utility functions
+	static const ArrayNode* IsArray(const ActionNode* node);
+	static size_t GetArraySize(const ActionNode* node);
+	
 	ActionNode(const Token& token);
 	virtual ~ActionNode() = default;
 	
@@ -97,7 +97,6 @@ public:
 protected:
 	const Token _token;
 };
-
 
 class DoubleNumberNode: public ActionNode
 {
@@ -140,11 +139,8 @@ public:
 	const ActionNode* Value() const { return _value; }
 	ActionNode* Value() { return _value; }
 	
-	VariableType Type() const { return _type; }
-	
 private:
 	ActionNode* _value;
-	VariableType _type;
 };
 
 class ArrayGetterNode: public ActionNode

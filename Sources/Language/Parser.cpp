@@ -1,5 +1,6 @@
 ﻿#include "Parser.h"
 
+#include <sstream>
 #include <fmt/format.h>
 
 #include "Utils/StringUtils.h"
@@ -25,7 +26,6 @@ const std::map<Parser::ReservedNameTypes, std::string> Parser::_reservedWords
 };
 
 
-
 ActionTree Parser::Parse(Lexer lexer)
 {
 	_errors.clear();
@@ -34,39 +34,32 @@ ActionTree Parser::Parse(Lexer lexer)
 	std::deque<ActionNodeFactory*> factoryStack( {&tree.GlobalFactory()} );
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (CheckToken(lexer.Peek(), Token::Type::Word))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
 		{
-			if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
-			{
-				lexer.Pop();
-				if (!ParseFunction(lexer, factoryStack))
-					break;
-			}
-			else if (StringUtils::Compare(lexer.Peek().string, "var"))
-			{
-				lexer.Pop();
-				if (!ParseVariableDeclaration(lexer, factoryStack))
-					break;
-			}
-			else
-			{
-				if (!ParseVariableDeclaration(lexer, factoryStack))
-					break;
-			}
-			
-			if (lexer.Peek().type == Token::Type::Semicolon)
-				lexer.Pop();
+			lexer.Pop();
+			if (!ParseFunction(lexer, factoryStack))
+				break;
+		}
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef)))
+		{
+			lexer.Pop();
+			if (!ParseVariableDeclaration(lexer, factoryStack))
+				break;
 		}
 		else
 		{
-			break;
+			if (!ParseVariableDeclaration(lexer, factoryStack))
+				break;
 		}
+		
+		if (lexer.Peek().type == Token::Type::Semicolon)
+			lexer.Pop();
 	}
 	factoryStack.pop_front();
 	if (!factoryStack.empty())
 		_errors.push_back("Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size()));
 	
-	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction("main"))
+	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction(_reservedWords.at(ReservedNameTypes::MainFunc)))
 		tree.SetRoot(mainFunc);
 	else
 		_errors.push_back("No main function in parsed code");
@@ -135,11 +128,25 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<Action
 		if (currPriority < priority)
 			return lhs;
 		
+		if (ActionNode::IsArray(lhs))
+		{
+			DumpTokenError("Array operations not supported ({line}: {column})\n"
+				"You must make some array variable and work with it's components", lexer.Peek());
+			return nullptr;
+		}
+	
 		Token operation = lexer.Take();
 		ActionNode* rhs = ParsePrimary(lexer, factories);
 		
 		if (!rhs)
 			return nullptr;
+		
+		if (ActionNode::IsArray(rhs))
+		{
+			DumpTokenError("Array operations not supported ({line}: {column})\n"
+				"You must make some array variable and work with it's components", lexer.Peek());
+			return nullptr;
+		}
 		
 		int newOperatorPriority = GetOperationPriority(lexer.Peek().type);
 		if (currPriority < newOperatorPriority)
@@ -178,10 +185,10 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 		ActionNode* val = ParseExpression(lexer, factories);
 		if (!val)
 			return nullptr;
-		
-		if (size && size != GetArraySize(val))
+		size_t valSize = ActionNode::GetArraySize(val);
+		if (size && size != valSize)
 		{
-			DumpTokenError("Array variable size is different from it's value ({line}: {column})", var);
+			DumpTokenError("Array variable \"{name}\" ({line}: {column}) size error: have "+std::to_string(size)+", expected: "+std::to_string(valSize), var);
 			return nullptr;
 		}
 		
@@ -254,52 +261,45 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 	
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (CheckToken(lexer.Peek(), Token::Type::Word))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
 		{
-			if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
+			lexer.Pop();
+			if (!ParseFunction(lexer, factories))
+				break;
+		}
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::ReturnStatement)))
+		{
+			lexer.Pop();
+			if (ActionNode* result = ParseExpression(lexer, factories))
 			{
-				lexer.Pop();
-				if (!ParseFunction(lexer, factories))
-					break;
-			}
-			else if (StringUtils::Compare(lexer.Peek().string, "return"))
-			{
-				lexer.Pop();
-				if (ActionNode* result = ParseExpression(lexer, factories))
+				func->Get()->SetBody(result);
+				while (lexer.Peek().type == Token::Type::Semicolon)
+					lexer.Pop();
+				if (CheckToken(lexer.Peek(), Token::Type::BraceClose))
 				{
-					func->Get()->SetBody(result);
-					while (lexer.Peek().type == Token::Type::Semicolon)
-						lexer.Pop();
-					if (CheckToken(lexer.Peek(), Token::Type::BraceClose))
-					{
-						lexer.Pop();
-						break;
-					}
-				}
-				else
-				{
+					lexer.Pop();
 					break;
 				}
-			}
-			else if (StringUtils::Compare(lexer.Peek().string, "var"))
-			{
-				lexer.Pop();
-				if (!ParseVariableDeclaration(lexer, factories))
-					break;
 			}
 			else
 			{
-				if (!ParseVariableDeclaration(lexer, factories))
-					break;
+				break;
 			}
-			
-			while (lexer.Peek().type == Token::Type::Semicolon)
-				lexer.Pop();
+		}
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef)))
+		{
+			lexer.Pop();
+			if (!ParseVariableDeclaration(lexer, factories))
+				break;
 		}
 		else
 		{
-			break;
+			if (!ParseVariableDeclaration(lexer, factories))
+				break;
 		}
+		
+		while (lexer.Peek().type == Token::Type::Semicolon)
+			lexer.Pop();
 	}
 	factories.pop_front();
 	
@@ -310,7 +310,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 }
 
 ActionNode* Parser::ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
-{
+{	
 	if (lexer.Peek().type == Token::Type::Word)
 		return ParseWord(lexer, factories);
 	
@@ -327,7 +327,7 @@ ActionNode* Parser::ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& f
 	{
 		Token minus = lexer.Take();
 		ActionNode* child = ParsePrimary(lexer, factories);
-		if (child && !IsArray(child))
+		if (child && !ActionNode::IsArray(child))
 			return factories.front()->Create<UnaryNode>(minus, child);
 		DumpTokenError("Couldn't apply unary operator to array value at ({line}: {column})", minus);
 	}
@@ -344,9 +344,23 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 	}
 	
 	Token name = lexer.Take();
+	
 	if (lexer.Peek().type == Token::Type::ParenthesisOpen)
 	{
 		lexer.Pop();
+		FunctionDeclarationNode* funcDecl{};
+		for (auto i = factories.rbegin(); i != factories.rend(); ++i)
+		{
+			funcDecl = (*i)->FindFunction(name.string);
+			if (funcDecl)
+				break;
+		}
+		if (!funcDecl)
+		{
+			DumpTokenError("Couldn't find function \"{name}\" declaration ({line}: {column})", name);
+			return nullptr;
+		}
+		
 		std::vector<ActionNode*> args;
 		while (lexer.Peek().type != Token::Type::ParenthesisClose)
 		{
@@ -354,20 +368,33 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 			if (!arg)
 				return nullptr;
 			
+			if (args.size() == funcDecl->Signature().Args().size())
+			{
+				DumpTokenError("Function \"{name}\" arguments size miss match ({line}: {column})", name);
+				return nullptr;
+			}
+			bool sigArgIsArr = ActionNode::IsArray(funcDecl->Signature().Args()[args.size()]);
+			bool argIsArr = ActionNode::IsArray(arg);
+			if (sigArgIsArr != argIsArr)
+			{
+				DumpTokenError("Function \"{name}\" arguments type miss match ({line}: {column})", name);
+				return nullptr;
+			}
+			
 			args.push_back(arg);
 			if (lexer.Peek().type == Token::Type::ParenthesisClose)
 				break;
 			
 			CheckToken(lexer.Take(), Token::Type::Comma);
 		}
-		lexer.Pop();
-		for (auto i = factories.rbegin(); i != factories.rend(); ++i)
+		if (args.size() != funcDecl->Signature().Args().size())
 		{
-			if (FunctionDeclarationNode* funcDecl = (*i)->FindFunction(name.string))
-				return factories.front()->Create<FunctionCallNode>(funcDecl, args);
+			DumpTokenError("Function \"{name}\" arguments size miss match ({line}: {column})", name);
+			return nullptr;
 		}
-		DumpTokenError("Function \"{name}\" not found ({line}: {column})", name);
-		return nullptr;
+		lexer.Pop();
+
+		return factories.front()->Create<FunctionCallNode>(funcDecl, args);
 	}
 	
 	if (lexer.Peek().type == Token::Type::BracketOpen)
@@ -383,7 +410,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 		for (auto i = factories.rbegin(); i != factories.rend(); ++i)
 		{
 			VariableDeclarationNode* var = (*i)->FindVariable(name.string);
-			if (var && var->Type() == VariableType::Array)
+			if (var && ActionNode::IsArray(var->Value()))
 				return factories.front()->Create<ArrayGetterNode>(var, node);
 		}
 		DumpTokenError("Array variable \"{name}\" not found ({line}: {column})", name);
@@ -416,16 +443,23 @@ ActionNode* Parser::ParseArrayValues(Lexer& lexer, std::deque<ActionNodeFactory*
 {
 	lexer.Pop();
 	Token top = lexer.Peek();
+	Token lastArg = top;
 	std::vector<ActionNode*> components;
 	while (lexer.Peek().type != Token::Type::BraceClose)
 	{
 		ActionNode* node = ParseExpression(lexer, factories);
 		if (!node)
 			return nullptr;
+		
+		if (ActionNode::IsArray(node))
+		{
+			DumpTokenError("Array nesting is not supported: \"{name}\" ({line}: {column})", lastArg);
+			return nullptr;
+		}
 
 		if (lexer.Peek().type != Token::Type::BraceClose)
 			CheckToken(lexer.Take(), Token::Type::Comma);
-		
+		lastArg = lexer.Peek();
 		components.push_back(node);
 	}
 	lexer.Pop();
@@ -465,39 +499,32 @@ ActionNode* Parser::ParseBody(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 {
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (CheckToken(lexer.Peek(), Token::Type::Word))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
 		{
-			if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
-			{
-				lexer.Pop();
-				if (!ParseFunction(lexer, factories))
-					break;
-			}
-			else if (StringUtils::Compare(lexer.Peek().string, "return", false))
-			{
-				lexer.Pop();
-				if (ActionNode* result = ParseExpression(lexer, factories))
-					return result;
-			}
-			else if (StringUtils::Compare(lexer.Peek().string, "var", false))
-			{
-				lexer.Pop();
-				if (!ParseVariableDeclaration(lexer, factories))
-					break;
-			}
-			else
-			{
-				if (!ParseVariableDeclaration(lexer, factories))
-					break;
-			}
-			
-			if (lexer.Peek().type == Token::Type::Semicolon)
-				lexer.Pop();
+			lexer.Pop();
+			if (!ParseFunction(lexer, factories))
+				break;
+		}
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::ReturnStatement), false))
+		{
+			lexer.Pop();
+			if (ActionNode* result = ParseExpression(lexer, factories))
+				return result;
+		}
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef), false))
+		{
+			lexer.Pop();
+			if (!ParseVariableDeclaration(lexer, factories))
+				break;
 		}
 		else
 		{
-			break;
+			if (!ParseVariableDeclaration(lexer, factories))
+				break;
 		}
+		
+		if (lexer.Peek().type == Token::Type::Semicolon)
+			lexer.Pop();
 	}
 	
 	return nullptr;

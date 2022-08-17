@@ -69,10 +69,10 @@ ActionNode::ActionNode(const Token& token):
 {
 }
 
-bool IsArray(const ActionNode* node)
+const ArrayNode* ActionNode::IsArray(const ActionNode* node)
 {
-	if (dynamic_cast<const ArrayNode*>(node))
-		return true;
+	if (auto arr = dynamic_cast<const ArrayNode*>(node))
+		return arr;
 	
 	if (auto var = dynamic_cast<const VariableNode*>(node))
 		return IsArray(var->Declaration()->Value());
@@ -80,10 +80,10 @@ bool IsArray(const ActionNode* node)
 	if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
 		return IsArray(funcCall->Root()->Body());
 	
-	return false;
+	return nullptr;
 }
 
-size_t GetArraySize(const ActionNode* node)
+size_t ActionNode::GetArraySize(const ActionNode* node)
 {
 	if (auto arr = dynamic_cast<const ArrayNode*>(node))
 		return arr->Values().size();
@@ -149,10 +149,6 @@ VariableDeclarationNode::VariableDeclarationNode(const Token& token, ActionNode*
 	ActionNode(token),
 	_value(value)
 {
-	if (IsArray(value))
-		_type = VariableType::Array;
-	else
-		_type = VariableType::Double;
 }
 
 std::queue<ActionNode*> VariableDeclarationNode::WalkDown() const

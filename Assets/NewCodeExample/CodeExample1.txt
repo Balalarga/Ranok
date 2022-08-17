@@ -6,16 +6,16 @@ def s(se)
     return -se;
 }
 
-def sa()
+def sa(some)
 {
-    return {-1, 1};
+    return {some, -1, 1};
 }
 
 def main(space[3])
 {
-    var s3 = s(-.3 + 3.3);
+    var s3 = s(space[1]);
     k = -s3;
     s2[] = {1, space[2], 3 + s3 * 2 + 2};
-    s5[2] = sa();
-    return s2 + space[2] + s5[1];
+    s5[3] = sa(k);
+    return space[2] + s5[1];
 }

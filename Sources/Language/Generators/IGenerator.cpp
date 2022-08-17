@@ -143,8 +143,8 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
 {
-	if (node->Type() == VariableType::Array)
-		outCode << fmt::format("double {}[{}]", node->Name(), GetArraySize(node->Value()));
+	if (const ArrayNode* arr = ActionNode::IsArray(node->Value()))
+		outCode << fmt::format("double {}[{}]", node->Name(), arr->Values().size());
 	else
 		outCode << fmt::format("double {}", node->Name());
 
@@ -160,10 +160,18 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclara
 		}
 		outCode << "}";
 	}
-	else if (dynamic_cast<const FunctionCallNode*>(node->Value()) && node->Type() == VariableType::Array )
+	else if (auto func = dynamic_cast<const FunctionCallNode*>(node->Value()))
 	{
-		outCode << "; ";
-		Process(outCode, node->Value());
+		if (ActionNode::IsArray(node->Value()))
+		{
+			outCode << "; ";
+			ProcessNode(outCode, func, node);
+		}
+		else
+		{
+			outCode << " = ";
+			Process(outCode, node->Value());
+		}
 	}
 	else
 	{
@@ -173,7 +181,7 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclara
 	outCode << ";\n";
 }
 
-void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node)
+void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, const ActionNode* result)
 {
 	outCode << node->Name() << "(";
 	const std::vector<ActionNode*>& args = node->Arguments();
@@ -183,31 +191,40 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNod
 		if (i < args.size()-1)
 			outCode << ", ";
 	}
+	if (result)
+	{
+		if (!args.empty())
+			outCode << ", ";
+		outCode << result->Name();
+	}
 	outCode << ")";
 }
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node)
 {
 	const std::vector<VariableDeclarationNode*>& sigArgs = node->Signature().Args();
-	if (IsArray(node->Body()))
+	if (const ArrayNode* arrBody = ActionNode::IsArray(node->Body()))
 	{
 		constexpr const char* outVarName = "__out__name";
+		constexpr const char* outResName = "__out__res";
 		outCode << fmt::format("void {}(", node->Name());
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
-			if (sigArgs[i]->Type() == VariableType::Array)
-				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), GetArraySize(sigArgs[i]->Value()));
+			if (const ArrayNode* arr = ActionNode::IsArray(sigArgs[i]))
+				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), arr->Values().size());
 			else
 				outCode << fmt::format("double {}", sigArgs[i]->Name());
+			
 			outCode << ", ";
 		}
 		outCode << "double* " << outVarName;
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
-		
-		outCode << outVarName << " = ";
+
+		outCode << "double " << outResName << "[" << arrBody->Values().size() << "] = ";
 		Process(outCode, node->Body());
+		outCode << ";\nmemcpy(" << outVarName << ", " << outResName << ", sizeof(double) * "<< arrBody->Values().size() ;
 		outCode << ";\n}\n";
 	}
 	else
@@ -215,21 +232,18 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		outCode << fmt::format("double {}(", node->Name());
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
-			if (sigArgs[i]->Type() == VariableType::Array)
-			{
-				auto asArr = static_cast<const ArrayNode*>(sigArgs[i]->Value());
+			if (const ArrayNode* asArr = ActionNode::IsArray(sigArgs[i]->Value()))
 				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), asArr->Values().size());
-			}
 			else
-			{
 				outCode << fmt::format("double {}", sigArgs[i]->Name());
-			}
+			
 			if (i+1 != sigArgs.size())
 				outCode << ", ";
 		}
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
+		
 		outCode << "return ";
 		Process(outCode, node->Body());
 		outCode << ";\n}\n";
