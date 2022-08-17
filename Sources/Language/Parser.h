@@ -37,7 +37,7 @@ protected:
 	FunctionDeclarationNode* ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories);
 	
 	bool CheckToken(const Token& token, Token::Type expected);
-
+	
 	static std::set<std::string> GetReservedWords();
 	
 	/**
@@ -58,7 +58,7 @@ private:
 	};
 	static const std::map<Token::Type, int> _operationPriorities;
 	static const std::map<ReservedNameTypes, std::string> _reservedWords;
-
+	
 	/// TODO: for now nested functions not allowed, because of generation problems
 	bool bAllowInnerFunctionDeclarations = false;
 	const std::string _unnamePrefix = "__unnamedVar__";

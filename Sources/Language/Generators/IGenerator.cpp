@@ -28,6 +28,10 @@ std::optional<std::string> IGenerator::Generate(const ActionTree& tree)
 	return code.str();
 }
 
+void IGenerator::Predefines(std::stringstream& outCode)
+{
+}
+
 void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 {
 	if (!node)
@@ -74,6 +78,11 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 	}
 }
 
+
+void CppGenerator::Predefines(std::stringstream& outCode)
+{
+	IGenerator::Predefines(outCode);
+}
 
 // --------------------------------------CppGenerator-------------------------------------
 void CppGenerator::ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node)

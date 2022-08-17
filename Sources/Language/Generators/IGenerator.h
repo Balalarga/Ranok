@@ -12,7 +12,8 @@ public:
 	const std::vector<std::string>& Errors() const { return _errors; }
 	bool HasErrors() const { return !_errors.empty(); }
 	
-	virtual std::optional<std::string> Generate(const ActionTree& tree);
+	std::optional<std::string> Generate(const ActionTree& tree);
+	virtual void Predefines(std::stringstream& outCode);
 	
 	
 protected:
@@ -39,6 +40,8 @@ private:
 class CppGenerator: public IGenerator
 {
 public:
+	void Predefines(std::stringstream& outCode) override;
+	
 	void ProcessNode(std::stringstream& outCode, const DoubleNumberNode* node) override;
 	void ProcessNode(std::stringstream& outCode, const ArrayNode* node) override;
 	void ProcessNode(std::stringstream& outCode, const VariableNode* node) override;
