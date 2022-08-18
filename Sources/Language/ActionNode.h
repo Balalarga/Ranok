@@ -46,7 +46,7 @@ public:
 	template<class T, class ...TArgs>
 	std::enable_if_t<std::derived_from<T, ActionNode>, T*> Create(TArgs&& ...args)
 	{
-		_nodes.push_back(std::make_unique<T>(args...));
+		_nodes.push_back(std::make_shared<T>(args...));
 		return static_cast<T*>(_nodes.back().get());
 	}
 	
@@ -59,8 +59,8 @@ public:
 	VariableDeclarationNode* FindVariable(const std::string& name) const;
 	FunctionDeclarationNode* FindFunction(const std::string& name) const;
 	
-	std::vector<std::unique_ptr<ActionNode>>& Nodes() { return _nodes; }
-	const std::vector<std::unique_ptr<ActionNode>>& Nodes() const { return _nodes; }
+	std::vector<std::shared_ptr<ActionNode>>& Nodes() { return _nodes; }
+	const std::vector<std::shared_ptr<ActionNode>>& Nodes() const { return _nodes; }
 	
 	std::map<std::string, FunctionDeclarationNode*>& Functions() { return _functions; }
 	const std::map<std::string, FunctionDeclarationNode*>& Functions() const { return _functions; }
@@ -70,10 +70,12 @@ public:
 	
 	std::vector<ActionNode*>& DeclarationOrder() { return _declarationOrder; }
 	const std::vector<ActionNode*>& DeclarationOrder() const { return _declarationOrder; }
-	
+
+	friend ActionNodeFactory operator+(const ActionNodeFactory& lhs, const ActionNodeFactory& rhs);
+	friend ActionNodeFactory& operator+=(ActionNodeFactory& lhs, const ActionNodeFactory& rhs);
 	
 private:
-	std::vector<std::unique_ptr<ActionNode>> _nodes;
+	std::vector<std::shared_ptr<ActionNode>> _nodes;
 	std::map<std::string, FunctionDeclarationNode*> _functions;
 	std::map<std::string, VariableDeclarationNode*> _variables;
 	std::vector<ActionNode*> _declarationOrder;

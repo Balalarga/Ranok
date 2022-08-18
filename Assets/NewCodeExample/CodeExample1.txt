@@ -6,11 +6,6 @@ def s(se)
     return -se;
 }
 
-def sa(some)
-{
-    return {some, -1, 1};
-}
-
 def main(space[3])
 {
     var s3 = s(space[1]);

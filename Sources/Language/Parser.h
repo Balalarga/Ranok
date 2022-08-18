@@ -20,6 +20,8 @@ public:
 	const std::vector<std::string>& Errors() const { return _errors; }
 	bool HasErrors() const { return !_errors.empty(); }
 	
+	void AddGlobalData(const ActionNodeFactory& factory);
+	
 	static int GetOperationPriority(Token::Type type);
 	
 	
@@ -44,7 +46,7 @@ protected:
 	 * \brief Create error message from token with optional format args:\n
 	 * <b>{name}</b> - token name\n
 	 * <b>{line}</b> - token line\n
-	 * <b>{column}</b> - token column
+	 * <b>{column}</b> - token column\n
 	 * \param errFormat Error string with formatter args
 	 * \param token Where was the error founded
 	 */
@@ -58,6 +60,8 @@ private:
 	};
 	static const std::map<Token::Type, int> _operationPriorities;
 	static const std::map<ReservedNameTypes, std::string> _reservedWords;
+
+	ActionNodeFactory _globalFactory;
 	
 	/// TODO: for now nested functions not allowed, because of generation problems
 	bool bAllowInnerFunctionDeclarations = false;

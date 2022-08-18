@@ -211,4 +211,36 @@ std::queue<ActionNode*> FunctionDeclarationNode::WalkDown() const
 {
 	return std::queue<ActionNode*>{{_body}};
 }
+
+ActionNodeFactory operator+(const ActionNodeFactory& lhs, const ActionNodeFactory& rhs)
+{
+	ActionNodeFactory newFactory;
+	newFactory._functions = lhs._functions;
+	newFactory._nodes = lhs._nodes;
+	newFactory._variables = lhs._variables;
+	newFactory._declarationOrder = lhs._declarationOrder;
+	
+	newFactory += rhs;
+	
+	return newFactory;
+}
+
+ActionNodeFactory& operator+=(ActionNodeFactory& lhs, const ActionNodeFactory& rhs)
+{
+	for (auto& f: rhs._functions)
+		if (!lhs._functions.contains(f.first))
+			lhs._functions[f.first] = f.second;
+	
+	for (auto& f: rhs._variables)
+		if (!lhs._variables.contains(f.first))
+			lhs._variables[f.first] = f.second;
+	
+	for (auto& f: rhs._nodes)
+		lhs._nodes.push_back(f);
+	
+	for (auto& f: rhs._declarationOrder)
+		lhs._declarationOrder.push_back(f);
+	
+	return lhs;
+}
 }

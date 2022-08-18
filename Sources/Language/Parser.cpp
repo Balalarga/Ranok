@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fmt/format.h>
 
+#include "HardcodedConstructions.h"
 #include "Utils/StringUtils.h"
 
 namespace Ranok
@@ -31,6 +32,7 @@ ActionTree Parser::Parse(Lexer lexer)
 	_errors.clear();
 	
 	ActionTree tree;
+	tree.GlobalFactory() += _globalFactory;
 	std::deque<ActionNodeFactory*> factoryStack( {&tree.GlobalFactory()} );
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
@@ -113,6 +115,11 @@ void Parser::DumpTokenError(const std::string& errFormat, const Token& token)
 	_errors.push_back(fmt::format(fmt::runtime(errFormat), fmt::arg("name", token.string), fmt::arg("line", token.line), fmt::arg("column", token.column)));
 }
 
+void Parser::AddGlobalData(const ActionNodeFactory& factory)
+{
+	_globalFactory += factory;
+}
+
 ActionNode* Parser::ParseExpression(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	if (ActionNode* node = ParsePrimary(lexer, factories))
@@ -163,6 +170,12 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<Action
 VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
 	Token var = lexer.Take();
+	if (Hardcoded::Get().VariableDeclarations.contains(var.string) ||
+		Hardcoded::Get().FunctionDeclarations.contains(var.string))
+	{
+		DumpTokenError("Word \"{name}\" is reserved by language)", var);
+		return nullptr;
+	}
 	
 	if (lexer.Peek().type == Token::Type::BracketOpen)
 	{
@@ -208,6 +221,13 @@ VariableDeclarationNode* Parser::ParseVariableDeclaration(Lexer& lexer, std::deq
 
 FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
+	if (Hardcoded::Get().VariableDeclarations.contains(lexer.Peek().string) ||
+		Hardcoded::Get().FunctionDeclarations.contains(lexer.Peek().string))
+	{
+		DumpTokenError("Word \"{name}\" is reserved by language)", lexer.Peek());
+		return nullptr;
+	}
+	
 	if (!bAllowInnerFunctionDeclarations && factories.size() > 1)
 	{
 		DumpTokenError("Nested functions not supported for a while ({line}: {column})", lexer.Peek());
@@ -355,10 +375,19 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 			if (funcDecl)
 				break;
 		}
+		
 		if (!funcDecl)
 		{
-			DumpTokenError("Couldn't find function \"{name}\" declaration ({line}: {column})", name);
-			return nullptr;
+			auto hardcodedFunc = Hardcoded::Get().FunctionDeclarations.find(name.string);
+			if (hardcodedFunc != Hardcoded::Get().FunctionDeclarations.end())
+			{
+				funcDecl = hardcodedFunc->second;
+			}
+			else
+			{
+				DumpTokenError("Couldn't find function \"{name}\" declaration ({line}: {column})", name);
+				return nullptr;
+			}
 		}
 		
 		std::vector<ActionNode*> args;
@@ -413,12 +442,24 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 			if (var && ActionNode::IsArray(var->Value()))
 				return factories.front()->Create<ArrayGetterNode>(var, node);
 		}
+		
+		auto hardcodedVar = Hardcoded::Get().VariableDeclarations.find(name.string);
+		if (hardcodedVar != Hardcoded::Get().VariableDeclarations.end())
+		{
+			if (ActionNode::IsArray(hardcodedVar->second->Value()))
+				return hardcodedVar->second;
+		}
+		
 		DumpTokenError("Array variable \"{name}\" not found ({line}: {column})", name);
 		return nullptr;
 	}
 	
 	for (auto i = factories.rbegin(); i != factories.rend(); ++i)
 	{
+		auto hardcodedVar = Hardcoded::Get().VariableDeclarations.find(name.string);
+		if (hardcodedVar != Hardcoded::Get().VariableDeclarations.end())
+			return hardcodedVar->second;
+		
 		if (VariableDeclarationNode* varDecl = (*i)->FindVariable(name.string))
 			return factories.front()->Create<VariableNode>(varDecl);
 	}

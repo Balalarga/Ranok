@@ -78,7 +78,6 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 	}
 }
 
-
 void CppGenerator::Predefines(std::stringstream& outCode)
 {
 	IGenerator::Predefines(outCode);

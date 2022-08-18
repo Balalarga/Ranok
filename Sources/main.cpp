@@ -10,8 +10,8 @@ using namespace Ranok;
 
 int main(int argc, char** argv)
 {
-	std::string filepath = RESOURCE_DIR"/NewCodeExample/CodeExample1.txt";
-	std::optional<std::string> code = Files::ReadFile(filepath);
+	std::string filepath = "NewCodeExample/CodeExample1.txt";
+	std::optional<std::string> code = Files::ReadAsset(filepath);
 	if (!code)
 	{
 		cout << "File at " << filepath << " not found\n";
@@ -20,6 +20,15 @@ int main(int argc, char** argv)
 	
 	Lexer lexer(code.value());
 	Parser parser;
+	
+	std::optional<ActionNodeFactory> lib = Files::LoadAssetLibrary("BaseLib.txt");
+	if (!lib.has_value())
+	{
+		cout << "Couldn't load " << filepath << " library\n";
+		return -2;
+	}
+	
+	parser.AddGlobalData(lib.value());
 	ActionTree tree = parser.Parse(lexer);
 	if (parser.HasErrors())
 	{
