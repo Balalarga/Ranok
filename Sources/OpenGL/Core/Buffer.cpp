@@ -45,7 +45,7 @@ unsigned Buffer::Create()
                               Layout.Variables[i].Type,
                               Layout.Variables[i].Normalized ? GL_FALSE : GL_TRUE,
                               Layout.Size,
-                              (void*)offset))
+                              static_cast<void*>(&offset)))
         offset += Layout.Variables[i].Size * Layout.Variables[i].Count;
     }
     

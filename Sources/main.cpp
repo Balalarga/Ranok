@@ -2,7 +2,9 @@
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
+#include "OpenGL/Core/Scene.h"
 #include "Utils/FileUtils.h"
+#include "WindowSystem/OpenglWindow.h"
 
 using namespace std;
 using namespace Ranok;
@@ -66,21 +68,32 @@ bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::strin
 	return false;
 }
 
+bool TestGui()
+{
+	OpenglWindow window({});
+	Scene scene;
+	window.SetBackgroundColor(glm::vec4(0.2, 0.2, 0.2, 1.0));
+	window.SetScene(&scene);
+	window.Show();
+	return true;
+}
+
 int main(int argc, char** argv)
 {
+	constexpr const char* mainTest = "-main";
 	std::map<std::string, std::function<bool()>> tests
 	{
-		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } }
+		{ mainTest, [](){ return TestGui(); } },
+		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 	};
 
 
-	
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
 	for (int i = 1; i < argc; ++i)
 	{
 		auto it = tests.find(argv[i]);
-		if (it != tests.end())
+		if (it != tests.end() || strcmp(argv[i], "") == 0)
 		{
 			if (it->second())
 				success.emplace_back(argv[i]);
@@ -88,22 +101,36 @@ int main(int argc, char** argv)
 				failure.emplace_back(argv[i]);
 		}
 	}
+	if (argc == 1 && tests.contains(mainTest))
+	{
+		if (tests[mainTest]())
+			success.emplace_back(mainTest);
+		else
+			failure.emplace_back(mainTest);
+	}
+	
 	if (!success.empty())
 	{
-		cout << "Succeed: ";
+		cout << "Succeed:\n";
 		for (auto& test: success)
-			cout << '\t' << test << '\n';
+			cout << "    " << test << '\n';
+		cout << "\n";
 	}
 
 	if (!success.empty())
 	{
-		cout << "Failed: ";
+		cerr << "Failed:\n";
 		for (auto& test: failure)
-			cout << '\t' << test << '\n';
+			cerr << "    " << test << '\n';
+		cerr << '\n';
 	}
-	if (!success.empty() && !failure.empty())
-		cout << "(" << success.size() / (success.size() + failure.size()) << ")";
+	if (!success.empty() || !failure.empty())
+	{
+		cout << "Passed " << success.size() / (success.size() + failure.size()) << "/" << (success.size() + failure.size());
+	}
 	else
+	{
 		cout << "No tests made\n";
+	}
 	return 0;
 }
