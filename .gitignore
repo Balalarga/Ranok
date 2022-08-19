@@ -3,6 +3,8 @@
 
 .idea
 .cache
+.vscode
+.vs
 
 build/
 release/
