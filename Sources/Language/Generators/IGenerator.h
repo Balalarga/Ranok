@@ -2,6 +2,7 @@
 #include <optional>
 
 #include "Language/ActionTree.h"
+#include "Language/HardcodedConstructions.h"
 
 namespace Ranok
 {
@@ -28,11 +29,14 @@ protected:
 	virtual void ProcessNode(std::stringstream& outCode, const BinaryNode* node) = 0;
 	virtual void ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, const ActionNode* result = nullptr) = 0;
 	virtual void ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node) = 0;
+	virtual void PrintIndent(std::stringstream& outCode);
+	virtual std::string ProcessHardcodedFunc(Hardcoded::FuncNames);
 	
 	void AddError(const std::string& error) { _errors.push_back(error); }
 	
 	
 private:
+	int indentWidth = 0;
 	std::vector<std::string> _errors;
 };
 

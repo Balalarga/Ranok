@@ -18,6 +18,9 @@ std::optional<std::string> IGenerator::Generate(const ActionTree& tree)
 	}
 	
 	std::stringstream code;
+	
+	Predefines(code);
+	
 	std::queue<const std::vector<ActionNode*>*> declarationOrder({&tree.GlobalFactory().DeclarationOrder()});
 	while (!declarationOrder.empty())
 	{
@@ -66,6 +69,7 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 	}
 	else if (auto varDecl = dynamic_cast<const VariableDeclarationNode*>(node))
 	{
+		PrintIndent(outCode);
 		ProcessNode(outCode, varDecl);
 	}
 	else if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
@@ -74,13 +78,46 @@ void IGenerator::Process(std::stringstream& outCode, const ActionNode* node)
 	}
 	else if (auto func = dynamic_cast<const FunctionDeclarationNode*>(node))
 	{
+		++indentWidth;
 		ProcessNode(outCode, func);
+		--indentWidth;
+	}
+}
+
+void IGenerator::PrintIndent(std::stringstream& outCode)
+{
+	for (int i = 0; i < indentWidth; ++i)
+		outCode << "\t";
+}
+
+std::string IGenerator::ProcessHardcodedFunc(Hardcoded::FuncNames name)
+{
+	switch (name)
+	{
+	case Hardcoded::FuncNames::Arccos:
+		return "acos";
+	case Hardcoded::FuncNames::Arcsin:
+		return "asin";
+	case Hardcoded::FuncNames::Arctan:
+		return "atan";
+	default:
+		return Hardcoded::Get().FunctionNames.at(name);
 	}
 }
 
 void CppGenerator::Predefines(std::stringstream& outCode)
 {
 	IGenerator::Predefines(outCode);
+	outCode <<
+R"(double __rv__Or(double a, double b)
+{
+	return a + b + std::sqrt(std::pow(a, 2) + std::pow(b, 2));
+}
+double __rv__And(double a, double b)
+{
+	return a + b - std::sqrt(std::pow(a, 2) + std::pow(b, 2));
+}
+)";
 }
 
 // --------------------------------------CppGenerator-------------------------------------
@@ -112,11 +149,25 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableNode* n
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* node)
 {
-	int currPriority = Parser::GetOperationPriority(node->GetToken().type);
+	Token::Type type = node->GetToken().type;
+	int currPriority = Parser::GetOperationPriority(type);
 	int lPriority = Parser::GetOperationPriority(node->Left()->GetToken().type);
 	int rPriority = Parser::GetOperationPriority(node->Right()->GetToken().type);
 	bool needLeftParent = lPriority != -1 && lPriority < currPriority;
 	bool needRightParent = rPriority != -1 && rPriority < currPriority;
+	
+	if (type == Token::Type::Hat)
+	{
+		outCode << "std::pow(";
+	}
+	else if (type == Token::Type::Ampersand)
+	{
+		outCode << "__rv__And(";
+	}
+	else if (type == Token::Type::Pipe)
+	{
+		outCode << "__rv__Or(";
+	}
 	
 	if (needLeftParent)
 	{
@@ -129,7 +180,15 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* nod
 		Process(outCode, node->Left());
 	}
 	
-	outCode << " " << node->Name() << " ";
+	if (type == Token::Type::Hat || type == Token::Type::Ampersand || type == Token::Type::Pipe)
+	{
+		outCode << ", ";
+	}
+	else
+	{
+		outCode << " " << node->Name() << " ";
+	}
+	
 	if (needRightParent)
 	{
 		outCode << "(";
@@ -140,6 +199,8 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* nod
 	{
 		Process(outCode, node->Right());
 	}
+	if (type == Token::Type::Hat || type == Token::Type::Ampersand || type == Token::Type::Pipe)
+		outCode << ")";
 }
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode* node)
@@ -191,7 +252,13 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclara
 
 void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionCallNode* node, const ActionNode* result)
 {
-	outCode << node->Name() << "(";
+	auto it = Hardcoded::Get().NamedFunctions.find(node->Name());
+	if (it != Hardcoded::Get().NamedFunctions.end())
+		outCode << ProcessHardcodedFunc(it->second);
+	else
+		outCode << node->Name();
+	
+	outCode << "(";
 	const std::vector<ActionNode*>& args = node->Arguments();
 	for (size_t i = 0; i < args.size(); ++i)
 	{
@@ -213,8 +280,8 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 	const std::vector<VariableDeclarationNode*>& sigArgs = node->Signature().Args();
 	if (const ArrayNode* arrBody = ActionNode::IsArray(node->Body()))
 	{
+		PrintIndent(outCode);
 		constexpr const char* outVarName = "__out__name";
-		constexpr const char* outResName = "__out__res";
 		outCode << fmt::format("void {}(", node->Name());
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
@@ -229,11 +296,23 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
-
-		outCode << "double " << outResName << "[" << arrBody->Values().size() << "] = ";
-		Process(outCode, node->Body());
-		outCode << ";\nmemcpy(" << outVarName << ", " << outResName << ", sizeof(double) * "<< arrBody->Values().size() ;
-		outCode << ";\n}\n";
+		
+		std::string outResName = "__out__res";
+		if (auto varRes = dynamic_cast<const VariableNode*>(node->Body()))
+		{
+			outResName = varRes->Name();
+		}
+		else
+		{
+			PrintIndent(outCode);
+			outCode << "double " << outResName << "[" << arrBody->Values().size() << "] = ";
+			Process(outCode, node->Body());
+			outCode << ";\n";
+		}
+		PrintIndent(outCode);
+		outCode << "memcpy(" << outVarName << ", " << outResName << ", sizeof(double) * "<< arrBody->Values().size();
+		outCode << ");\n}\n";
+			
 	}
 	else
 	{
@@ -252,6 +331,7 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
 		
+		PrintIndent(outCode);
 		outCode << "return ";
 		Process(outCode, node->Body());
 		outCode << ";\n}\n";

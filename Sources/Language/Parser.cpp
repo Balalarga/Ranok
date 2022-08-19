@@ -448,7 +448,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 		if (hardcodedVar != Hardcoded::Get().VariableDeclarations.end())
 		{
 			if (ActionNode::IsArray(hardcodedVar->second->Value()))
-				return hardcodedVar->second;
+				return hardcodedVar->second->Value();
 		}
 		
 		DumpTokenError("Array variable \"{name}\" not found ({line}: {column})", name);
@@ -459,7 +459,7 @@ ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 	{
 		auto hardcodedVar = Hardcoded::Get().VariableDeclarations.find(name.string);
 		if (hardcodedVar != Hardcoded::Get().VariableDeclarations.end())
-			return hardcodedVar->second;
+			return hardcodedVar->second->Value();
 		
 		if (VariableDeclarationNode* varDecl = (*i)->FindVariable(name.string))
 			return factories.front()->Create<VariableNode>(varDecl);

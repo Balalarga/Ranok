@@ -12,5 +12,5 @@ def main(space[3])
     k = -s3;
     s2[] = {1, space[2], 3 + s3 * 2 + 2};
     s5[3] = sa(k);
-    return space[2] + s5[1];
+    return space[2] & s5[1] | k;
 }
