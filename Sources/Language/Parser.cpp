@@ -16,6 +16,9 @@ const std::map<Token::Type, int> Parser::_operationPriorities
 	{ Token::Type::Minus, 2 },
 	{ Token::Type::Star, 4 },
 	{ Token::Type::Slash, 4 },
+	{ Token::Type::Ampersand, 5 },
+	{ Token::Type::Pipe, 5 },
+	{ Token::Type::Hat, 8 },
 };
 
 const std::map<Parser::ReservedNameTypes, std::string> Parser::_reservedWords
@@ -63,8 +66,6 @@ ActionTree Parser::Parse(Lexer lexer)
 	
 	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction(_reservedWords.at(ReservedNameTypes::MainFunc)))
 		tree.SetRoot(mainFunc);
-	else
-		_errors.push_back("No main function in parsed code");
 	
 	return tree;
 }

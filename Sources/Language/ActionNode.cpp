@@ -77,6 +77,9 @@ const ArrayNode* ActionNode::IsArray(const ActionNode* node)
 	if (auto var = dynamic_cast<const VariableNode*>(node))
 		return IsArray(var->Declaration()->Value());
 	
+	if (auto varDecl = dynamic_cast<const VariableDeclarationNode*>(node))
+		return IsArray(varDecl->Value());
+	
 	if (auto funcCall = dynamic_cast<const FunctionCallNode*>(node))
 		return IsArray(funcCall->Root()->Body());
 	

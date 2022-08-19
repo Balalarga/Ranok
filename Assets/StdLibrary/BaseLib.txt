@@ -5,14 +5,12 @@ def sa(some)
 
 def Translate(s[3], pos[3])
 {
-    sn = { s[0] - pos[0], s[1] - pos[1], s[2] - pos[2] };
-    return sn;
+    return { s[0] - pos[0], s[1] - pos[1], s[2] - pos[2] };
 }
 
 def Scale(s[3], scale[3])
 {
-    sn = { s[0] * scale[0], s[1] * scale[1], s[2] * scale[2] };
-    return sn;
+    return { s[0] * scale[0], s[1] * scale[1], s[2] * scale[2] };
 }
 
 def Rotate(s[3], angles[3])
@@ -23,10 +21,9 @@ def Rotate(s[3], angles[3])
     sinx = sin(angles[0]);
     siny = sin(angles[1]);
     sinz = sin(angles[2]);
-    s2[3] = { cosz*cosy * s[0] + ( sinx*siny*cosz - cosx*sinz) * s[1] + ( sinx*sinz+cosx*siny*cosz) * s[2],
-            cosy*sinz*s[0] + ( cosx*cosz+sinx*siny*sinz ) * s[1] + ( cosx*siny*sinz - sinx*cosz) * s[2],
-            (-siny) * s[0] + sinx*cosy *s[1] + cosx*cosy * s[2] };
-    return s2;
+    return { cosz*cosy * s[0] + ( sinx*siny*cosz - cosx*sinz) * s[1] + ( sinx*sinz+cosx*siny*cosz) * s[2],
+                       cosy*sinz*s[0] + ( cosx*cosz+sinx*siny*sinz ) * s[1] + ( cosx*siny*sinz - sinx*cosz) * s[2],
+                       (-siny) * s[0] + sinx*cosy *s[1] + cosx*cosy * s[2] };
 }
 
 def Sphere(s[3], radius)
