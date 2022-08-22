@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <imgui.h>
+#include <iostream>
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
@@ -71,7 +72,19 @@ bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::strin
 bool TestGui()
 {
 	OpenglWindow window({});
+	window.AddGuiLayer(GuiLayer([]()
+	{
+		ImGui::Begin("Window");
+		ImGui::End();
+	}));
+	InputSystem::Add(SDL_SCANCODE_ESCAPE,
+		[&window](KeyState state)
+		{
+			if (state == KeyState::Pressed)
+				window.Close();
+		});
 	Scene scene;
+	
 	window.SetBackgroundColor(glm::vec4(0.2, 0.2, 0.2, 1.0));
 	window.SetScene(&scene);
 	window.Show();
@@ -93,7 +106,7 @@ int main(int argc, char** argv)
 	for (int i = 1; i < argc; ++i)
 	{
 		auto it = tests.find(argv[i]);
-		if (it != tests.end() || strcmp(argv[i], "") == 0)
+		if (it != tests.end())
 		{
 			if (it->second())
 				success.emplace_back(argv[i]);

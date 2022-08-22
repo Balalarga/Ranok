@@ -14,13 +14,12 @@ public:
 
     void SetBackgroundColor(const glm::vec4& newColor) override;
     void Render() override;
+    void PostRender() override;
     
     void SetVSync(bool enabled) override;
 
-#if USE_IMGUI
     void ClearImGui() override;
     void PostRenderImGui() override;
-#endif
 
 
 private:

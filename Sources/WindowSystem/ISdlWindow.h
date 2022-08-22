@@ -6,8 +6,8 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
+#include "GuiLayer.h"
 #include "InputSystem.h"
-
 
 class Scene;
 
@@ -33,7 +33,9 @@ class ISdlWindow
 public:
     ISdlWindow(const ISdlWindowParams& params = ISdlWindowParams());
     virtual ~ISdlWindow();
-
+    
+    void AddGuiLayer(GuiLayer layer);
+    
     void Show();
     void Close();
 
@@ -53,11 +55,9 @@ public:
     Scene* GetScene() { return _scene; }
     void ResetScene() { _scene = nullptr; }
 
-#if USE_IMGUI
     virtual void ClearImGui();
     virtual void RenderImGui();
     virtual void PostRenderImGui();
-#endif
 
     inline SDL_Window* GetSdlWindow() const { return _sdlWindow; }
     inline const ISdlWindowParams& GetParams() const { return _params; }
@@ -71,6 +71,7 @@ private:
 
     bool _bShouldClose;
     glm::vec4 _backColor;
+    std::vector<GuiLayer> _guiLayers;
 };
 
 

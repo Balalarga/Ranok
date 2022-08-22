@@ -3,10 +3,8 @@
 
 #include <GL/glew.h>
 
-#if USE_IMGUI
-    #include <imgui.h>
-    #include <imgui_impl_sdl.h>
-#endif
+#include <imgui.h>
+#include <imgui_impl_sdl.h>
 
 
 static Uint32 DefaultSdlSubsystems = SDL_INIT_EVERYTHING;
@@ -45,20 +43,21 @@ ISdlWindow::ISdlWindow(const ISdlWindowParams& params):
     
     ISdlWindow::SetVSync(_params.vsync);
 
-#if USE_IMGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-#endif
 }
 
 ISdlWindow::~ISdlWindow()
 {
-#if USE_IMGUI
     ImGui::DestroyContext();
-#endif
     SDL_DestroyWindow(_sdlWindow);
     SDL_Quit();
+}
+
+void ISdlWindow::AddGuiLayer(GuiLayer layer)
+{
+    _guiLayers.push_back(layer);
 }
 
 void ISdlWindow::SetBackgroundColor(const glm::vec4& newColor)
@@ -76,11 +75,9 @@ void ISdlWindow::Show()
         while (SDL_PollEvent(&event))
             HandleEvents(event);
 
-#if USE_IMGUI
         ClearImGui();
         RenderImGui();
         PostRenderImGui();
-#endif
 
         Clear();
         Render();
@@ -96,9 +93,7 @@ void ISdlWindow::Close()
 void ISdlWindow::HandleEvents(SDL_Event& event)
 {
     auto& Input = InputSystem::Get();
-#if USE_IMGUI
     ImGui_ImplSDL2_ProcessEvent(&event);
-#endif
     switch(event.type)
     {
         case SDL_QUIT:
@@ -122,12 +117,7 @@ void ISdlWindow::HandleEvents(SDL_Event& event)
 
 void ISdlWindow::Clear()
 {
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-}
-
-void ISdlWindow::Render()
-{
-
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void ISdlWindow::PostRender()
@@ -140,7 +130,6 @@ void ISdlWindow::SetVSync(bool enabled)
     _params.vsync = enabled;
 }
 
-#if USE_IMGUI
 void ISdlWindow::ClearImGui()
 {
     ImGui_ImplSDL2_NewFrame();
@@ -149,10 +138,11 @@ void ISdlWindow::ClearImGui()
 
 void ISdlWindow::RenderImGui()
 {
+    for (auto& l: _guiLayers)
+        l.Render();
 }
 
 void ISdlWindow::PostRenderImGui()
 {
     ImGui::Render();
 }
-#endif

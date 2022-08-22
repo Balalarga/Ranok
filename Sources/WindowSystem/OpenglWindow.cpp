@@ -5,10 +5,8 @@
 #include "OpenGL/Core/IRenderable.h"
 #include "OpenGL/Core/Scene.h"
 
-#if USE_IMGUI
-    #include <imgui_impl_sdl.h>
-    #include <imgui_impl_opengl3.h>
-#endif
+#include <imgui_impl_sdl.h>
+#include <imgui_impl_opengl3.h>
 
 
 OpenglWindow::OpenglWindow(const ISdlWindowParams& params):
@@ -32,21 +30,17 @@ OpenglWindow::OpenglWindow(const ISdlWindowParams& params):
     auto backColor = GetBackgroundColor();
     glClearColor(backColor.r, backColor.g, backColor.b, backColor.a);
 
-#if USE_IMGUI
     const char* glsl_version = "#version 330";
 
     ImGui_ImplSDL2_InitForOpenGL(GetSdlWindow(), _glContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
-#endif
 }
 
 OpenglWindow::~OpenglWindow()
 {
     SDL_GL_DeleteContext(_glContext);
-#if USE_IMGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
-#endif
 }
 
 
@@ -67,7 +61,12 @@ void OpenglWindow::Render()
             Obj->Unbind();
         }
     }
-    ISdlWindow::Render();
+}
+
+void OpenglWindow::PostRender()
+{
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ISdlWindow::PostRender();
 }
 
 void OpenglWindow::SetVSync(bool enabled)
@@ -80,7 +79,6 @@ void OpenglWindow::SetVSync(bool enabled)
     ISdlWindow::SetVSync(enabled);
 }
 
-#if USE_IMGUI
 void OpenglWindow::ClearImGui()
 {
     ImGui_ImplOpenGL3_NewFrame();
@@ -90,6 +88,4 @@ void OpenglWindow::ClearImGui()
 void OpenglWindow::PostRenderImGui()
 {
     ISdlWindow::PostRenderImGui();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
-#endif

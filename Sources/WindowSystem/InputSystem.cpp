@@ -9,16 +9,16 @@ InputSystem& InputSystem::Get()
 
 void InputSystem::Add(SDL_Scancode code, const std::function<void(const KeyState&)>& callback)
 {
-    KeyCallbacks[code].push_back(callback);
+    Get().KeyCallbacks[code].push_back(callback);
 }
 
 bool InputSystem::Remove(SDL_Scancode code, const std::function<void(const KeyState&)>& callback)
 {
-    for (int i = 0; i < KeyCallbacks[code].size(); ++i)
+    for (int i = 0; i < Get().KeyCallbacks[code].size(); ++i)
     {
-        if (KeyCallbacks[code][i].target<void(const KeyState&)>() == callback.target<void(const KeyState&)>())
+        if (Get().KeyCallbacks[code][i].target<void(const KeyState&)>() == callback.target<void(const KeyState&)>())
         {
-            KeyCallbacks[code].erase(KeyCallbacks[code].begin() + i);
+            Get().KeyCallbacks[code].erase(Get().KeyCallbacks[code].begin() + i);
             return true;
         }
     }

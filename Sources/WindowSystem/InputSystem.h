@@ -16,17 +16,16 @@ class InputSystem
     friend class ISdlWindow;
 public:
     static InputSystem& Get();
-
-    void Add(SDL_Scancode code, const std::function<void(const KeyState&)>& callback);
-    bool Remove(SDL_Scancode code, const std::function<void(const KeyState&)>& callback);
-
-
+    static void Add(SDL_Scancode code, const std::function<void(const KeyState&)>& callback);
+    static bool Remove(SDL_Scancode code, const std::function<void(const KeyState&)>& callback);
+    
+    
 protected:
     InputSystem() = default;
-
+    
     void OnStateChange(SDL_Scancode code, KeyState state);
-
-
+    
+    
 private:
     std::vector<std::function<void(const KeyState&)>> KeyCallbacks[SDL_NUM_SCANCODES];
 };
