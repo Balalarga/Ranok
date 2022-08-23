@@ -21,5 +21,4 @@ endif()
 # Fmt setup
 add_subdirectory(${THIRDPARTY_DIR}/fmt fmt)
 
-
 add_subdirectory(Sources)

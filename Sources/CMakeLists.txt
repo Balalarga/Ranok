@@ -11,10 +11,10 @@ file(GLOB_RECURSE PROJECT_RESOURCES ${PROJECT_RESOURCE_DIR}/*)
 file(GLOB_RECURSE PROJECT_SOURCES ./*.cpp ./*.h ./*.hpp)
 
 # ImGui setup
-add_compile_definitions(USE_IMGUI = 1)
 set(ADDITIONAL_SOURCES
     # Main Imgui files
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui_demo.cpp
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui_draw.cpp
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui_tables.cpp
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
