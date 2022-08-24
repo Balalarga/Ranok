@@ -213,9 +213,9 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const ArrayGetterNode
 void CppGenerator::ProcessNode(std::stringstream& outCode, const VariableDeclarationNode* node)
 {
 	if (const ArrayNode* arr = ActionNode::IsArray(node->Value()))
-		outCode << fmt::format("double {}[{}]", node->Name(), arr->Values().size());
+		outCode << fmt::format("float {}[{}]", node->Name(), arr->Values().size());
 	else
-		outCode << fmt::format("double {}", node->Name());
+		outCode << fmt::format("float {}", node->Name());
 
 	if (auto arrNode = dynamic_cast<const ArrayNode*>(node->Value()))
 	{
@@ -286,13 +286,13 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
 			if (const ArrayNode* arr = ActionNode::IsArray(sigArgs[i]))
-				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), arr->Values().size());
+				outCode << fmt::format("float {}[{}]", sigArgs[i]->Name(), arr->Values().size());
 			else
-				outCode << fmt::format("double {}", sigArgs[i]->Name());
+				outCode << fmt::format("float {}", sigArgs[i]->Name());
 			
 			outCode << ", ";
 		}
-		outCode << "double* " << outVarName;
+		outCode << "float* " << outVarName;
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
@@ -305,24 +305,24 @@ void CppGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclara
 		else
 		{
 			PrintIndent(outCode);
-			outCode << "double " << outResName << "[" << arrBody->Values().size() << "] = ";
+			outCode << "float " << outResName << "[" << arrBody->Values().size() << "] = ";
 			Process(outCode, node->Body());
 			outCode << ";\n";
 		}
 		PrintIndent(outCode);
-		outCode << "memcpy(" << outVarName << ", " << outResName << ", sizeof(double) * "<< arrBody->Values().size();
+		outCode << "memcpy(" << outVarName << ", " << outResName << ", sizeof(float) * "<< arrBody->Values().size();
 		outCode << ");\n}\n";
 			
 	}
 	else
 	{
-		outCode << fmt::format("double {}(", node->Name());
+		outCode << fmt::format("float {}(", node->Name());
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
 			if (const ArrayNode* asArr = ActionNode::IsArray(sigArgs[i]->Value()))
-				outCode << fmt::format("double {}[{}]", sigArgs[i]->Name(), asArr->Values().size());
+				outCode << fmt::format("float {}[{}]", sigArgs[i]->Name(), asArr->Values().size());
 			else
-				outCode << fmt::format("double {}", sigArgs[i]->Name());
+				outCode << fmt::format("float {}", sigArgs[i]->Name());
 			
 			if (i+1 != sigArgs.size())
 				outCode << ", ";

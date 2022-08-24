@@ -9,6 +9,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "Language/Generators/OpenclGenerator.h"
+
 using namespace std;
 using namespace Ranok;
 
@@ -158,11 +160,11 @@ void CustomStyle()
 bool TestGui()
 {
 	OpenglWindow window;
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	CustomStyle();
 	window.AddGuiLayer(GuiLayer([]
 	{
-		ImGui::Begin("Window");
-		ImGui::Button("asga");
+		ImGui::Begin("DockSpace");
 		ImGui::End();
 	}));
 	
@@ -180,6 +182,52 @@ bool TestGui()
 	return true;
 }
 
+bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths = {})
+{
+	ScopedCout _("--------OpenCL Start-------\n", "--------OpenCL End-------\n");
+	std::optional<std::string> code = Files::ReadAsset(codeAssetPath);
+	if (!code)
+	{
+		cerr << "File at " << codeAssetPath << " not found\n";
+		return false;
+	}
+	
+	Lexer lexer(code.value());
+	Parser parser;
+	for (auto& libPath: libAssetPaths)
+	{
+		std::optional<ActionNodeFactory> lib = Files::LoadAssetLibrary(libPath);
+		if (!lib.has_value())
+		{
+			cerr << "Couldn't load " << libPath << " library\n";
+			return false;
+		}
+		parser.AddGlobalData(lib.value());
+	}
+	ActionTree tree = parser.Parse(lexer);
+	if (parser.HasErrors())
+	{
+		for (const string& error : parser.Errors())
+			cerr << error << endl;
+	}
+	
+	if (!tree.Root())
+	{
+		cerr << "No main function founded\n";
+		return false;
+	}
+	
+	OpenclGenerator gen;
+	if (std::optional<std::string> res = gen.Generate(tree))
+	{
+		cout << "Result:\n" << res.value() << endl;
+		return true;
+	}
+	
+	cerr << "Generation failed\n";
+	return false;
+}
+
 int main(int argc, char** argv)
 {
 	constexpr const char* mainTest = "-main";
@@ -187,9 +235,10 @@ int main(int argc, char** argv)
 	{
 		{ mainTest, [](){ return TestGui(); } },
 		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
+		{ "-openclTest", []{ return TestOpencl("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 	};
-
-
+	
+	
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
 	for (int i = 1; i < argc; ++i)
