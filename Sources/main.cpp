@@ -232,15 +232,20 @@ int main(int argc, char** argv)
 		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 		{ "-openclTest", []{ return TestOpencl("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 	};
-	
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
-	if (argc <= 1 && tests.contains(mainTest))
+	
+	auto tester = [&failure, &success](std::function<bool()>& func)
 	{
-		if (tests[mainTest]())
+		if (func())
 			success.emplace_back(mainTest);
 		else
 			failure.emplace_back(mainTest);
+	};
+	
+	if (argc <= 1 && tests.contains(mainTest))
+	{
+		tester(tests[mainTest]);
 	}
 	else
 	{
@@ -248,28 +253,23 @@ int main(int argc, char** argv)
 		{
 			auto it = tests.find(argv[i]);
 			if (it != tests.end())
-			{
-				if (it->second())
-					success.emplace_back(argv[i]);
-				else
-					failure.emplace_back(argv[i]);
-			}
+				tester(it->second);
 		}
 	}
 	
 	if (!success.empty())
 	{
 		cout << "Succeed:\n";
-		for (std::string& test : success)
-			cout << "    " << test << '\n';
+		for (std::string& result : success)
+			cout << "    " << result << '\n';
 		cout << "\n";
 	}
 	
 	if (!success.empty())
 	{
 		cerr << "Failed:\n";
-		for (std::string& test : failure)
-			cerr << "    " << test << '\n';
+		for (std::string& result : failure)
+			cerr << "    " << result << '\n';
 		cerr << '\n';
 	}
 	if (!success.empty() || !failure.empty())
