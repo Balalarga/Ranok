@@ -19,15 +19,28 @@ using namespace Ranok;
 
 struct ScopedCout
 {
-	ScopedCout(const std::string& inBeginning, std::string&& inEnding): inEnding(std::move(inEnding))
+	ScopedCout(const std::string& inBeginning, std::string&& inEnding): _inEnding(std::move(inEnding))
 	{
-		cout << inBeginning;
+		if (!inBeginning.empty())
+			cout << inBeginning;
 	}
 	~ScopedCout()
 	{
-		cout << inEnding;
+		if (!_inEnding.empty())
+			cout << _inEnding;
 	}
-	std::string inEnding;
+private:
+	std::string _inEnding;
+};
+
+template<class T>
+struct ScopedExec
+{
+	ScopedExec(const T& func): _func(func) {}
+	~ScopedExec() { _func(); }
+	
+private:
+	const T& _func;
 };
 
 std::optional<ActionTree> ReadCode(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths)
@@ -197,6 +210,7 @@ bool TestGui()
 bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths = {})
 {
 	Opencl::Executor::Init();
+	ScopedExec openclDestroyer([]{ Opencl::Executor::Destroy(); });
 	ScopedCout _("--------OpenCL Start-------\n", "--------OpenCL End-------\n");
 	std::optional<ActionTree> tree = ReadCode(codeAssetPath, libAssetPaths);
 	if (!tree.has_value())
@@ -218,7 +232,6 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 		return false;
 	}
 	
-	Opencl::Executor::Destroy();
 	cout << "Success\n";
 	return true;
 }
