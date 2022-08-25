@@ -9,6 +9,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "Executor/OpenclExecutor.h"
 #include "Language/Generators/OpenclGenerator.h"
 
 using namespace std;
@@ -218,14 +219,22 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 	}
 	
 	OpenclGenerator gen;
-	if (std::optional<std::string> res = gen.Generate(tree))
+	std::optional<std::string> res = gen.Generate(tree);
+	if (!res)
 	{
-		cout << "Result:\n" << res.value() << endl;
-		return true;
+		cerr << "Generation failed\n";
+		return false;
 	}
-	
-	cerr << "Generation failed\n";
-	return false;
+	Opencl::Executor::Init();
+	int result = Opencl::Executor::Compile(res.value());
+	if (result != CL_SUCCESS)
+	{
+		cerr << result;
+		return false;
+	}
+	Opencl::Executor::Destroy();
+	cout << "Success\n";
+	return true;
 }
 
 int main(int argc, char** argv)
@@ -233,7 +242,7 @@ int main(int argc, char** argv)
 	constexpr const char* mainTest = "-main";
 	std::map<std::string, std::function<bool()>> tests
 	{
-		{ mainTest, [](){ return TestGui(); } },
+		{ mainTest, TestGui },
 		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 		{ "-openclTest", []{ return TestOpencl("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 	};
@@ -241,29 +250,32 @@ int main(int argc, char** argv)
 	
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
-	for (int i = 1; i < argc; ++i)
-	{
-		auto it = tests.find(argv[i]);
-		if (it != tests.end())
-		{
-			if (it->second())
-				success.emplace_back(argv[i]);
-			else
-				failure.emplace_back(argv[i]);
-		}
-	}
-	if (argc == 1 && tests.contains(mainTest))
+	if (argc <= 1 && tests.contains(mainTest))
 	{
 		if (tests[mainTest]())
 			success.emplace_back(mainTest);
 		else
 			failure.emplace_back(mainTest);
 	}
+	else
+	{
+		for (int i = 1; i < argc; ++i)
+		{
+			auto it = tests.find(argv[i]);
+			if (it != tests.end())
+			{
+				if (it->second())
+					success.emplace_back(argv[i]);
+				else
+					failure.emplace_back(argv[i]);
+			}
+		}
+	}
 	
 	if (!success.empty())
 	{
 		cout << "Succeed:\n";
-		for (auto& test: success)
+		for (std::string& test : success)
 			cout << "    " << test << '\n';
 		cout << "\n";
 	}
@@ -271,13 +283,14 @@ int main(int argc, char** argv)
 	if (!success.empty())
 	{
 		cerr << "Failed:\n";
-		for (auto& test: failure)
+		for (std::string& test : failure)
 			cerr << "    " << test << '\n';
 		cerr << '\n';
 	}
 	if (!success.empty() || !failure.empty())
 	{
-		cout << "Passed " << success.size() / (success.size() + failure.size()) << "/" << (success.size() + failure.size());
+		unsigned long long total = success.size() + failure.size();
+		cout << "Passed " << success.size() << "/" << total;
 	}
 	else
 	{

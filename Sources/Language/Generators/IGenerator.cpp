@@ -1,8 +1,7 @@
 #include "IGenerator.h"
-#include "fmt/format.h"
 
 #include <sstream>
-
+#include "fmt/format.h"
 #include "Language/Parser.h"
 
 
