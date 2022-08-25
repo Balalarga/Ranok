@@ -49,12 +49,11 @@ class Executor
 public:
 	static int Init();
 	static void Destroy();
-
-	static std::string GetError(int code);
+	static DeviceInfo& GetDeviceInfo();
 	
-	static int ExecuteCurrentKernel(const std::string& functionName, const KernelArguments& args);
-	static int Compile(const std::string& code);
+	bool IsOk() const { return GetDeviceInfo().context != 0; };
 	
-	inline static DeviceInfo& GetDeviceInfo();
+	int ExecuteCurrentKernel(const std::string& functionName, const KernelArguments& args);
+	int Compile(const std::string& code);
 };
 }

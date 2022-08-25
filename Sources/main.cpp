@@ -1,23 +1,25 @@
 ﻿#include <iostream>
+
+#include "imgui.h"
+#include "imgui_internal.h"
+
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
 #include "OpenGL/Core/Scene.h"
 #include "Utils/FileUtils.h"
 #include "WindowSystem/OpenglWindow.h"
-
-#include <imgui.h>
-#include <imgui_internal.h>
-
 #include "Executor/OpenclExecutor.h"
 #include "Language/Generators/OpenclGenerator.h"
+
 
 using namespace std;
 using namespace Ranok;
 
+
 struct ScopedCout
 {
-	ScopedCout(const std::string& inBeginning, const std::string& inEnding): inEnding(inEnding)
+	ScopedCout(const std::string& inBeginning, std::string&& inEnding): inEnding(std::move(inEnding))
 	{
 		cout << inBeginning;
 	}
@@ -28,25 +30,24 @@ struct ScopedCout
 	std::string inEnding;
 };
 
-bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths = {})
+std::optional<ActionTree> ReadCode(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths)
 {
-	ScopedCout _("--------LangTest Start-------\n", "--------LangTest End-------\n");
 	std::optional<std::string> code = Files::ReadAsset(codeAssetPath);
 	if (!code)
 	{
 		cerr << "File at " << codeAssetPath << " not found\n";
-		return false;
+		return {};
 	}
 	
 	Lexer lexer(code.value());
 	Parser parser;
-	for (auto& libPath: libAssetPaths)
+	for (const std::string& libPath : libAssetPaths)
 	{
 		std::optional<ActionNodeFactory> lib = Files::LoadAssetLibrary(libPath);
 		if (!lib.has_value())
 		{
 			cerr << "Couldn't load " << libPath << " library\n";
-			return false;
+			return {};
 		}
 		parser.AddGlobalData(lib.value());
 	}
@@ -60,11 +61,21 @@ bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::strin
 	if (!tree.Root())
 	{
 		cerr << "No main function founded\n";
-		return false;
+		return {};
 	}
 	
+	return tree;
+}
+
+bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths = {})
+{
+	ScopedCout _("--------LangTest Start-------\n", "--------LangTest End-------\n");
+	std::optional<ActionTree> tree = ReadCode(codeAssetPath, libAssetPaths);
+	if (!tree.has_value())
+		return false;
+	
 	CppGenerator gen;
-	if (std::optional<std::string> res = gen.Generate(tree))
+	if (std::optional<std::string> res = gen.Generate(tree.value()))
 	{
 		cout << "Result:\n" << res.value() << endl;
 		return true;
@@ -185,53 +196,28 @@ bool TestGui()
 
 bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths = {})
 {
+	Opencl::Executor::Init();
 	ScopedCout _("--------OpenCL Start-------\n", "--------OpenCL End-------\n");
-	std::optional<std::string> code = Files::ReadAsset(codeAssetPath);
-	if (!code)
-	{
-		cerr << "File at " << codeAssetPath << " not found\n";
+	std::optional<ActionTree> tree = ReadCode(codeAssetPath, libAssetPaths);
+	if (!tree.has_value())
 		return false;
-	}
-	
-	Lexer lexer(code.value());
-	Parser parser;
-	for (auto& libPath: libAssetPaths)
-	{
-		std::optional<ActionNodeFactory> lib = Files::LoadAssetLibrary(libPath);
-		if (!lib.has_value())
-		{
-			cerr << "Couldn't load " << libPath << " library\n";
-			return false;
-		}
-		parser.AddGlobalData(lib.value());
-	}
-	ActionTree tree = parser.Parse(lexer);
-	if (parser.HasErrors())
-	{
-		for (const string& error : parser.Errors())
-			cerr << error << endl;
-	}
-	
-	if (!tree.Root())
-	{
-		cerr << "No main function founded\n";
-		return false;
-	}
 	
 	OpenclGenerator gen;
-	std::optional<std::string> res = gen.Generate(tree);
+	std::optional<std::string> res = gen.Generate(tree.value());
 	if (!res)
 	{
 		cerr << "Generation failed\n";
 		return false;
 	}
-	Opencl::Executor::Init();
-	int result = Opencl::Executor::Compile(res.value());
+	
+	Opencl::Executor exec;
+	int result = exec.Compile(res.value());
 	if (result != CL_SUCCESS)
 	{
 		cerr << result;
 		return false;
 	}
+	
 	Opencl::Executor::Destroy();
 	cout << "Success\n";
 	return true;
@@ -246,7 +232,6 @@ int main(int argc, char** argv)
 		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 		{ "-openclTest", []{ return TestOpencl("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 	};
-	
 	
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
@@ -279,7 +264,7 @@ int main(int argc, char** argv)
 			cout << "    " << test << '\n';
 		cout << "\n";
 	}
-
+	
 	if (!success.empty())
 	{
 		cerr << "Failed:\n";

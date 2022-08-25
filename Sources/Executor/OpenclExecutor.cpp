@@ -6,13 +6,13 @@ int Executor::Init()
 {
 	if (GetDeviceInfo().ret == CL_SUCCESS)
 		return GetDeviceInfo().ret;
-
+	
 	GetDeviceInfo().ret = clGetPlatformIDs(1,
 									   &GetDeviceInfo().platform_id,
 									   &GetDeviceInfo().ret_num_platforms);
 	if(GetDeviceInfo().ret != CL_SUCCESS)
 		return GetDeviceInfo().ret;
-
+	
 	GetDeviceInfo().ret = clGetDeviceIDs(GetDeviceInfo().platform_id,
 									 CL_DEVICE_TYPE_GPU,
 									 1,
@@ -20,7 +20,7 @@ int Executor::Init()
 									 &GetDeviceInfo().ret_num_devices);
 	if(GetDeviceInfo().ret != CL_SUCCESS)
 		return GetDeviceInfo().ret;
-
+	
 	GetDeviceInfo().context = clCreateContext(NULL, 1, &GetDeviceInfo().device_id,
 										  NULL,
 										  NULL,
@@ -47,22 +47,17 @@ void Executor::Destroy()
 	GetDeviceInfo().ret = clReleaseContext(GetDeviceInfo().context);
 }
 
-std::string Executor::GetError(int code)
-{
-	return std::to_string(code);
-}
-
 int Executor::ExecuteCurrentKernel(const std::string& functionName, const KernelArguments& args)
 {
 	 if (!GetDeviceInfo().program)
         return CL_INVALID_PROGRAM;
-
+	
     GetDeviceInfo().kernel = clCreateKernel(GetDeviceInfo().program,
                                         functionName.c_str(),
                                         &GetDeviceInfo().ret);
     if (!GetDeviceInfo().kernel || GetDeviceInfo().ret != CL_SUCCESS)
         return GetDeviceInfo().ret;
-
+	
     // Create gpu buffers
     cl_mem out_mem_obj = clCreateBuffer(GetDeviceInfo().context,
                                         CL_MEM_WRITE_ONLY,
@@ -71,28 +66,28 @@ int Executor::ExecuteCurrentKernel(const std::string& functionName, const Kernel
                                         &GetDeviceInfo().ret);
     if (GetDeviceInfo().ret != CL_SUCCESS)
         return GetDeviceInfo().ret;
-
+	
     GetDeviceInfo().ret = clSetKernelArg(GetDeviceInfo().kernel, 0, sizeof(cl_mem), &out_mem_obj);
     if (GetDeviceInfo().ret != CL_SUCCESS)
     {
         clReleaseMemObject(out_mem_obj);
         return GetDeviceInfo().ret;
     }
-
+	
     for (size_t i = 0; i < args.optional.size(); ++i)
     {
         GetDeviceInfo().ret = clSetKernelArg(GetDeviceInfo().kernel,
                                          i + 1,
                                          args.optional[i].TotalSize(),
                                          args.optional[i].ptr);
-
+		
         if (GetDeviceInfo().ret != CL_SUCCESS)
         {
             clReleaseMemObject(out_mem_obj);
             return GetDeviceInfo().ret;
         }
     }
-
+	
     // Get the maximum work group size for executing the kernel on the device
     //
     size_t global;  // global domain size for our calculation
@@ -108,12 +103,12 @@ int Executor::ExecuteCurrentKernel(const std::string& functionName, const Kernel
         clReleaseMemObject(out_mem_obj);
         return GetDeviceInfo().ret;
     }
-
+	
     // Execute the kernel over the entire range of our 1d input data set
     // using the maximum number of work group items for this device
     global = args.output.count;
     GetDeviceInfo().localGroupSize = static_cast<cl_uint>(local);
-
+	
     GetDeviceInfo().ret = clEnqueueNDRangeKernel(GetDeviceInfo().command_queue,
                                              GetDeviceInfo().kernel,
                                              1,
@@ -144,7 +139,7 @@ int Executor::ExecuteCurrentKernel(const std::string& functionName, const Kernel
         return GetDeviceInfo().ret;
     }
     GetDeviceInfo().ret = clReleaseMemObject(out_mem_obj);
-
+	
     return GetDeviceInfo().ret;
 }
 
@@ -152,7 +147,7 @@ int Executor::Compile(const std::string& code)
 {
 	if (code.empty())
 		return false;
-
+	
 	if(GetDeviceInfo().program != 0)
 		GetDeviceInfo().ret = clReleaseProgram(GetDeviceInfo().program);
 	
@@ -193,7 +188,7 @@ int Executor::Compile(const std::string& code)
 	return GetDeviceInfo().ret;
 }
 
-inline DeviceInfo& Executor::GetDeviceInfo()
+DeviceInfo& Executor::GetDeviceInfo()
 {
 	static DeviceInfo info;
 	return info;
