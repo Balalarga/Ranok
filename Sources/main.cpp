@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "Editor/Editor.h"
 
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
@@ -184,26 +185,21 @@ void CustomStyle()
 
 bool TestGui()
 {
-	OpenglWindow window;
+	Editor editor;
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	CustomStyle();
-	window.AddGuiLayer(GuiLayer([]
-	{
-		ImGui::Begin("DockSpace");
-		ImGui::End();
-	}));
 	
 	InputSystem::Add(SDL_SCANCODE_ESCAPE,
-		[&window](KeyState state)
+		[&editor](KeyState state)
 		{
 			if (state == KeyState::Pressed)
-				window.Close();
+				editor.Close();
 		});
 	Scene scene;
 	
-	window.SetBackgroundColor(glm::vec4(0.2, 0.2, 0.2, 1.0));
-	window.SetScene(&scene);
-	window.Show();
+	editor.SetBackgroundColor(glm::vec4(0.2, 0.2, 0.2, 1.0));
+	editor.SetScene(&scene);
+	editor.Show();
 	return true;
 }
 
@@ -285,9 +281,9 @@ int main(int argc, char** argv)
 			cerr << "    " << result << '\n';
 		cerr << '\n';
 	}
-	if (!success.empty() || !failure.empty())
+	unsigned long long total = success.size() + failure.size();
+	if (total > 0)
 	{
-		unsigned long long total = success.size() + failure.size();
 		cout << "Passed " << success.size() << "/" << total;
 	}
 	else

@@ -10,5 +10,6 @@ class Editor: public OpenglWindow
 public:
 	Editor();
 	
+	void GuiRender();
 };
 }
