@@ -1,24 +1,43 @@
 #include "Editor.h"
-
-#include <imgui_internal.h>
-
+#include "GuiWrap/WMenuBar.h"
 #include "imgui.h"
-#include "Utils/ImGuiUtils.h"
 
 namespace Ranok
 {
-Editor::Editor()
+ModuleSystem<IEditorModule> Editor::EditorSystem;
+
+ImGuiWindowFlags sMainWindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
+
+Editor::Editor():
+    _mainWindow("Editor", sMainWindowFlags)
 {
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	AddGuiLayer(GuiLayer([this] { GuiRender(); }));
+	EditorSystem.Init();
+
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    AddGuiLayer(GuiLayer([this] { GuiRender(); }));
+
+    auto& mainMenuBar = _mainWindow.Add<WMenuBar>();
+    auto& pluginsMenu = mainMenuBar.Add<WMenu>("Plugins");
+    EditorSystem.EnumerateModules([this, &pluginsMenu](IEditorModule *mod)
+    {
+        auto& menuItem = pluginsMenu.Add<WMenuCheckItem>(mod->Title(), [mod](bool state)
+        {
+            if (state)
+                mod->Open();
+            else
+                mod->Close();
+        });
+        mod->SetMenuItemPtr(&menuItem);
+    });
 }
 
 void Editor::GuiRender()
 {
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
-	ImGui::DockSpaceOverViewport(viewport);
-	
-	ImGui::Begin("MainEditorWindow", nullptr);
-	ImGui::End();
+    _mainWindow.Render();
+    EditorSystem.EnumerateModules([this](IEditorModule *mod)
+    {
+        if (mod->bHasGui)
+            mod->Render();
+    });
 }
 }

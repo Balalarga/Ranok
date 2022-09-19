@@ -1,15 +1,19 @@
-﻿#include <iostream>
+﻿#if __MINGW64__ || __MINGW32__
+#define SDL_MAIN_HANDLED
+#endif
+
+#include <iostream>
+
+#include <GuiWrap/WButton.h>
+#include <GuiWrap/WMenuBar.h>
 
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "Editor/Editor.h"
 
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
-#include "OpenGL/Core/Scene.h"
 #include "Utils/FileUtils.h"
-#include "WindowSystem/OpenglWindow.h"
 #include "Executor/OpenclExecutor.h"
 #include "Language/Generators/OpenclGenerator.h"
 
@@ -185,21 +189,18 @@ void CustomStyle()
 
 bool TestGui()
 {
-	Editor editor;
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    struct TestMod: public IEditorModule
+    {
+        TestMod(): IEditorModule("TestMod")
+        {
+            Add<WButton>("New Button");
+        }
+    };
+
+    TestMod& testModule = Editor::EditorSystem.AddModule<TestMod>();
+    Editor editor;
 	CustomStyle();
-	
-	InputSystem::Add(SDL_SCANCODE_ESCAPE,
-		[&editor](KeyState state)
-		{
-			if (state == KeyState::Pressed)
-				editor.Close();
-		});
-	Scene scene;
-	
-	editor.SetBackgroundColor(glm::vec4(0.2, 0.2, 0.2, 1.0));
-	editor.SetScene(&scene);
-	editor.Show();
+    editor.Show();
 	return true;
 }
 
@@ -244,7 +245,7 @@ int main(int argc, char** argv)
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
 	
-	auto tester = [&failure, &success](std::function<bool()>& func)
+    auto tester = [&failure, &success, &mainTest](std::function<bool()>& func)
 	{
 		if (func())
 			success.emplace_back(mainTest);
@@ -252,20 +253,20 @@ int main(int argc, char** argv)
 			failure.emplace_back(mainTest);
 	};
 	
-	if (argc <= 1 && tests.contains(mainTest))
-	{
-		tester(tests[mainTest]);
-	}
-	else
-	{
-		for (int i = 1; i < argc; ++i)
-		{
-			auto it = tests.find(argv[i]);
-			if (it != tests.end())
-				tester(it->second);
-		}
-	}
-	
+    if (argc <= 1 && tests.contains(mainTest))
+    {
+        tester(tests[mainTest]);
+    }
+    else
+    {
+        for (int i = 1; i < argc; ++i)
+        {
+            auto it = tests.find(argv[i]);
+            if (it != tests.end())
+                tester(it->second);
+        }
+    }
+
 	if (!success.empty())
 	{
 		cout << "Succeed:\n";
