@@ -1,9 +1,12 @@
 #include "Editor.h"
 #include "GuiWrap/WMenuBar.h"
 #include "imgui.h"
+#include "Localization/LocalizationSystem.h"
 
 namespace Ranok
 {
+DEFINELOCALETEXT(PluginsMenu, "Plugins")
+
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
 ImGuiWindowFlags sMainWindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDecoration;
@@ -17,7 +20,7 @@ Editor::Editor():
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 
     auto& mainMenuBar = _mainWindow.Add<WMenuBar>();
-    auto& pluginsMenu = mainMenuBar.Add<WMenu>("Plugins");
+    auto& pluginsMenu = mainMenuBar.Add<WMenu>(GETLOCALETEXT(PluginsMenu));
     EditorSystem.EnumerateModules([this, &pluginsMenu](IEditorModule *mod)
     {
         auto& menuItem = pluginsMenu.Add<WMenuCheckItem>(mod->Title(), [mod](bool state)
