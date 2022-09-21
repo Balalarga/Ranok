@@ -9,7 +9,7 @@
 
 #include "imgui.h"
 #include "Editor/Editor.h"
-
+#include "Log/Logger.h"
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
@@ -24,28 +24,28 @@ using namespace Ranok;
 
 struct ScopedCout
 {
-	ScopedCout(const std::string& inBeginning, std::string&& inEnding): _inEnding(std::move(inEnding))
-	{
-		if (!inBeginning.empty())
-			cout << inBeginning;
-	}
-	~ScopedCout()
-	{
-		if (!_inEnding.empty())
-			cout << _inEnding;
-	}
+    ScopedCout(const std::string& inBeginning, std::string&& inEnding): _inEnding(std::move(inEnding))
+    {
+        if (!inBeginning.empty())
+            cout << inBeginning;
+    }
+    ~ScopedCout()
+    {
+        if (!_inEnding.empty())
+            cout << _inEnding;
+    }
 private:
-	std::string _inEnding;
+    std::string _inEnding;
 };
 
 template<class T>
 struct ScopedExec
 {
-	ScopedExec(const T& func): _func(func) {}
-	~ScopedExec() { _func(); }
-	
+    ScopedExec(const T& func): _func(func) {}
+    ~ScopedExec() { _func(); }
+
 private:
-	const T& _func;
+    const T& _func;
 };
 
 std::optional<ActionTree> ReadCode(const std::string& codeAssetPath, const std::vector<std::string>& libAssetPaths)
@@ -105,6 +105,8 @@ bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::strin
 
 void CustomStyle()
 {
+    Logger::Log("CustomStyle");
+
 	auto &style = ImGui::GetStyle();
 	style.WindowPadding                     = ImVec2(8.00f, 8.00f);
 	style.FramePadding                      = ImVec2(5.00f, 2.00f);
@@ -233,15 +235,37 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 	return true;
 }
 
+void Preinit()
+{
+    Logger::AddOutputDevice(new CmdOutput());
+}
+
+void Init()
+{
+
+}
+
+void Predeinit()
+{
+
+}
+
+void Deinit()
+{
+
+}
+
 int main(int argc, char** argv)
 {
+    Preinit();
+    Init();
 	constexpr const char* mainTest = "-main";
 	std::map<std::string, std::function<bool()>> tests
 	{
 		{ mainTest, TestGui },
 		{ "-langTest", []{ return TestLanguage("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
 		{ "-openclTest", []{ return TestOpencl("NewCodeExample/CodeExample1.txt", {"BaseLib.txt"}); } },
-	};
+    };
 	std::vector<std::string> success;
 	std::vector<std::string> failure;
 	
@@ -291,5 +315,8 @@ int main(int argc, char** argv)
 	{
 		cout << "No tests made\n";
 	}
+
+    Predeinit();
+    Deinit();
 	return 0;
 }
