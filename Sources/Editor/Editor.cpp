@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include "GuiWrap/WMenuBar.h"
+#include "GuiWrap/WTexture.h"
 #include "imgui.h"
 #include "Localization/LocalizationSystem.h"
 
@@ -32,6 +33,8 @@ Editor::Editor():
         });
         mod->SetMenuItemPtr(&menuItem);
     });
+
+    _mainWindow.Add<WTexture>(glm::uvec2(800, 600));
 }
 
 void Editor::GuiRender()
