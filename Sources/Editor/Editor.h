@@ -7,6 +7,8 @@
 
 namespace Ranok
 {
+class WLogs;
+
 class IEditorModule: public IModule, public WWindow
 {
 public:
@@ -46,7 +48,10 @@ public:
 
     WWindow& GetMainWindow() { return _mainWindow; }
 
+    WLogs* GetLogWindow() { return _logWindow; }
+    
 private:
     WWindow _mainWindow;
+    WLogs* _logWindow{};
 };
 }

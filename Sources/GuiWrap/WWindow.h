@@ -16,35 +16,36 @@ public:
 
     void Render() override
     {
-        if (!_bIsOpened)
+        if (!bIsOpened)
             return;
 
         bool bCanClose = !(_windowFlags & ImGuiWindowFlags_NoTitleBar);
-        if (ImGui::Begin(_title.c_str(), bCanClose ? &_bIsOpened : nullptr, _windowFlags))
+        if (ImGui::Begin(_title.c_str(), bCanClose ? &bIsOpened : nullptr, _windowFlags))
         {
-            for (auto& widget: _inners)
+            for (std::unique_ptr<IWidget>& widget : _inners)
                 widget->Render();
         }
 
         ImGui::End();
 
-        if (!_bIsOpened)
+        if (!bIsOpened)
             OnClose();
     }
 
     virtual void OnClose() {}
 
-    void Open() { if (!_bIsOpened) _bIsOpened = true; }
-    void Close() { if (_bIsOpened) _bIsOpened = false; }
-    bool IsOpened() const { return _bIsOpened; }
+    void Open() { if (!bIsOpened) bIsOpened = true; }
+    void Close() { if (bIsOpened) bIsOpened = false; }
+    bool IsOpened() const { return bIsOpened; }
 
     const std::string& Title() const { return _title; }
 
+protected:
+    bool bIsOpened = true;
+    
 private:
     std::string _title;
     ImGuiWindowFlags _windowFlags;
-
-    bool _bIsOpened = true;
-
+    
     std::vector<std::unique_ptr<IWidget>> _inners;
 };

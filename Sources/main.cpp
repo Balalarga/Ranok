@@ -15,6 +15,9 @@
 #include "Language/Generators/IGenerator.h"
 #include "Utils/FileUtils.h"
 #include "Executor/OpenclExecutor.h"
+
+#include "GuiWrap/WLogs.h"
+
 #include "Language/Generators/OpenclGenerator.h"
 
 
@@ -193,13 +196,17 @@ bool TestGui()
 {
     struct TestMod: public IEditorModule
     {
-        TestMod(): IEditorModule("TestMod")
+        TestMod():
+    		IEditorModule("TestMod")
         {
-            Add<WButton>("New Button");
+            Add<WButton>("New Button", [this]
+            {
+            	
+            });
         }
     };
 
-    TestMod& testModule = Editor::EditorSystem.AddModule<TestMod>();
+    Editor::EditorSystem.AddModule<TestMod>();
     Editor editor;
 	CustomStyle();
     editor.Show();

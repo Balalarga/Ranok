@@ -19,7 +19,7 @@ public:
     void Render() override
     {
         ImGui::Image((void*)(intptr_t)_frameBuffer.GetTextureId(),
-                     ImGui::GetWindowSize(),
+                     ImVec2(_frameBuffer.GetTextureSize().x, _frameBuffer.GetTextureSize().y),
                      ImVec2(0, 1),
                      ImVec2(1, 0));
     }

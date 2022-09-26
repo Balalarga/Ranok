@@ -19,6 +19,8 @@ public:
 
     unsigned GetTextureId() const { return _texture.GetId(); }
 
+    glm::uvec2 GetTextureSize() { return _texture.Size(); }
+
 private:
     Texture _texture;
     unsigned _fboId;
