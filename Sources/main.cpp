@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include "imgui.h"
+#include "TextEditor.h"
+
 #include "Editor/Editor.h"
 #include "Editor/Modules/EditorModule.h"
 #include "Editor/Modules/Logger/LoggerModule.h"
@@ -197,10 +199,9 @@ bool TestGui()
     	
     	void RenderWindowContent() override
 	    {
-	    	if (ImGui::Button("New Button"))
-	    	{
-	    	}
+	    	textEditor.Render("TextEditor");
 	    }
+    	TextEditor textEditor;
     };
 	Editor::EditorSystem.AddModule<TestMod>();
 	Editor& editor = Editor::Instance();

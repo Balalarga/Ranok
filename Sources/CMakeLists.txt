@@ -20,10 +20,16 @@ set(ADDITIONAL_SOURCES
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/imgui_widgets.cpp
     # SDL2+OpenGL-specific files
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_sdl.cpp
-    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp)
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/imgui_impl_opengl3.cpp
+    # Additional ImGui subprojects:
+    # 1. TextEditor
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/TextEditor.cpp
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/TextEditor.h)
+    
 set(ADDITIONAL_INCLUDE_DIRS ${ADDITIONAL_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/
-    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/)
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/)
 
 # Glew setup
 set(GLEW_DIR ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/GLEW)
