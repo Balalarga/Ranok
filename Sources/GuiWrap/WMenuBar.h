@@ -99,7 +99,22 @@ public:
         }
     }
 
-private:
+protected:
     std::vector<std::unique_ptr<WMenu>> _menus;
+};
+
+class WMainMenuBar: public WMenuBar
+{
+public:
+    void Render()
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            for (auto& menu: _menus)
+                menu->Render();
+
+            ImGui::EndMainMenuBar();
+        }
+    }
 };
 }

@@ -4,6 +4,7 @@
 #include "imgui.h"
 
 #include "GuiWrap/WLogs.h"
+#include "GuiWrap/WRawWidget.h"
 
 #include "Localization/LocalizationSystem.h"
 
@@ -13,50 +14,83 @@ DEFINELOCALETEXT(PluginsMenu, "Plugins")
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
-ImGuiWindowFlags sMainWindowFlags = ImGuiWindowFlags_MenuBar |
-    ImGuiWindowFlags_NoDecoration |
-    ImGuiWindowFlags_NoResize |
-    ImGuiWindowFlags_NoBringToFrontOnFocus;
+Editor& Editor::Instance()
+{
+    static Editor editor;
+    return editor;
+}
 
-Editor::Editor():
-    _mainWindow("Editor", sMainWindowFlags)
+Editor::Editor()
 {
 	EditorSystem.Init();
 
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
-
-    auto& mainMenuBar = _mainWindow.Add<WMenuBar>();
-    auto& pluginsMenu = mainMenuBar.Add<WMenu>(GETLOCALETEXT(PluginsMenu));
-    EditorSystem.EnumerateModules([this, &pluginsMenu](IEditorModule *mod)
-    {
-        auto& menuItem = pluginsMenu.Add<WMenuCheckItem>(mod->Title(), [mod](bool state)
-        {
-            if (state)
-                mod->Open();
-            else
-                mod->Close();
-        });
-        mod->SetMenuItemPtr(&menuItem);
-    });
-
-    _mainWindow.Add<WTexture>(glm::uvec2(800, 600));
-    _logWindow = &_mainWindow.Add<WLogs>();
 }
 
 void Editor::GuiRender()
 {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->Pos);
-    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImVec4(0.02f, 0.02f, 0.02f, 1.f));
+        
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+    
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    _mainWindow.Render();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Editor", nullptr, window_flags);
     ImGui::PopStyleVar();
-    EditorSystem.EnumerateModules([this](IEditorModule *mod)
+
+    ImGui::PopStyleVar(2);
+
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+    if (ImGui::BeginMenuBar())
     {
-        if (mod->bHasGui)
-            mod->Render();
-    });
+        if (ImGui::BeginMenu(GETLOCALETEXT(PluginsMenu).c_str()))
+        {
+            EditorSystem.EnumerateModules([](IEditorModule*)
+            {
+                
+            });
+            
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+    static WLogs logWindow;
+    logWindow.Render();
+    
+    static WTexture texture(glm::uvec2(800, 600));
+    if (ImGui::Begin("Viewport"))
+    {
+        texture.Render();
+    }
+    ImGui::End();
+
+    ImGui::End();
+    ImGui::PopStyleColor();
+}
+
+void Editor::AddModuleMenuItem(ModuleMenuItem&& item)
+{
+    _moduleMenuItems.push_back(item);
+}
+
+IEditorModule::IEditorModule(const std::string& moduleName):
+    moduleName(moduleName)
+{
+    Editor::Instance().AddGuiLayer({[this]{ RenderGui(); }});
+}
+
+void IEditorModule::RenderGui()
+{
+    
 }
 }

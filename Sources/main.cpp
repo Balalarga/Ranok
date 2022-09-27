@@ -196,18 +196,19 @@ bool TestGui()
 {
     struct TestMod: public IEditorModule
     {
-        TestMod():
-    		IEditorModule("TestMod")
-        {
-            Add<WButton>("New Button", [this]
-            {
-            	
-            });
-        }
+	    TestMod(): IEditorModule("TestMod")
+        {}
+    	
+    	void RenderGui() override
+	    {
+	    	if (ImGui::Button("New Button"))
+	    	{
+	    	}
+	    }
     };
 
     Editor::EditorSystem.AddModule<TestMod>();
-    Editor editor;
+    Editor& editor = Editor::Instance();
 	CustomStyle();
     editor.Show();
 	return true;
