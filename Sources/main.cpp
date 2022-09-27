@@ -1,22 +1,20 @@
-﻿#if __MINGW64__ || __MINGW32__
+﻿#ifndef __MINGW__
 #define SDL_MAIN_HANDLED
 #endif
 
 #include <iostream>
 
-#include <GuiWrap/WButton.h>
-#include <GuiWrap/WMenuBar.h>
-
 #include "imgui.h"
 #include "Editor/Editor.h"
+#include "Editor/Modules/EditorModule.h"
+#include "Editor/Modules/Logger/LoggerModule.h"
+
 #include "Log/Logger.h"
 #include "Language/Lexer.h"
 #include "Language/Parser.h"
 #include "Language/Generators/IGenerator.h"
 #include "Utils/FileUtils.h"
 #include "Executor/OpenclExecutor.h"
-
-#include "GuiWrap/WLogs.h"
 
 #include "Language/Generators/OpenclGenerator.h"
 
@@ -108,8 +106,6 @@ bool TestLanguage(const std::string& codeAssetPath, const std::vector<std::strin
 
 void CustomStyle()
 {
-    Logger::Log("CustomStyle");
-
 	auto &style = ImGui::GetStyle();
 	style.WindowPadding                     = ImVec2(8.00f, 8.00f);
 	style.FramePadding                      = ImVec2(5.00f, 2.00f);
@@ -146,7 +142,7 @@ void CustomStyle()
 	colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.19f, 0.19f, 0.19f, 0.54f);
 	colors[ImGuiCol_FrameBgActive]          = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
 	colors[ImGuiCol_TitleBg]                = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-	colors[ImGuiCol_TitleBgActive]          = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+ 	colors[ImGuiCol_TitleBgActive]          = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
 	colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
 	colors[ImGuiCol_MenuBarBg]              = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
 	colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.05f, 0.05f, 0.05f, 0.54f);
@@ -199,18 +195,16 @@ bool TestGui()
 	    TestMod(): IEditorModule("TestMod")
         {}
     	
-    	void RenderGui() override
+    	void RenderWindowContent() override
 	    {
 	    	if (ImGui::Button("New Button"))
 	    	{
 	    	}
 	    }
     };
-
-    Editor::EditorSystem.AddModule<TestMod>();
-    Editor& editor = Editor::Instance();
-	CustomStyle();
-    editor.Show();
+	Editor::EditorSystem.AddModule<TestMod>();
+	Editor& editor = Editor::Instance();
+	editor.Show();
 	return true;
 }
 
@@ -250,7 +244,14 @@ void Preinit()
 
 void Init()
 {
+	Editor::Instance();
+	CustomStyle();
 
+	auto& logger = Editor::EditorSystem.AddModule<LoggerModule>("Log");
+	logger.bWorks = true;
+	
+	Editor::EditorSystem.Init();
+	Logger::Log("Editor module system inited");	
 }
 
 void Predeinit()

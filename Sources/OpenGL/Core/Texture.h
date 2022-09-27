@@ -11,6 +11,8 @@ public:
     Texture(glm::uvec2 size);
     virtual ~Texture();
 
+    void Resize(glm::uvec2 size);
+    
     unsigned Create();
 
     void Bind();

@@ -14,6 +14,15 @@ FrameBuffer::~FrameBuffer()
     glDeleteFramebuffers(1, &_fboId);
 }
 
+void FrameBuffer::Resize(glm::uvec2 size)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
+    
+    _texture.Resize(size);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 unsigned FrameBuffer::Create()
 {
     glGenFramebuffers(1, &_fboId);

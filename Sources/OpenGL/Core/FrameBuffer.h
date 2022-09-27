@@ -12,6 +12,8 @@ public:
     FrameBuffer(glm::uvec2 size);
     ~FrameBuffer();
 
+    void Resize(glm::uvec2 size);
+    
     unsigned Create();
 
     void Bind();

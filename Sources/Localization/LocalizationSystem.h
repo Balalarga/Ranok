@@ -5,7 +5,8 @@
 #include <vector>
 
 #define DEFINELOCALETEXT(tagId, text) static size_t tagId = LocalizationSystem::Get().AddText(#tagId, text);
-#define GETLOCALETEXT(tagId) LocalizationSystem::Get().GetText(tagId)
+#define GETLOCALETEXT(tagId) LocalizationSystem::Get().GetText(tagId).c_str()
+#define GETLOCALETEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId)
 
 namespace Ranok
 {
