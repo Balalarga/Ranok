@@ -12,8 +12,12 @@ class Editor: public OpenglWindow
 public:	
     static ModuleSystem<IEditorModule> EditorSystem;
 	static Editor& Instance();
-
+	
+	~Editor();
+	
 	void GuiRender();
+	
+	void TryLoadDefaultLayout();
 	
 private:
 	Editor();

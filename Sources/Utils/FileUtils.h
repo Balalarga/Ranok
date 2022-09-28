@@ -4,9 +4,34 @@
 #include <optional>
 #include <string>
 #include <fmt/format.h>
+#include "Language/ActionNode.h"
+#include "Language/Parser.h"
 
 namespace Ranok::Files
 {
+inline std::string GetAssetPath(const std::string& relativePath)
+{
+	return fmt::format("{}/{}", RESOURCE_DIR, relativePath);
+}
+
+inline std::string GetDefaultLayoutConfigPath()
+{
+	return GetAssetPath("Config/DefaultLayout.ini");
+}
+
+inline bool IsFileExists(const std::string& path)
+{
+	std::ifstream file(path);
+	bool bExists = !!file;
+	file.close();
+	return bExists;
+}
+
+inline bool IsAssetExists(const std::string& relativePath)
+{
+	return IsFileExists(GetAssetPath(relativePath));
+}
+
 inline std::optional<std::string> ReadFile(const std::string& path)
 {
 	std::ifstream file(path);
@@ -24,7 +49,7 @@ inline std::optional<std::string> ReadFile(const std::string& path)
 
 inline std::optional<std::string> ReadAsset(const std::string& relativePath)
 {
-	return ReadFile(fmt::format("{}/{}", RESOURCE_DIR, relativePath));
+	return ReadFile(GetAssetPath(relativePath));
 }
 
 inline std::optional<ActionNodeFactory> LoadLibrary(const std::string& path)

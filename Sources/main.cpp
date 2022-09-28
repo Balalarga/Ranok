@@ -10,6 +10,8 @@
 #include "Editor/Editor.h"
 #include "Editor/Modules/EditorModule.h"
 #include "Editor/Modules/Logger/LoggerModule.h"
+#include "Editor/Modules/MImageComputeModule/MImageComputeModule.h"
+#include "Editor/Modules/ModelingModule/ModelingModule.h"
 
 #include "Log/Logger.h"
 #include "Language/Lexer.h"
@@ -250,14 +252,16 @@ void Init()
 
 	auto& logger = Editor::EditorSystem.AddModule<LoggerModule>("Log");
 	logger.bWorks = true;
+
+	auto& mimageCompute = Editor::EditorSystem.AddModule<MImageComputeModule>();
+	auto& modeling = Editor::EditorSystem.AddModule<ModelingModule>();
 	
 	Editor::EditorSystem.Init();
-	Logger::Log("Editor module system inited");	
+	Logger::Log("Editor module system inited");
 }
 
 void Predeinit()
 {
-
 }
 
 void Deinit()

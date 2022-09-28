@@ -7,6 +7,8 @@
 #define DEFINELOCALETEXT(tagId, text) static size_t tagId = LocalizationSystem::Get().AddText(#tagId, text);
 #define GETLOCALETEXT(tagId) LocalizationSystem::Get().GetText(tagId).c_str()
 #define GETLOCALETEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId)
+#define GETDEFAULTLOCALETEXT(tagId) LocalizationSystem::Get().GetDefaultText(tagId).c_str()
+#define GETDEFAULTLOCALETEXTSTR(tagId) LocalizationSystem::Get().GetDefaultText(tagId)
 
 namespace Ranok
 {
@@ -24,6 +26,7 @@ public:
 
     size_t AddText(const std::string& tag, const std::string& text);
     std::string GetText(size_t id) { return id < _currentLocale->size() ? _currentLocale->at(id) : "<unknown_id>"; }
+    std::string GetDefaultText(size_t id) { return _locales.begin()->second.at(id); }
 
 private:
     LocalizationSystem();
