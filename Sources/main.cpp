@@ -254,7 +254,9 @@ void Init()
 	logger.bWorks = true;
 
 	auto& mimageCompute = Editor::EditorSystem.AddModule<MImageComputeModule>();
+	
 	auto& modeling = Editor::EditorSystem.AddModule<ModelingModule>();
+	modeling.bWorks = true;
 	
 	Editor::EditorSystem.Init();
 	Logger::Log("Editor module system inited");

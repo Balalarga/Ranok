@@ -6,20 +6,34 @@ namespace Ranok
 DEFINELOCALETEXT(ModuleName, "Modeling")
 
 ModelingModule::ModelingModule():
-	IEditorModule(GETLOCALETEXTSTR(ModuleName))
+	IEditorModule(GETLOCALETEXTSTR(ModuleName)),
+	_viewport({800, 600})
 {
+	_viewport.Create();
 }
 
 void ModelingModule::RenderWindowContent()
 {
-	ImGui::BeginChild("Splitter test");
-
+	ImGui::BeginChild("mainContainer");
 	static float w = 200.0f;
-	static float h = 300.0f;
-	float trueH = h >= 0 ? h : 1;
+	float trueH = ImGui::GetWindowContentRegionMax().y;
 	float trueW = w >= 0 ? w : 1;
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,0));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
+	if (_textEditorTabs.size() > 0)
+	{
+		ImGui::BeginTabBar("##textEditorTabs");
+		for (auto& tab: _textEditorTabs)
+		{
+			if (ImGui::BeginTabItem(""))
+			{
+				tab.Render("TextEditor");
+			}
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+	
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));
@@ -30,19 +44,15 @@ void ModelingModule::RenderWindowContent()
 	if (bIsActive || bIsHovered)
 		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 	ImGui::SameLine();
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::BeginChild("child2", ImVec2(0, trueH), true);
-	ImGui::EndChild();
-	ImGui::InvisibleButton("hsplitter", ImVec2(-1, 8.0f));
-	bIsActive = ImGui::IsItemActive();
-	bIsHovered = ImGui::IsItemHovered();
-	if (ImGui::IsItemActive())
-		h += ImGui::GetIO().MouseDelta.y;
-	if (bIsActive || bIsHovered)
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-	ImGui::BeginChild("child3", ImVec2(0, 0), true);
+	ImGui::Image((void*)(intptr_t)_viewport.GetTextureId(),
+				 ImGui::GetWindowSize(),
+				 ImVec2(0, 1),
+				 ImVec2(1, 0));
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
-
+	ImGui::PopStyleVar();
 	ImGui::EndChild();
 }
 }

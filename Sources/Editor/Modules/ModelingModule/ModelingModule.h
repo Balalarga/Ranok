@@ -1,5 +1,9 @@
 ﻿#pragma once
+#include "TextEditor.h"
+
 #include "Editor/Modules/EditorModule.h"
+
+#include "OpenGL/Core/FrameBuffer.h"
 
 namespace Ranok
 {
@@ -11,9 +15,7 @@ public:
 	void RenderWindowContent() override;
 	
 private:
-	struct SubwindowSettings
-	{
-		
-	};
+	std::vector<TextEditor> _textEditorTabs;
+	FrameBuffer _viewport;
 };
 }
