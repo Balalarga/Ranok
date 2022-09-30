@@ -14,6 +14,9 @@ public:
 	
 	void RenderWindowContent() override;
 	
+	std::string OpenFileFilter() override;
+	void OpenFile(const std::string& filepath) override;
+	
 private:
 	std::vector<TextEditor> _textEditorTabs;
 	FrameBuffer _viewport;

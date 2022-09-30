@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "imgui.h"
+#include "ImGuiFileDialog.h"
 #include "TextEditor.h"
 
 #include "Editor/Editor.h"
@@ -189,23 +190,19 @@ void CustomStyle()
 	colors[ImGuiCol_NavHighlight]           = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
 	colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 0.00f, 0.00f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
-	colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(1.00f, 0.00f, 0.00f, 0.35f);
+	colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.00f, 0.00f, 0.00f, 0.2f);
+	
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, nullptr, ImVec4(1.0f, 1.0f, 0.3f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, nullptr, ImVec4(0.5f, 1.0f, 0.9f, 0.9f));
+	
+	ImGuiIO& io = ImGui::GetIO();
+	std::string fontPath = Files::GetAssetPath("Fonts/Roboto-Regular.ttf");
+	ImFont* font1 = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 14, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+	io.FontDefault = font1;
 }
 
 bool TestGui()
 {
-    struct TestMod: public IEditorModule
-    {
-	    TestMod(): IEditorModule("TestMod")
-        {}
-    	
-    	void RenderWindowContent() override
-	    {
-	    	textEditor.Render("TextEditor");
-	    }
-    	TextEditor textEditor;
-    };
-	Editor::EditorSystem.AddModule<TestMod>();
 	Editor& editor = Editor::Instance();
 	editor.Show();
 	return true;

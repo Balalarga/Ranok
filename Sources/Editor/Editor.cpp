@@ -1,11 +1,10 @@
 #include "Editor.h"
 
 #include "imgui.h"
+#include "ImGuiFileDialog.h"
 #include "Modules/EditorModule.h"
 #include "Localization/LocalizationSystem.h"
 #include "Log/Logger.h"
-
-#include "OpenGL/Core/FrameBuffer.h"
 #include "Utils/FileUtils.h"
 
 namespace Ranok
@@ -13,6 +12,7 @@ namespace Ranok
 DEFINELOCALETEXT(FileMenu, "File")
 DEFINELOCALETEXT(ModulesMenu, "Modules")
 DEFINELOCALETEXT(SettinsMenu, "Settings")
+DEFINELOCALETEXT(ChooseFileDialog, "Choose File")
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
@@ -57,7 +57,23 @@ void Editor::GuiRender()
 	{
 		if (ImGui::BeginMenu(GETLOCALETEXT(FileMenu)))
 		{
-			ImGui::MenuItem("Open");
+			if (ImGui::MenuItem("Open"))
+			{
+				std::stringstream filters;
+				EditorSystem.EnumerateModules([&filters](IEditorModule* module)
+				{
+					if (!module->bWorks)
+						return;
+					
+					filters << module->OpenFileFilter() << ",";
+				});
+				std::string filtersStr = filters.str();
+				filtersStr.resize(filtersStr.size()-1);
+				ImGuiFileDialog::Instance()->OpenModal("ChooseFileDlgKey",
+					GETLOCALETEXTSTR(ChooseFileDialog),
+					filtersStr.c_str(),
+					".");
+			}
 			ImGui::EndMenu();
 		}
 		
@@ -78,8 +94,27 @@ void Editor::GuiRender()
 		}
 		ImGui::EndMenuBar();
 	}
+
+	static ImVec2 fileChoosePos = {viewport->WorkSize.x/4.f, viewport->WorkSize.y/4.f};
+	static ImVec2 fileChooseSize = {viewport->WorkSize.x/2.f, viewport->WorkSize.y/2.f};
+	ImGui::SetNextWindowPos(fileChoosePos);
+	ImGui::SetNextWindowSize(fileChooseSize);
+	if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+	{
+		if (ImGuiFileDialog::Instance()->IsOk())
+		{
+			EditorSystem.EnumerateModules([](IEditorModule* module)
+			{
+				if (!module->bWorks || module->OpenFileFilter() != ImGuiFileDialog::Instance()->GetCurrentFilter())
+					return;
+
+				module->OpenFile(ImGuiFileDialog::Instance()->GetFilePathName());
+			});
+		}
+		ImGuiFileDialog::Instance()->Close();
+	}
 	
-	static ImGuiID dockspaceId = ImGui::GetID("MyDockSpace");
+	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
 	ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 	
 	ImGui::End();
@@ -100,3 +135,4 @@ void Editor::TryLoadDefaultLayout()
 	}
 }
 }
+ 

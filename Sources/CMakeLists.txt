@@ -6,6 +6,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
 set(PROJECT_RESOURCE_DIR ${CMAKE_SOURCE_DIR}/Assets)
 file(GLOB_RECURSE PROJECT_RESOURCES ${PROJECT_RESOURCE_DIR}/*)
 file(GLOB_RECURSE PROJECT_SOURCES ./*.cpp ./*.h ./*.hpp)
@@ -24,12 +27,16 @@ set(ADDITIONAL_SOURCES
     # Additional ImGui subprojects:
     # 1. TextEditor
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/TextEditor.cpp
-    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/TextEditor.h)
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/TextEditor.h
+    # 2. FileDialog
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiFileDialog-0.6.4/ImGuiFileDialog.cpp
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiFileDialog-0.6.4/ImGuiFileDialog.h)
     
 set(ADDITIONAL_INCLUDE_DIRS ${ADDITIONAL_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/
     ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGui/backends/
-    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/)
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiColorTextEdit/
+    ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/ImGuiFileDialog-0.6.4/)
 
 # Glew setup
 set(GLEW_DIR ${CMAKE_SOURCE_DIR}/${THIRDPARTY_DIR}/GLEW)

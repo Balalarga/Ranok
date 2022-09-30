@@ -6,6 +6,7 @@
 #include <fmt/format.h>
 #include "Language/ActionNode.h"
 #include "Language/Parser.h"
+#include "Log/Logger.h"
 
 namespace Ranok::Files
 {
@@ -37,7 +38,7 @@ inline std::optional<std::string> ReadFile(const std::string& path)
 	std::ifstream file(path);
 	if (!file)
 	{
-		std::cerr << path << std::endl;
+		Logger::Error(fmt::format("Couldn't open {}", path));
 		return {};
 	}
 	
@@ -58,16 +59,18 @@ inline std::optional<ActionNodeFactory> LoadLibrary(const std::string& path)
 	std::optional<std::string> code = ReadFile(path);
 	if (!code.has_value())
 		return {};
-
+	
 	ActionTree tree = parser.Parse(Lexer(code.value()));
 	
 	if (parser.HasErrors())
 	{
-		std::cerr << "----------------------------------------\n";
-		std::cerr << path << std::endl;
+		std::stringstream errorText;
+		errorText << "----------------------------------------\n";
+		errorText << path << std::endl;
 		for(auto& err: parser.Errors())
-			std::cerr << err << std::endl;
-		std::cerr << "----------------------------------------\n";
+			errorText << err << std::endl;
+		errorText << "----------------------------------------\n";
+		Logger::Error(errorText.str());
 	}
 	return tree.GlobalFactory();
 }

@@ -1,5 +1,6 @@
 ﻿#include "ModelingModule.h"
 #include "Localization/LocalizationSystem.h"
+#include "Utils/FileUtils.h"
 
 namespace Ranok
 {
@@ -15,20 +16,18 @@ ModelingModule::ModelingModule():
 void ModelingModule::RenderWindowContent()
 {
 	ImGui::BeginChild("mainContainer");
-	static float w = 200.0f;
+	static float w = ImGui::GetWindowContentRegionMax().x / 3.f;
 	float trueH = ImGui::GetWindowContentRegionMax().y;
 	float trueW = w >= 0 ? w : 1;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
-	if (_textEditorTabs.size() > 0)
+	if (!_textEditorTabs.empty())
 	{
 		ImGui::BeginTabBar("##textEditorTabs");
-		for (auto& tab: _textEditorTabs)
+		for (TextEditor& tab : _textEditorTabs)
 		{
-			if (ImGui::BeginTabItem(""))
-			{
-				tab.Render("TextEditor");
-			}
+			if (ImGui::BeginTabItem(tab.GetFilename().c_str()))
+				tab.Render();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -54,5 +53,21 @@ void ModelingModule::RenderWindowContent()
 	ImGui::PopStyleVar();
 	ImGui::PopStyleVar();
 	ImGui::EndChild();
+}
+
+std::string ModelingModule::OpenFileFilter()
+{
+	return "*.rcode";
+}
+
+void ModelingModule::OpenFile(const std::string& filepath)
+{
+	if (std::optional<std::string> data = Files::ReadFile(filepath))
+	{
+		_textEditorTabs.push_back({});
+		_textEditorTabs.back().SetText(data.value());
+		_textEditorTabs.back().SetFilename(filepath.substr(filepath.find_last_of("//")));
+		_textEditorTabs.back().SetFilepath(filepath);
+	}
 }
 }
