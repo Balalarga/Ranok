@@ -31,6 +31,7 @@ OpenglWindow::OpenglWindow(const ISdlWindowParams& params):
     glClearColor(backColor.r, backColor.g, backColor.b, backColor.a);
 
     const char* glsl_version = "#version 330";
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplSDL2_InitForOpenGL(GetSdlWindow(), _glContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
@@ -66,6 +67,13 @@ void OpenglWindow::Render()
 void OpenglWindow::PostRender()
 {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+    
     ISdlWindow::PostRender();
 }
 

@@ -6,13 +6,13 @@
 #include "Localization/LocalizationSystem.h"
 #include "Log/Logger.h"
 #include "Utils/FileUtils.h"
+#include "Utils/WindowsUtils.h"
 
 namespace Ranok
 {
 DEFINELOCALETEXT(FileMenu, "File")
 DEFINELOCALETEXT(ModulesMenu, "Modules")
 DEFINELOCALETEXT(SettinsMenu, "Settings")
-DEFINELOCALETEXT(ChooseFileDialog, "Choose File")
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
@@ -29,7 +29,6 @@ Editor::~Editor()
 
 Editor::Editor()
 {
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 }
@@ -59,20 +58,19 @@ void Editor::GuiRender()
 		{
 			if (ImGui::MenuItem("Open"))
 			{
-				std::stringstream filters;
-				EditorSystem.EnumerateModules([&filters](IEditorModule* module)
+				std::string filepathStr = OpenFileDialog("*.*");
+				if (!filepathStr.empty())
 				{
-					if (!module->bWorks)
-						return;
-					
-					filters << module->OpenFileFilter() << ",";
-				});
-				std::string filtersStr = filters.str();
-				filtersStr.resize(filtersStr.size()-1);
-				ImGuiFileDialog::Instance()->OpenModal("ChooseFileDlgKey",
-					GETLOCALETEXTSTR(ChooseFileDialog),
-					filtersStr.c_str(),
-					".");
+					Logger::Log(std::forward<std::string>(filepathStr));
+					bool bProcessed = false;
+					EditorSystem.EnumerateModules([&bProcessed, &filepathStr](IEditorModule* module)
+					{
+						if (!bProcessed)
+							bProcessed = module->bWorks && module->TryOpenFile(filepathStr);
+					});
+					if (!bProcessed)
+						Logger::Warning(fmt::format("No one module can open file: {}", filepathStr));
+				}
 			}
 			ImGui::EndMenu();
 		}
@@ -93,25 +91,6 @@ void Editor::GuiRender()
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
-	}
-
-	static ImVec2 fileChoosePos = {viewport->WorkSize.x/4.f, viewport->WorkSize.y/4.f};
-	static ImVec2 fileChooseSize = {viewport->WorkSize.x/2.f, viewport->WorkSize.y/2.f};
-	ImGui::SetNextWindowPos(fileChoosePos);
-	ImGui::SetNextWindowSize(fileChooseSize);
-	if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
-	{
-		if (ImGuiFileDialog::Instance()->IsOk())
-		{
-			EditorSystem.EnumerateModules([](IEditorModule* module)
-			{
-				if (!module->bWorks || module->OpenFileFilter() != ImGuiFileDialog::Instance()->GetCurrentFilter())
-					return;
-
-				module->OpenFile(ImGuiFileDialog::Instance()->GetFilePathName());
-			});
-		}
-		ImGuiFileDialog::Instance()->Close();
 	}
 	
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");

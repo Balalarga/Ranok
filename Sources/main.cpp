@@ -22,6 +22,7 @@
 #include "Executor/OpenclExecutor.h"
 
 #include "Language/Generators/OpenclGenerator.h"
+#include "Utils/TextureManager.h"
 
 
 using namespace std;
@@ -192,9 +193,42 @@ void CustomStyle()
 	colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
 	colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.00f, 0.00f, 0.00f, 0.2f);
 	
-	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, nullptr, ImVec4(1.0f, 1.0f, 0.3f, 0.9f));
-	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, nullptr, ImVec4(0.5f, 1.0f, 0.9f, 0.9f));
+	std::string ICON_IGFD_ADD = "\uf067";
+	std::string ICON_IGFD_BOOKMARK = "\uf02e";
+	std::string ICON_IGFD_CANCEL = "\uf00d";
+	std::string ICON_IGFD_CHEVRON_DOWN = "\uf078";
+	std::string ICON_IGFD_CHEVRON_UP = "\uf077";
+	std::string ICON_IGFD_DRIVES = "\uf0a0";
+	std::string ICON_IGFD_EDIT = "\uf040";
+	std::string ICON_IGFD_FILE = "\uf15b";
+	std::string ICON_IGFD_FILE_GRID_THUMBNAILS = "\uf00a";
+	std::string ICON_IGFD_FILE_LIST = "\uf0c9";
+	std::string ICON_IGFD_FILE_LIST_THUMBNAILS = "\uf00b";
+	std::string ICON_IGFD_FILE_PIC = "\uf1c5";
+	std::string ICON_IGFD_FOLDER = "\uf07b";
+	std::string ICON_IGFD_FOLDER_OPEN = "\uf07c";
+	std::string ICON_IGFD_LINK = "\uf1c9";
+	std::string ICON_IGFD_OK = "\uf00c";
+	std::string ICON_IGFD_REFRESH = "\uf021";
+	std::string ICON_IGFD_REMOVE = "\uf068";
+	std::string ICON_IGFD_RESET = "\uf064";
+	std::string ICON_IGFD_SAVE = "\uf0c7";
+	std::string ICON_IGFD_SEARCH = "\uf002";
+	std::string ICON_IGFD_STEP_FORWARD = "\uf051";
 	
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByFullName, "(Custom.+[.]h)", ImVec4(1.0f, 1.0f, 0.0f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".cpp", ImVec4(1.0f, 1.0f, 0.0f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".h", ImVec4(0.0f, 1.0f, 0.0f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".hpp", ImVec4(0.0f, 0.0f, 1.0f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".md", ImVec4(1.0f, 0.0f, 1.0f, 0.9f));
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".png", ImVec4(0.0f, 1.0f, 1.0f, 0.9f), ICON_IGFD_FILE_PIC); // add an icon for the filter type
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByExtention, ".gif", ImVec4(0.0f, 1.0f, 0.5f, 0.9f), "[GIF]"); // add an text for a filter type
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir, nullptr, ImVec4(0.5f, 1.0f, 0.9f, 0.9f), ICON_IGFD_FOLDER); // for all dirs
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile, "CMakeLists.txt", ImVec4(0.1f, 0.5f, 0.5f, 0.9f), ICON_IGFD_ADD);
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByFullName, "doc", ImVec4(0.9f, 0.2f, 0.0f, 0.9f), ICON_IGFD_FILE_PIC);
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeDir | IGFD_FileStyleByContainedInFullName, ".git", ImVec4(0.9f, 0.2f, 0.0f, 0.9f), ICON_IGFD_BOOKMARK);
+	ImGuiFileDialog::Instance()->SetFileStyle(IGFD_FileStyleByTypeFile | IGFD_FileStyleByContainedInFullName, ".git", ImVec4(0.5f, 0.8f, 0.5f, 0.9f), ICON_IGFD_SAVE);
+
 	ImGuiIO& io = ImGui::GetIO();
 	std::string fontPath = Files::GetAssetPath("Fonts/Roboto-Regular.ttf");
 	ImFont* font1 = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 14, nullptr, io.Fonts->GetGlyphRangesCyrillic());
@@ -242,11 +276,29 @@ void Preinit()
     Logger::AddOutputDevice(new CmdOutput());
 }
 
+void LoadAssets()
+{
+	auto& textureManager = TextureManager::Instance();
+	
+	auto TryToLoadTexture = [&textureManager](std::string&& tag, std::string&& assetPath)
+	{
+		std::string fullPath = Files::GetAssetPath(assetPath);
+		std::optional<TextureManager::TextureInfo> textureInfo = textureManager.LoadTexture(tag, fullPath);
+		if (!textureInfo.has_value())
+			Logger::Warning(fmt::format("Couldn't load texture \"{}\" from {} ", tag, fullPath));
+		else
+			Logger::Log(fmt::format("Loaded texture \"{}\" from {} ", tag, fullPath));
+	};
+	TryToLoadTexture("FileIcon", "Icons/FileIcon.png");
+	TryToLoadTexture("DirIcon", "Icons/DirIcon.png");
+}
+
 void Init()
 {
 	Editor::Instance();
+	LoadAssets();
 	CustomStyle();
-
+	
 	auto& logger = Editor::EditorSystem.AddModule<LoggerModule>("Log");
 	logger.bWorks = true;
 

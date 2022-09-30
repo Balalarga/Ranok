@@ -23,7 +23,7 @@ inline std::string GetDefaultLayoutConfigPath()
 inline bool IsFileExists(const std::string& path)
 {
 	std::ifstream file(path);
-	bool bExists = !!file;
+	const bool bExists = !!file;
 	file.close();
 	return bExists;
 }
@@ -39,7 +39,7 @@ inline std::optional<std::string> ReadFile(const std::string& path)
 	if (!file)
 	{
 		Logger::Error(fmt::format("Couldn't open {}", path));
-		return {};
+		return std::nullopt;
 	}
 	
 	std::stringstream stream;
@@ -58,7 +58,7 @@ inline std::optional<ActionNodeFactory> LoadLibrary(const std::string& path)
 	Parser parser;
 	std::optional<std::string> code = ReadFile(path);
 	if (!code.has_value())
-		return {};
+		return std::nullopt;
 	
 	ActionTree tree = parser.Parse(Lexer(code.value()));
 	

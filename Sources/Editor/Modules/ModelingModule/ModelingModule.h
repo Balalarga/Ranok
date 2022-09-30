@@ -13,9 +13,9 @@ public:
 	ModelingModule();
 	
 	void RenderWindowContent() override;
+	void PostRender() override;
 	
-	std::string OpenFileFilter() override;
-	void OpenFile(const std::string& filepath) override;
+	bool TryOpenFile(const std::string& filepath) override;
 	
 private:
 	std::vector<TextEditor> _textEditorTabs;

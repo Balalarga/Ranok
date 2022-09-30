@@ -23,17 +23,37 @@ void ModelingModule::RenderWindowContent()
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
 	if (!_textEditorTabs.empty())
 	{
+		int idToClose = -1;
 		ImGui::BeginTabBar("##textEditorTabs");
-		for (TextEditor& tab : _textEditorTabs)
+		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 		{
-			if (ImGui::BeginTabItem(tab.GetFilename().c_str()))
-				tab.Render();
-			ImGui::EndTabItem();
+			bool bOpen = true;
+			if (ImGui::BeginTabItem(_textEditorTabs[i].GetFilename().c_str(), &bOpen))
+			{
+				_textEditorTabs[i].Render();
+				ImGui::EndTabItem();
+			}
+			if (!bOpen)
+			{
+				idToClose = static_cast<int>(i);
+				ImGui::OpenPopup("Close rcode");
+				break;
+			}
 		}
 		ImGui::EndTabBar();
+		if (ImGui::BeginPopupModal("Close rcode"))
+		{
+			Logger::Log("Popup");
+			if (ImGui::Button("Yes"))
+				ImGui::CloseCurrentPopup();
+			ImGui::SameLine();
+			if (ImGui::Button("No"))
+				ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+		}
 	}
-	
 	ImGui::EndChild();
+	
 	ImGui::SameLine();
 	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));
 	bool bIsActive = ImGui::IsItemActive();
@@ -50,24 +70,28 @@ void ModelingModule::RenderWindowContent()
 				 ImVec2(0, 1),
 				 ImVec2(1, 0));
 	ImGui::EndChild();
-	ImGui::PopStyleVar();
-	ImGui::PopStyleVar();
+	ImGui::PopStyleVar(2);
 	ImGui::EndChild();
 }
 
-std::string ModelingModule::OpenFileFilter()
+void ModelingModule::PostRender()
 {
-	return "*.rcode";
 }
 
-void ModelingModule::OpenFile(const std::string& filepath)
+bool ModelingModule::TryOpenFile(const std::string& filepath)
 {
-	if (std::optional<std::string> data = Files::ReadFile(filepath))
-	{
-		_textEditorTabs.push_back({});
-		_textEditorTabs.back().SetText(data.value());
-		_textEditorTabs.back().SetFilename(filepath.substr(filepath.find_last_of("//")));
-		_textEditorTabs.back().SetFilepath(filepath);
-	}
+	if (!filepath.ends_with(".rcode"))
+		return false;
+	
+	std::optional<std::string> data = Files::ReadFile(filepath);
+	if (!data.has_value())
+		return false;
+	
+	TextEditor& lastItem = _textEditorTabs.emplace_back();
+	lastItem.SetText(data.value());
+	size_t nameStart = filepath.find_last_of("\\")+1;
+	lastItem.SetFilename(filepath.substr(nameStart));
+	lastItem.SetFilepath(filepath);
+	return true;
 }
 }

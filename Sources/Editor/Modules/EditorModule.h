@@ -22,16 +22,16 @@ public:
 				RenderWindowContent();
 			
 			ImGui::End();
+			
+			PostRender();
 		}});
 	}
 	
+	virtual void PostRender() {}
 	virtual void RenderWindowContent() = 0;
 
-	/// Use for OpenFile filters setup
-	virtual std::string OpenFileFilter() { return {}; }
-
 	// Use for On OpenFile execution for yours module
-	virtual void OpenFile(const std::string& filepath) {}
+	virtual bool TryOpenFile(const std::string& filepath) { return false; }
 	
 	std::string moduleName;
 	bool bWorks = false;

@@ -47,11 +47,6 @@ public:
 		_textBuffer.clear();
 	}
 
-	std::string OpenFileFilter() override
-	{
-		return "*.txt";
-	}
-
 protected:
 	bool _bScrollToBottom = true;
 	ImGuiTextBuffer _textBuffer;

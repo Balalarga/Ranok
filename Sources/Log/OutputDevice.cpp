@@ -5,6 +5,6 @@ namespace Ranok
 {
 void CmdOutput::Write(std::string &&text)
 {
-    std::cout << text;
+    std::cout << text << std::endl;
 }
 }

@@ -1,6 +1,5 @@
 #pragma once
 #include <map>
-
 #include "imgui.h"
 
 namespace Ranok::ImGuiUtils
