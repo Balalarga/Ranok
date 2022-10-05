@@ -28,7 +28,7 @@ void ModelingModule::RenderWindowContent()
 		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 		{
 			bool bOpen = true;
-			if (ImGui::BeginTabItem(_textEditorTabs[i].GetFilename().c_str(), &bOpen))
+			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen))
 			{
 				_textEditorTabs[i].Render();
 				ImGui::EndTabItem();
@@ -87,11 +87,11 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	if (!data.has_value())
 		return false;
 	
-	TextEditor& lastItem = _textEditorTabs.emplace_back();
-	lastItem.SetText(data.value());
+	TextEditorTab& lastItem = _textEditorTabs.emplace_back();
+	lastItem.editor.SetText(data.value());
 	size_t nameStart = filepath.find_last_of("\\")+1;
-	lastItem.SetFilename(filepath.substr(nameStart));
-	lastItem.SetFilepath(filepath);
+	lastItem.filename = filepath.substr(nameStart);
+	lastItem.filepath = filepath;
 	return true;
 }
 }
