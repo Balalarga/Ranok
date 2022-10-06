@@ -9,6 +9,7 @@ DEFINE_LOCTEXT(ModuleName, "Modeling")
 DEFINE_LOCTEXT(CloseTabText, "Do you want to save code before closing?")
 DEFINE_LOCTEXT(CloseTabSaveText, "Save")
 DEFINE_LOCTEXT(CloseTabCloseText, "Close")
+DEFINE_LOCTEXT(CloseTabCancelText, "Cancel")
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModuleName)),
@@ -27,7 +28,7 @@ void ModelingModule::RenderWindowContent()
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
 	if (!_textEditorTabs.empty())
 	{
-		int idToClose = -1;
+		static int idToClose = -1;
 		ImGui::BeginTabBar("##textEditorTabs");
 		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 		{
@@ -40,28 +41,34 @@ void ModelingModule::RenderWindowContent()
 			if (!bOpen)
 			{
 				idToClose = static_cast<int>(i);
-				ImGui::OpenPopup("Close rcode");
+				ImGui::OpenPopup("Close code");
 				break;
 			}
 		}
 		
-		if (ImGui::BeginPopupModal("Close rcode"))
+		if (ImGui::BeginPopupModal("Close code"))
 		{
 			ImGui::Text(LOCTEXT(CloseTabText));
 			ImGui::Text("\n");
-			
+			ImGui::Separator();
+
 			if (ImGui::Button(LOCTEXT(CloseTabSaveText)))
 			{
 				SaveFileDialog("");
 				ImGui::CloseCurrentPopup();
+				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
 			}
 			
 			ImGui::SameLine();
-			
 			if (ImGui::Button(LOCTEXT(CloseTabCloseText)))
 			{
 				ImGui::CloseCurrentPopup();
+				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
 			}
+			
+			ImGui::SameLine();
+			if (ImGui::Button(LOCTEXT(CloseTabCancelText)))
+				ImGui::CloseCurrentPopup();
 			
 			ImGui::EndPopup();
 		}
