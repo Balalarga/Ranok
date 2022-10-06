@@ -4,10 +4,10 @@
 
 namespace Ranok
 {
-DEFINELOCALETEXT(ModuleName, "Mimage Compute")
+DEFINE_LOCTEXT(ModuleName, "Mimage Compute")
 
 MImageComputeModule::MImageComputeModule():
-	IEditorModule(GETLOCALETEXTSTR(ModuleName)),
+	IEditorModule(LOCTEXTSTR(ModuleName)),
     _viewport({800, 600})
 {
 	_viewport.Create();

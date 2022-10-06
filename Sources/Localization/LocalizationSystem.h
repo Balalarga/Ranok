@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 
-#define DEFINELOCALETEXT(tagId, text) static size_t tagId = LocalizationSystem::Get().AddText(#tagId, text);
-#define GETLOCALETEXT(tagId) LocalizationSystem::Get().GetText(tagId).c_str()
-#define GETLOCALETEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId)
-#define GETDEFAULTLOCALETEXT(tagId) LocalizationSystem::Get().GetDefaultText(tagId).c_str()
-#define GETDEFAULTLOCALETEXTSTR(tagId) LocalizationSystem::Get().GetDefaultText(tagId)
+#define DEFINE_LOCTEXT(tagId, text) static size_t tagId = LocalizationSystem::Get().AddText(#tagId, text);
+#define LOCTEXT(tagId) LocalizationSystem::Get().GetText(tagId).c_str()
+#define LOCTEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId)
+#define DEFAULT_LOCTEXT(tagId) LocalizationSystem::Get().GetDefaultText(tagId).c_str()
+#define DEFAULT_LOCTEXTSTR(tagId) LocalizationSystem::Get().GetDefaultText(tagId)
 
 namespace Ranok
 {

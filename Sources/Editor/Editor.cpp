@@ -10,9 +10,9 @@
 
 namespace Ranok
 {
-DEFINELOCALETEXT(FileMenu, "File")
-DEFINELOCALETEXT(ModulesMenu, "Modules")
-DEFINELOCALETEXT(SettinsMenu, "Settings")
+DEFINE_LOCTEXT(FileMenu, "File")
+DEFINE_LOCTEXT(ModulesMenu, "Modules")
+DEFINE_LOCTEXT(SettinsMenu, "Settings")
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
@@ -54,7 +54,7 @@ void Editor::GuiRender()
 	
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu(GETLOCALETEXT(FileMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(FileMenu)))
 		{
 			if (ImGui::MenuItem("Open"))
 			{
@@ -75,14 +75,14 @@ void Editor::GuiRender()
 			ImGui::EndMenu();
 		}
 		
-		if (ImGui::BeginMenu(GETLOCALETEXT(SettinsMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(SettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
 				ImGui::SaveIniSettingsToDisk(Files::GetDefaultLayoutConfigPath().c_str());
 			ImGui::EndMenu();
 		}
 		
-		if (ImGui::BeginMenu(GETLOCALETEXT(ModulesMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(ModulesMenu)))
 		{
 			EditorSystem.EnumerateModules([](IEditorModule* module)
 			{

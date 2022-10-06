@@ -18,7 +18,13 @@ public:
 	bool TryOpenFile(const std::string& filepath) override;
 	
 private:
-	std::vector<TextEditor> _textEditorTabs;
+	struct TextEditorInfo
+	{
+		std::string filename;
+		std::string filepath;
+		TextEditor editor;
+	};
+	std::vector<TextEditorInfo> _textEditorTabs;
 	FrameBuffer _viewport;
 };
 }
