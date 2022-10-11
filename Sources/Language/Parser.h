@@ -23,6 +23,8 @@ public:
 	void AddGlobalData(const ActionNodeFactory& factory);
 	
 	static int GetOperationPriority(Token::Type type);
+	static std::set<std::string> GetReservedKeywords();
+	static std::set<std::string> GetReservedFuncwords();
 	
 	
 protected:
@@ -40,8 +42,6 @@ protected:
 	
 	bool CheckToken(const Token& token, Token::Type expected);
 	
-	static std::set<std::string> GetReservedWords();
-	
 	/**
 	 * \brief Create error message from token with optional format args:\n
 	 * <b>{name}</b> - token name\n
@@ -54,12 +54,19 @@ protected:
 	
 	
 private:
-	enum class ReservedNameTypes: uint8_t
+	enum class ReservedKeywordsTypes: uint8_t
 	{
-		MainFunc, ReturnStatement, FunctionDef, VariableDef
+		ReturnStatement, FunctionDef, VariableDef
 	};
+	
+	enum class ReservedFuncsTypes: uint8_t
+	{
+		MainFunc
+	};
+	
 	static const std::map<Token::Type, int> _operationPriorities;
-	static const std::map<ReservedNameTypes, std::string> _reservedWords;
+	static const std::map<ReservedKeywordsTypes, std::string> _reservedKeywords;
+	static const std::map<ReservedFuncsTypes, std::string> _reservedFuncs;
 
 	ActionNodeFactory _globalFactory;
 	

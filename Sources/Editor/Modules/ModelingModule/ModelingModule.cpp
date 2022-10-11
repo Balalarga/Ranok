@@ -140,6 +140,7 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	
 	TextEditorInfo& lastItem = _textEditorTabs.emplace_back();
 	lastItem.editor.SetText(data.value());
+	lastItem.editor.SetLanguageDefinition(TextEditor::LanguageDefinition::RanokLanguageDefinition());
 	size_t nameStart = filepath.find_last_of("\\")+1;
 	lastItem.filename = filepath.substr(nameStart);
 	lastItem.filepath = filepath;

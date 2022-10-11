@@ -173,6 +173,7 @@ public:
 		{
 		}
 
+		static const LanguageDefinition& RanokLanguageDefinition();
 		static const LanguageDefinition& CPlusPlus();
 		static const LanguageDefinition& HLSL();
 		static const LanguageDefinition& GLSL();

@@ -21,12 +21,15 @@ const std::map<Token::Type, int> Parser::_operationPriorities
 	{ Token::Type::Hat, 8 },
 };
 
-const std::map<Parser::ReservedNameTypes, std::string> Parser::_reservedWords
+const std::map<Parser::ReservedKeywordsTypes, std::string> Parser::_reservedKeywords
 {
-	{ ReservedNameTypes::FunctionDef, "def" },
-	{ ReservedNameTypes::MainFunc, "main" },
-	{ ReservedNameTypes::VariableDef, "var" },
-	{ ReservedNameTypes::ReturnStatement, "return" },
+	{ ReservedKeywordsTypes::FunctionDef, "def" },
+	{ ReservedKeywordsTypes::VariableDef, "var" },
+	{ ReservedKeywordsTypes::ReturnStatement, "return" },
+};
+const std::map<Parser::ReservedFuncsTypes, std::string> Parser::_reservedFuncs
+{
+	{ ReservedFuncsTypes::MainFunc, "main" },
 };
 
 
@@ -39,13 +42,13 @@ ActionTree Parser::Parse(Lexer lexer)
 	std::deque<ActionNodeFactory*> factoryStack( {&tree.GlobalFactory()} );
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::FunctionDef)))
 		{
 			lexer.Pop();
 			if (!ParseFunction(lexer, factoryStack))
 				break;
 		}
-		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef)))
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::VariableDef)))
 		{
 			lexer.Pop();
 			if (!ParseVariableDeclaration(lexer, factoryStack))
@@ -64,7 +67,7 @@ ActionTree Parser::Parse(Lexer lexer)
 	if (!factoryStack.empty())
 		_errors.push_back("Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size()));
 	
-	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction(_reservedWords.at(ReservedNameTypes::MainFunc)))
+	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction(_reservedFuncs.at(ReservedFuncsTypes::MainFunc)))
 		tree.SetRoot(mainFunc);
 	
 	return tree;
@@ -103,10 +106,18 @@ bool Parser::CheckToken(const Token& token, Token::Type expected)
 	return false;
 }
 
-std::set<std::string> Parser::GetReservedWords()
+std::set<std::string> Parser::GetReservedKeywords()
 {
 	std::set<std::string> words;
-	for (auto& kv: _reservedWords)
+	for (auto& kv: _reservedKeywords)
+		words.emplace(kv.second);
+	return words;
+}
+
+std::set<std::string> Parser::GetReservedFuncwords()
+{
+	std::set<std::string> words;
+	for (auto& kv: _reservedFuncs)
 		words.emplace(kv.second);
 	return words;
 }
@@ -282,13 +293,13 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 	
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::FunctionDef)))
 		{
 			lexer.Pop();
 			if (!ParseFunction(lexer, factories))
 				break;
 		}
-		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::ReturnStatement)))
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::ReturnStatement)))
 		{
 			lexer.Pop();
 			if (ActionNode* result = ParseExpression(lexer, factories))
@@ -307,7 +318,7 @@ FunctionDeclarationNode* Parser::ParseFunction(Lexer& lexer, std::deque<ActionNo
 				break;
 			}
 		}
-		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef)))
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::VariableDef)))
 		{
 			lexer.Pop();
 			if (!ParseVariableDeclaration(lexer, factories))
@@ -358,7 +369,7 @@ ActionNode* Parser::ParsePrimary(Lexer& lexer, std::deque<ActionNodeFactory*>& f
 
 ActionNode* Parser::ParseWord(Lexer& lexer, std::deque<ActionNodeFactory*>& factories)
 {
-	if (GetReservedWords().contains(lexer.Peek().string))
+	if (GetReservedKeywords().contains(lexer.Peek().string))
 	{
 		DumpTokenError("Word \"{name}\" is reserved by language)", lexer.Peek());
 		return nullptr;
@@ -541,19 +552,19 @@ ActionNode* Parser::ParseBody(Lexer& lexer, std::deque<ActionNodeFactory*>& fact
 {
 	while (!lexer.IsEmpty() && lexer.Peek().type != Token::Type::EndFile)
 	{
-		if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::FunctionDef)))
+		if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::FunctionDef)))
 		{
 			lexer.Pop();
 			if (!ParseFunction(lexer, factories))
 				break;
 		}
-		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::ReturnStatement), false))
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::ReturnStatement), false))
 		{
 			lexer.Pop();
 			if (ActionNode* result = ParseExpression(lexer, factories))
 				return result;
 		}
-		else if (StringUtils::Compare(lexer.Peek().string, _reservedWords.at(ReservedNameTypes::VariableDef), false))
+		else if (StringUtils::Compare(lexer.Peek().string, _reservedKeywords.at(ReservedKeywordsTypes::VariableDef), false))
 		{
 			lexer.Pop();
 			if (!ParseVariableDeclaration(lexer, factories))

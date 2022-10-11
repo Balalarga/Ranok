@@ -8,6 +8,8 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h" // for imGui::GetCurrentWindow()
+#include "Language/HardcodedConstructions.h"
+#include "Language/Parser.h"
 
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
@@ -2739,6 +2741,48 @@ static bool TokenizeCStylePunctuation(const char * in_begin, const char * in_end
 
 	return false;
 }
+
+
+const TextEditor::LanguageDefinition &TextEditor::LanguageDefinition::RanokLanguageDefinition()
+{
+	static bool inited = false;
+	static LanguageDefinition langDef = GLSL();
+	if (!inited)
+	{
+		langDef.mKeywords.clear();
+		for (const std::string& k : Ranok::Parser::GetReservedKeywords())
+			langDef.mKeywords.insert(k);
+
+		std::vector<std::pair<std::string, std::string>> identifiers;
+		for (const std::string& name : Ranok::Parser::GetReservedFuncwords())
+			identifiers.push_back({"Base function", name});
+		
+		for (auto& [_, name]: Ranok::Hardcoded::Get().FunctionNames)
+			identifiers.push_back({"Base function", name});
+		
+		for (auto& [_, name]: Ranok::Hardcoded::Get().VariableNames)
+			identifiers.push_back({"Base variable", name});
+
+		langDef.mIdentifiers.clear();
+		for (auto& k : identifiers)
+		{
+			Identifier id;
+			id.mDeclaration = k.first;
+			langDef.mIdentifiers.insert(std::make_pair(k.second, id));
+		}
+
+		langDef.mSingleLineComment = "//";
+
+		langDef.mCaseSensitive = true;
+		langDef.mAutoIndentation = true;
+
+		langDef.mName = "Ranok";
+
+		inited = true;
+	}
+	return langDef;
+}
+
 
 const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::CPlusPlus()
 {

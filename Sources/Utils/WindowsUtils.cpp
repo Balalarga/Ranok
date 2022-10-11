@@ -1,4 +1,5 @@
 #include "WindowsUtils.h"
+#include <filesystem>
 
 namespace Ranok
 {
@@ -6,6 +7,7 @@ namespace Ranok
 #include <windows.h>
 std::string OpenFileDialog(const std::string& filters)
 {
+	auto path = std::filesystem::current_path(); //getting path
 	std::string result;
 	OPENFILENAME ofn = {sizeof(ofn)};
 	char szFile[300];
@@ -24,11 +26,14 @@ std::string OpenFileDialog(const std::string& filters)
 	
 	if(GetOpenFileNameA(&ofn))
 		result = ofn.lpstrFile;
+	
+	std::filesystem::current_path(path); //setting path
 	return result;
 }
 
 std::string SaveFileDialog(const std::string& filters)
 {
+	auto path = std::filesystem::current_path(); //getting path
 	std::string result;
 	OPENFILENAME ofn = {sizeof(ofn)};
 	char szFile[300];
@@ -47,6 +52,8 @@ std::string SaveFileDialog(const std::string& filters)
 	
 	if(GetSaveFileNameA(&ofn))
 		result = ofn.lpstrFile;
+	
+	std::filesystem::current_path(path); //setting path
 	return result;
 }
 #endif
