@@ -21,8 +21,13 @@
 #include "Executor/OpenclExecutor.h"
 
 #include "Language/Generators/OpenclGenerator.h"
-#include "Utils/TextureManager.h"
 
+#include "Settings/ISettings.h"
+#include "Settings/SettingsManager.h"
+
+#include "Utils/TextureManager.h"
+#include "Utils/Archives/Serializer.h"
+#include "Utils/Archives/Json/JsonArchive.h"
 
 using namespace std;
 using namespace Ranok;
@@ -273,6 +278,30 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 void Preinit()
 {
     Logger::AddOutputDevice(new CmdOutput());
+	
+	class SomeSettings: public ISettings
+	{
+	public:
+		SomeSettings():
+			ISettings("SomeSettings.json")
+		{
+			
+		}
+		void Serialize(Serializer& archive) override
+		{
+			archive.Serialize(val);
+			archive.Serialize(val2);
+		}
+		
+		int val{};
+		float val2{};
+	};
+	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().AddSettings<SomeSettings>();
+	SettingsManager::Instance().LoadAll();
+	
+	Logger::Log(fmt::format("{}", setting->val));
+	setting->val = 10;
+	Logger::Log(fmt::format("{}", setting->val));
 }
 
 void LoadAssets()
@@ -294,6 +323,8 @@ void LoadAssets()
 
 void Init()
 {
+	SettingsManager::Instance().LoadAll();
+	
 	Editor::Instance();
 	LoadAssets();
 	CustomStyle();
@@ -312,11 +343,12 @@ void Init()
 
 void Predeinit()
 {
+	
 }
 
 void Deinit()
 {
-
+	SettingsManager::Instance().SaveAll();
 }
 
 int main(int argc, char** argv)

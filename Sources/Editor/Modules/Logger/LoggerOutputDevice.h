@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Log/OutputDevice.h"
+#include "Log/LogOutputDevice.h"
 
 namespace Ranok
 {

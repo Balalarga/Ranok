@@ -59,11 +59,17 @@ find_package(OpenCL REQUIRED)
 set(ADDITIONAL_INCLUDE_DIRS ${ADDITIONAL_INCLUDE_DIRS} ${OpenCL_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${OpenCL_LIBRARY})
 
+# RapidJson
+# set(LIBS ${LIBS} RapidJson)
+
+# Fmt
+set(LIBS ${LIBS} fmt)
+
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES} ${ADDITIONAL_SOURCES} ${PROJECT_RESOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_INCLUDE_DIRS})
 target_link_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_LINK_DIRS})
-target_link_libraries(${PROJECT_NAME} PUBLIC fmt ${LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RESOURCE_DIR=\"${PROJECT_RESOURCE_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "SDL_LIBRARY_DIR=\"${PROJECT_RESOURCE_DIR}/StdLibrary\"")

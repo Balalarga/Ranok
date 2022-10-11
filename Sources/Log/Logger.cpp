@@ -1,5 +1,5 @@
 #include "Logger.h"
-#include "OutputDevice.h"
+#include "LogOutputDevice.h"
 #include "fmt/format.h"
 
 namespace Ranok

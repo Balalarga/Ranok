@@ -1,4 +1,4 @@
-#include "OutputDevice.h"
+#include "LogOutputDevice.h"
 #include <iostream>
 
 namespace Ranok
