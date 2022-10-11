@@ -6,7 +6,6 @@
 
 #include "imgui.h"
 #include "ImGuiFileDialog.h"
-#include "TextEditor.h"
 
 #include "Editor/Editor.h"
 #include "Editor/Modules/EditorModule.h"

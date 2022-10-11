@@ -1,17 +1,17 @@
 #pragma once
 
-#include <iostream>
+#include <string>
 #include <vector>
 #include <memory>
-#include "fmt/format.h"
-#include "OutputDevice.h"
 
 
 namespace Ranok
 {
+class IOutputDevice;
+
 enum class LogLevel
 {
-    Log, Warning, Error
+    Verbose, Log, Warning, Error
 };
 
 class Logger
@@ -25,6 +25,10 @@ public:
     static void Log(std::string&& text);
     static void Warning(std::string&& text);
     static void Error(std::string&& text);
+    
+    static void Log(const std::string& text);
+    static void Warning(const std::string& text);
+    static void Error(const std::string& text);
 
 private:
     static std::vector<std::unique_ptr<IOutputDevice>> devices;

@@ -1,5 +1,7 @@
 #include "WindowsUtils.h"
 
+namespace Ranok
+{
 #if _WINDOWS
 #include <windows.h>
 std::string OpenFileDialog(const std::string& filters)
@@ -48,3 +50,4 @@ std::string SaveFileDialog(const std::string& filters)
 	return result;
 }
 #endif
+}

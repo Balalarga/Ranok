@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "TextEditor.h"
+#include "TextEditorSettings.h"
 #include "Editor/Modules/EditorModule.h"
 #include "OpenGL/Core/FrameBuffer.h"
 
@@ -32,7 +33,9 @@ private:
 		std::string filepath;
 		TextEditor editor;
 	};
+	TextEditorSettings _textEditorSettings;
 	std::vector<TextEditorInfo> _textEditorTabs;
 	FrameBuffer _viewport;
+	ImFont* _textEditorFont;
 };
 }

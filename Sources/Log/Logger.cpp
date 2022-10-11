@@ -1,4 +1,6 @@
 #include "Logger.h"
+#include "OutputDevice.h"
+#include "fmt/format.h"
 
 namespace Ranok
 {
@@ -18,11 +20,17 @@ void Logger::Print(LogLevel level, std::string&& text)
 	case LogLevel::Error:
 		leveledText = "[Error]   ";
 		break;
+	case LogLevel::Verbose:
+		leveledText = "[Verbose] ";
+		break;
 	}
 	leveledText += text;
 
-	for (auto& device: devices)
-		device->Write(std::forward<std::string>(leveledText));
+	for (const std::unique_ptr<IOutputDevice>& device : devices)
+	{
+		if (static_cast<int>(level) >= static_cast<int>(device->GetMinLogLevel()))
+			device->Write(level, std::forward<std::string>(leveledText));
+	}
 }
 
 void Logger::AddOutputDevice(IOutputDevice* device)
@@ -41,6 +49,21 @@ void Logger::Warning(std::string&& text)
 }
 
 void Logger::Error(std::string&& text)
+{
+	Print(LogLevel::Error, fmt::format("{}", text));
+}
+
+void Logger::Log(const std::string& text)
+{
+	Print(LogLevel::Log, fmt::format("{}", text));
+}
+
+void Logger::Warning(const std::string& text)
+{
+	Print(LogLevel::Warning, fmt::format("{}", text));
+}
+
+void Logger::Error(const std::string& text)
 {
 	Print(LogLevel::Error, fmt::format("{}", text));
 }

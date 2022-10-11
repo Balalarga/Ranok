@@ -10,7 +10,7 @@ class LoggerOutputDevice: public IOutputDevice
 public:
 	LoggerOutputDevice(LoggerModule& logger);
 	
-	void Write(std::string &&text) override;
+	void Write(const LogLevel& level, std::string &&text) override;
 	
 private:
 	LoggerModule& _logger;

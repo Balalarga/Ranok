@@ -38,7 +38,7 @@ inline std::optional<std::string> ReadFile(const std::string& path)
 	std::ifstream file(path);
 	if (!file)
 	{
-		Logger::Error(fmt::format("Couldn't open {}", path));
+		Logger::Error(fmt::format("Couldn't open {}  for reading", path));
 		return std::nullopt;
 	}
 	
@@ -46,6 +46,19 @@ inline std::optional<std::string> ReadFile(const std::string& path)
 	stream << file.rdbuf();
 	file.close();
 	return stream.str();
+}
+
+inline bool WriteToFile(const std::string& path, const std::string& data)
+{
+	std::ofstream file(path);
+	if (!file)
+	{
+		Logger::Error(fmt::format("Couldn't open {} for writing", path));
+		return false;
+	}
+	file << data;
+	file.close();
+	return true;
 }
 
 inline std::optional<std::string> ReadAsset(const std::string& relativePath)

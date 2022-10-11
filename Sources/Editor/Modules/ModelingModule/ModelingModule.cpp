@@ -6,8 +6,10 @@
 namespace Ranok
 {
 DEFINE_LOCTEXT(ModuleName, "Modeling")
+DEFINE_LOCTEXT(CloseTabTitle, "Close code")
 DEFINE_LOCTEXT(CloseTabText, "Do you want to save code before closing?")
 DEFINE_LOCTEXT(CloseTabSaveText, "Save")
+DEFINE_LOCTEXT(CloseTabSaveAsText, "Save as...")
 DEFINE_LOCTEXT(CloseTabCloseText, "Close")
 DEFINE_LOCTEXT(CloseTabCancelText, "Cancel")
 
@@ -16,6 +18,12 @@ ModelingModule::ModelingModule():
 	_viewport({800, 600})
 {
 	_viewport.Create();
+	const ImGuiIO& io = ImGui::GetIO();
+	const std::string fontPath = Files::GetAssetPath(_textEditorSettings.textFont);
+	_textEditorFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(),
+		_textEditorSettings.renderFontSize,
+		nullptr,
+		io.Fonts->GetGlyphRangesCyrillic());
 }
 
 void ModelingModule::RenderWindowContent()
@@ -35,28 +43,49 @@ void ModelingModule::RenderWindowContent()
 			bool bOpen = true;
 			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen))
 			{
+				ImGui::SetWindowFontScale(_textEditorSettings.fontSize / _textEditorSettings.renderFontSize);
+				ImGui::PushFont(_textEditorFont);
 				_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
+				ImGui::PopFont();
 				ImGui::EndTabItem();
+				ImGui::SetWindowFontScale(1.f);
 			}
 			if (!bOpen)
 			{
 				idToClose = static_cast<int>(i);
-				ImGui::OpenPopup("Close code");
+				ImGui::OpenPopup(LOCTEXT(CloseTabTitle));
 				break;
 			}
 		}
 		
-		if (ImGui::BeginPopupModal("Close code"))
+		if (ImGui::BeginPopupModal(LOCTEXT(CloseTabTitle)))
 		{
 			ImGui::Text(LOCTEXT(CloseTabText));
 			ImGui::Text("\n");
 			ImGui::Separator();
-
+			
 			if (ImGui::Button(LOCTEXT(CloseTabSaveText)))
 			{
-				SaveFileDialog();
-				ImGui::CloseCurrentPopup();
-				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+				TextEditorInfo& currentTab = _textEditorTabs[idToClose];
+				if (!currentTab.filepath.empty() &&
+					Files::WriteToFile(currentTab.filepath, currentTab.editor.GetText()))
+				{
+					Logger::Log(fmt::format("RCode saved to {}", currentTab.filepath));
+					_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			
+			ImGui::SameLine();
+			if (ImGui::Button(LOCTEXT(CloseTabSaveAsText)))
+			{
+				std::string toSave = SaveFileDialog();
+				if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[idToClose].editor.GetText()))
+				{
+					_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+					Logger::Log(fmt::format("RCode saved to {}", toSave));
+					ImGui::CloseCurrentPopup();
+				}
 			}
 			
 			ImGui::SameLine();
@@ -78,8 +107,8 @@ void ModelingModule::RenderWindowContent()
 	
 	ImGui::SameLine();
 	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));
-	bool bIsActive = ImGui::IsItemActive();
-	bool bIsHovered = ImGui::IsItemHovered();
+	const bool bIsActive = ImGui::IsItemActive();
+	const bool bIsHovered = ImGui::IsItemHovered();
 	if (bIsActive)
 		w += ImGui::GetIO().MouseDelta.x;
 	if (bIsActive || bIsHovered)
@@ -114,6 +143,7 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	size_t nameStart = filepath.find_last_of("\\")+1;
 	lastItem.filename = filepath.substr(nameStart);
 	lastItem.filepath = filepath;
+	Logger::Log(fmt::format("RCode {} opened", filepath));
 	return true;
 }
 }

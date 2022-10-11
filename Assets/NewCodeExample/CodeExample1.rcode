@@ -14,3 +14,4 @@ def main(space[3])
     s5[3] = sa(k);
     return space[2] & s5[1] | k;
 }
+

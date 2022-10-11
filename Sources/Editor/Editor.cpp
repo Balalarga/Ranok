@@ -58,7 +58,7 @@ void Editor::GuiRender()
 		{
 			if (ImGui::MenuItem("Open"))
 			{
-				std::string filepathStr = OpenFileDialog("*.*");
+				std::string filepathStr = OpenFileDialog();
 				if (!filepathStr.empty())
 				{
 					Logger::Log(std::forward<std::string>(filepathStr));

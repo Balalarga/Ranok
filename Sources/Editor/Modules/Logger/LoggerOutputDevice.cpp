@@ -5,9 +5,11 @@ namespace Ranok
 {
 LoggerOutputDevice::LoggerOutputDevice(LoggerModule& logger):
 	_logger(logger)
-{}
+{
+	SetMinLogLevel(LogLevel::Log);
+}
 
-void LoggerOutputDevice::Write(std::string &&text)
+void LoggerOutputDevice::Write(const LogLevel& level, std::string &&text)
 {
 	_logger.AddLog(text);
 }
