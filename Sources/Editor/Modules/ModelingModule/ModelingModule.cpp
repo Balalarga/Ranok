@@ -54,7 +54,7 @@ void ModelingModule::RenderWindowContent()
 
 			if (ImGui::Button(LOCTEXT(CloseTabSaveText)))
 			{
-				SaveFileDialog("");
+				SaveFileDialog();
 				ImGui::CloseCurrentPopup();
 				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
 			}
