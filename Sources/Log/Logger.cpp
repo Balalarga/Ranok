@@ -4,7 +4,7 @@
 
 namespace Ranok
 {
-std::vector<std::unique_ptr<IOutputDevice>> Logger::devices = {};
+std::vector<std::unique_ptr<ILogOutputDevice>> Logger::devices = {};
 
 void Logger::Print(LogLevel level, std::string&& text)
 {
@@ -26,16 +26,16 @@ void Logger::Print(LogLevel level, std::string&& text)
 	}
 	leveledText += text;
 
-	for (const std::unique_ptr<IOutputDevice>& device : devices)
+	for (const std::unique_ptr<ILogOutputDevice>& device : devices)
 	{
 		if (static_cast<int>(level) >= static_cast<int>(device->GetMinLogLevel()))
 			device->Write(level, std::forward<std::string>(leveledText));
 	}
 }
 
-void Logger::AddOutputDevice(IOutputDevice* device)
+void Logger::AddOutputDevice(ILogOutputDevice* device)
 {
-	devices.push_back(std::unique_ptr<IOutputDevice>(device));
+	devices.push_back(std::unique_ptr<ILogOutputDevice>(device));
 }
 
 void Logger::Log(std::string&& text)

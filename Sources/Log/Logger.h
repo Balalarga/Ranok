@@ -7,7 +7,7 @@
 
 namespace Ranok
 {
-class IOutputDevice;
+class ILogOutputDevice;
 
 enum class LogLevel
 {
@@ -20,7 +20,7 @@ public:
     static void Print(LogLevel level, std::string&& text);
     
     /// Careful, it creates unique_ptr for device
-    static void AddOutputDevice(IOutputDevice* device);
+    static void AddOutputDevice(ILogOutputDevice* device);
 
     static void Log(std::string&& text);
     static void Warning(std::string&& text);
@@ -31,7 +31,7 @@ public:
     static void Error(const std::string& text);
 
 private:
-    static std::vector<std::unique_ptr<IOutputDevice>> devices;
+    static std::vector<std::unique_ptr<ILogOutputDevice>> devices;
 };
 }
 

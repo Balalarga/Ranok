@@ -5,7 +5,7 @@ namespace Ranok
 {
 class LoggerModule;
 
-class LoggerOutputDevice: public IOutputDevice
+class LoggerOutputDevice: public ILogOutputDevice
 {
 public:
 	LoggerOutputDevice(LoggerModule& logger);

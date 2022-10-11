@@ -3,7 +3,7 @@
 
 namespace Ranok
 {
-void IOutputDevice::SetMinLogLevel(LogLevel level)
+void ILogOutputDevice::SetMinLogLevel(LogLevel level)
 {
     _minLevel = level;
 }
