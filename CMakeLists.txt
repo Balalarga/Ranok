@@ -20,8 +20,5 @@ endif()
 
 # Fmt setup
 add_subdirectory(${THIRDPARTY_DIR}/fmt fmt)
-add_subdirectory(${THIRDPARTY_DIR}/RapidJson RapidJson)
-
-include_directories(${THIRDPARTY_DIR}/RapidJson/include)
 
 add_subdirectory(Sources)

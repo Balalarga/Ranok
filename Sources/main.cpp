@@ -26,7 +26,6 @@
 #include "Settings/SettingsManager.h"
 
 #include "Utils/TextureManager.h"
-#include "Utils/Archives/Serializer.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 using namespace std;
@@ -282,22 +281,19 @@ void Preinit()
 	class SomeSettings: public ISettings
 	{
 	public:
-		SomeSettings():
-			ISettings("SomeSettings.json")
+		SomeSettings(): ISettings("SomeSettings.json")
 		{
-			
 		}
-		void Serialize(Serializer& archive) override
+		
+		void Serialize(JsonArchive& archive) override
 		{
-			archive.Serialize(val);
-			archive.Serialize(val2);
+			archive.Serialize("someName", val);
 		}
 		
 		int val{};
 		float val2{};
 	};
 	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().CreateSettings<SomeSettings>();
-	SettingsManager::Instance().LoadAll();
 	
 	Logger::Log(fmt::format("{}", setting->val));
 	setting->val = 10;

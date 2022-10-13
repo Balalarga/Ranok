@@ -1,27 +1,30 @@
 ﻿#include "JsonArchive.h"
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
 namespace Ranok
 {
-JsonArchiveReader::JsonArchiveReader(std::string filepath):
-	FileArchive(filepath, std::ios_base::in)
-{
-	
-}
-
-void JsonArchiveReader::Read(nlohmann::json& doc)
+JsonArchive::JsonArchive(std::string filepath, ArchiveMode mode):
+	FileArchive(filepath, mode)
 {
 }
 
-JsonArchiveWriter::JsonArchiveWriter(std::string filepath):
-	FileArchive(filepath, std::ios_base::out)
+bool JsonArchive::Open()
 {
-	
+	if (!FileArchive::Open())
+		return false;
+
+	if (GetMode() == ArchiveMode::Read)
+	{
+		_json = nlohmann::json::parse(GetStdStream());
+		return _json.is_object() || _json.is_array();
+	}
+
+	return true;
 }
 
-void JsonArchiveWriter::Write(const nlohmann::json& doc)
+void JsonArchive::Close()
 {
+	if (GetMode() == ArchiveMode::Write)
+		Write(_json.dump(4));
+	FileArchive::Close();
 }
 }

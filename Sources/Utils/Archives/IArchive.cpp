@@ -2,4 +2,8 @@
 
 namespace Ranok
 {
+IArchive::IArchive(ArchiveMode mode):
+	_mode(mode)
+{
+}
 }

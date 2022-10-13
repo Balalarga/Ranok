@@ -7,32 +7,35 @@ namespace Ranok
 template<class T>
 void FileArchive::StreamWrite(const T& val)
 {
-	if (_stream.is_open() && _stdFlags & std::ios_base::out)
+	if (_stream.is_open() && GetMode() == ArchiveMode::Write)
 		_stream << val;
 }
 
 template<class T>
 void FileArchive::StreamRead(T& val)
 {
-	if (_stream.is_open() && _stdFlags & std::ios_base::in)
+	if (_stream.is_open() && GetMode() == ArchiveMode::Read)
 		_stream >> val;
 }
 
-FileArchive::FileArchive(std::string filepath, std::_Iosb<int>::_Openmode stdFlags):
-	_filepath(std::move(filepath)),
-	_stdFlags(stdFlags)
-{
-}
+FileArchive::FileArchive(std::string filepath, ArchiveMode mode):
+	IArchive(mode),
+	_filepath(std::move(filepath))
+{}
 
 FileArchive::~FileArchive()
 {
 	FileArchive::Close();
 }
 
-bool FileArchive::Open(ArchiveMode mode)
+bool FileArchive::Open()
 {
-	_stream.open(_filepath,
-		_stdFlags | (mode == ArchiveMode::Read ? std::ios_base::in : std::ios_base::out));
+	if (GetMode() == ArchiveMode::Read)
+		_stdFlags = static_cast<std::_Iosb<int>::_Openmode>(_stdFlags | std::ios_base::in);
+	else if (GetMode() == ArchiveMode::Write)
+		_stdFlags = static_cast<std::_Iosb<int>::_Openmode>(_stdFlags | std::ios_base::out);
+	
+	_stream.open(_filepath, _stdFlags);
 	return _stream.is_open();
 }
 
@@ -52,7 +55,7 @@ void FileArchive::Reload()
 
 std::string FileArchive::ReadAll() const
 {
-	if (_stream.is_open() || _stdFlags & std::ios_base::in)
+	if (_stream.is_open() || GetMode() == ArchiveMode::Read)
 	{
 		std::stringstream stream;
 		stream << _stream.rdbuf();

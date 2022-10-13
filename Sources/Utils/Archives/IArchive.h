@@ -5,15 +5,18 @@ namespace Ranok
 {
 enum class ArchiveMode
 {
-	Read, Write
+	None, Read, Write
 };
 
 class IArchive
 {
 public:
+	IArchive(ArchiveMode mode);
 	virtual ~IArchive() = default;
+
+	ArchiveMode GetMode() const { return _mode; }
 	
-	virtual bool Open(ArchiveMode mode) = 0;
+	virtual bool Open() = 0;
 	virtual void Close() = 0;
 	
 	virtual void Reload() {}
@@ -35,5 +38,17 @@ public:
 	virtual void Read(double& val) = 0;
 	virtual void Read(unsigned& val) = 0;
 	virtual void Read(std::string& val) = 0;
+
+	template<class T>
+	void Serialize(T& val)
+	{
+		if (GetMode() == ArchiveMode::Read)
+			Read(val);
+		else if (GetMode() == ArchiveMode::Write)
+			Write(val);
+	}
+	
+private:
+	ArchiveMode _mode;
 };
 }

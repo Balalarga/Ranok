@@ -16,15 +16,17 @@ public:
 	template<class T, class ...TArgs>
 	std::enable_if_t<std::derived_from<T, ISettings>, std::shared_ptr<T>> CreateSettings(TArgs&& ...args)
 	{
-		std::shared_ptr<T> setting = std::make_shared<T>(args...);
-		assert(!_settings.contains(setting->GetFilepath()));
+		SettingData settingData;
+		settingData.userSetting = std::make_shared<T>(args...);
+		settingData.defaultSetting = std::make_shared<T>(args...);
+		assert(!_settings.contains(settingData.defaultSetting->GetFilepath()));
 		
-		_settings[setting->GetFilepath()] = {std::make_shared<T>(args...), setting};
+		_settings[settingData.defaultSetting->GetFilepath()] = settingData;
 		
 		if (_bWasLoaded)
-			LoadSetting(setting.get());
+			LoadSetting(settingData);
 		
-		return std::static_pointer_cast<T>(setting);
+		return std::static_pointer_cast<T>(settingData.userSetting);
 	}
 
 	static const std::string& GetConfigDir();
@@ -45,8 +47,8 @@ private:
 	
 	std::map<std::string, SettingData> _settings;
 
-	std::string GetFullPath(ISettings* setting);
-	std::string GetFullDefaultPath(ISettings* setting);
+	static std::string GetFullPath(ISettings* setting);
+	static std::string GetFullDefaultPath(ISettings* setting);
 	
 	void LoadSetting(SettingData& settings);
 	void LoadDefaultSetting(std::shared_ptr<ISettings>& settings);

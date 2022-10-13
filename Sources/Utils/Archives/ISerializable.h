@@ -2,13 +2,13 @@
 
 namespace Ranok
 {
-class Serializer;
+class IArchive;
 
 class ISerializable
 {
 public:
 	virtual ~ISerializable() = default;
 
-	virtual void Serialize(Serializer& archive) = 0;
+	virtual void Serialize(IArchive& archive) = 0;
 };
 }

@@ -2,14 +2,13 @@
 #include "Settings/ISettings.h"
 
 #include "Utils/FileUtils.h"
-#include "Utils/Archives/Serializer.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
 
-std::string _defaultConfigDir = CONFIG_DEFAULT_DIR;
-std::string _configDir = CONFIG_DIR;
+std::string _sDefaultConfigDir = CONFIG_DEFAULT_DIR;
+std::string _sConfigDir = CONFIG_DIR;
 
 SettingsManager& SettingsManager::Instance()
 {
@@ -19,12 +18,12 @@ SettingsManager& SettingsManager::Instance()
 
 const std::string& SettingsManager::GetConfigDir()
 {
-	return _configDir;
+	return _sConfigDir;
 }
 
 const std::string& SettingsManager::GetDefaultConfigDir()
 {
-	return _defaultConfigDir;
+	return _sDefaultConfigDir;
 }
 
 void SettingsManager::LoadAll()
@@ -43,12 +42,12 @@ void SettingsManager::SaveAll()
 
 std::string SettingsManager::GetFullPath(ISettings* setting)
 {
-	return _configDir+"/"+setting->GetFilepath();
+	return _sConfigDir+"/"+setting->GetFilepath();
 }
 
 std::string SettingsManager::GetFullDefaultPath(ISettings* setting)
 {
-	return _defaultConfigDir+"/"+setting->GetFilepath();
+	return _sDefaultConfigDir+"/"+setting->GetFilepath();
 }
 
 void SettingsManager::LoadSetting(SettingData& settings)
@@ -57,7 +56,7 @@ void SettingsManager::LoadSetting(SettingData& settings)
 	std::string path = GetFullPath(settings.userSetting.get());
 	if (Files::IsFileExists(path))
 	{
-		Serializer serializer = Serializer::LoadFrom<JsonArchiveReader>(path);
+		JsonArchive serializer(path, ArchiveMode::Read);
 		settings.userSetting->Serialize(serializer);
 	}
 }
@@ -67,7 +66,7 @@ void SettingsManager::LoadDefaultSetting(std::shared_ptr<ISettings>& setting)
 	std::string path = GetFullDefaultPath(setting.get());
 	if (Files::IsFileExists(path))
 	{
-		Serializer serializer = Serializer::LoadFrom<JsonArchiveReader>(path);
+		JsonArchive serializer(path, ArchiveMode::Read);
 		setting->Serialize(serializer);
 	}
 }
@@ -75,16 +74,20 @@ void SettingsManager::LoadDefaultSetting(std::shared_ptr<ISettings>& setting)
 void SettingsManager::SaveSetting(SettingData& setting)
 {
 	std::string path = GetFullPath(setting.userSetting.get());
-	Serializer serializer = Serializer::SaveTo<JsonArchiveWriter>(path);
+	JsonArchive serializer(path, ArchiveMode::Write);
+	serializer.Open();
 	setting.userSetting->Serialize(serializer);
+	serializer.Close();
 	Logger::Log(path);
 }
 
 void SettingsManager::SaveDefaultSetting(std::shared_ptr<ISettings>& setting)
 {
 	std::string path = GetFullPath(setting.get());
-	Serializer serializer = Serializer::SaveTo<JsonArchiveWriter>(path);
+	JsonArchive serializer(path, ArchiveMode::Write);
+	serializer.Open();
 	setting->Serialize(serializer);
+	serializer.Close();
 	Logger::Log(path);
 }
 }
