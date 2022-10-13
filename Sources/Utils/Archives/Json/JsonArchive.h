@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Utils/Archives/FileArchive.h"
-#include "rapidjson/document.h"
+#include "Utils/ThirdParty/nlohmann_json.hpp"
 
 namespace Ranok
 {
@@ -11,7 +11,7 @@ class JsonArchiveReader: public FileArchive
 public:
 	JsonArchiveReader(std::string filepath);
 
-	void Read(rapidjson::Document& val);
+	void Read(nlohmann::json& val);
 };
 
 class JsonArchiveWriter: public FileArchive
@@ -19,6 +19,6 @@ class JsonArchiveWriter: public FileArchive
 public:
 	JsonArchiveWriter(std::string filepath);
 
-	void Write(const rapidjson::Document& val);
+	void Write(const nlohmann::json& val);
 };
 }

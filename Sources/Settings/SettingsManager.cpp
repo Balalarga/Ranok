@@ -7,34 +7,38 @@
 
 namespace Ranok
 {
+
+std::string _defaultConfigDir = CONFIG_DEFAULT_DIR;
+std::string _configDir = CONFIG_DIR;
+
 SettingsManager& SettingsManager::Instance()
 {
 	static SettingsManager manager;
 	return manager;
 }
 
-void SettingsManager::SetConfigDir(const std::string& configDir)
+const std::string& SettingsManager::GetConfigDir()
 {
-	_configDir = configDir;
+	return _configDir;
 }
 
-void SettingsManager::SetDefaultConfigDir(const std::string& configDir)
+const std::string& SettingsManager::GetDefaultConfigDir()
 {
-	_defaultConfigDir = configDir;
+	return _defaultConfigDir;
 }
 
 void SettingsManager::LoadAll()
 {
-	for (auto& [filepath, setting]: _settings)
-		LoadSetting(setting.get());
+	for (auto& [_, setting]: _settings)
+		LoadSetting(setting);
 	
 	_bWasLoaded = true;
 }
 
 void SettingsManager::SaveAll()
 {
-	for (auto& [filepath, setting]: _settings)
-		SaveSetting(setting.get());
+	for (auto& [_, setting]: _settings)
+		SaveSetting(setting);
 }
 
 std::string SettingsManager::GetFullPath(ISettings* setting)
@@ -47,10 +51,20 @@ std::string SettingsManager::GetFullDefaultPath(ISettings* setting)
 	return _defaultConfigDir+"/"+setting->GetFilepath();
 }
 
-void SettingsManager::LoadSetting(ISettings* setting)
+void SettingsManager::LoadSetting(SettingData& settings)
 {
-	LoadDefaultSetting(setting);
-	std::string path = GetFullPath(setting);
+	LoadDefaultSetting(settings.defaultSetting);
+	std::string path = GetFullPath(settings.userSetting.get());
+	if (Files::IsFileExists(path))
+	{
+		Serializer serializer = Serializer::LoadFrom<JsonArchiveReader>(path);
+		settings.userSetting->Serialize(serializer);
+	}
+}
+
+void SettingsManager::LoadDefaultSetting(std::shared_ptr<ISettings>& setting)
+{
+	std::string path = GetFullDefaultPath(setting.get());
 	if (Files::IsFileExists(path))
 	{
 		Serializer serializer = Serializer::LoadFrom<JsonArchiveReader>(path);
@@ -58,19 +72,17 @@ void SettingsManager::LoadSetting(ISettings* setting)
 	}
 }
 
-void SettingsManager::LoadDefaultSetting(ISettings* setting)
+void SettingsManager::SaveSetting(SettingData& setting)
 {
-	std::string path = GetFullDefaultPath(setting);
-	if (Files::IsFileExists(path))
-	{
-		Serializer serializer = Serializer::LoadFrom<JsonArchiveReader>(path);
-		setting->Serialize(serializer);
-	}
+	std::string path = GetFullPath(setting.userSetting.get());
+	Serializer serializer = Serializer::SaveTo<JsonArchiveWriter>(path);
+	setting.userSetting->Serialize(serializer);
+	Logger::Log(path);
 }
 
-void SettingsManager::SaveSetting(ISettings* setting)
+void SettingsManager::SaveDefaultSetting(std::shared_ptr<ISettings>& setting)
 {
-	std::string path = GetFullPath(setting);
+	std::string path = GetFullPath(setting.get());
 	Serializer serializer = Serializer::SaveTo<JsonArchiveWriter>(path);
 	setting->Serialize(serializer);
 	Logger::Log(path);

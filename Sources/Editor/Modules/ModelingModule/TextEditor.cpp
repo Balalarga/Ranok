@@ -7,6 +7,8 @@
 #include "TextEditor.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui_internal.h>
+
 #include "imgui.h" // for imGui::GetCurrentWindow()
 #include "Language/HardcodedConstructions.h"
 #include "Language/Parser.h"
@@ -853,10 +855,8 @@ void TextEditor::HandleMouseInputs()
 	}
 }
 
-void TextEditor::Render()
+void TextEditor::Render(float fontScale)
 {
-	if (font)
-		ImGui::PushFont(font);
 	/* Compute mCharAdvance regarding to scaled font size (Ctrl + mouse wheel)*/
 	const float fontSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, "#", nullptr, nullptr).x;
 	mCharAdvance = ImVec2(fontSize, ImGui::GetTextLineHeightWithSpacing() * mLineSpacing);
@@ -893,7 +893,6 @@ void TextEditor::Render()
 	char buf[16];
 	snprintf(buf, 16, " %d ", globalLineMax);
 	mTextStart = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x + mLeftMargin;
-
 	if (!mLines.empty())
 	{
 		float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
@@ -948,6 +947,7 @@ void TextEditor::Render()
 				if (ImGui::IsMouseHoveringRect(lineStartScreenPos, end))
 				{
 					ImGui::BeginTooltip();
+					ImGui::SetWindowFontScale(fontScale);
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
 					ImGui::Text("Error at line %d:", errorIt->first);
 					ImGui::PopStyleColor();
@@ -1093,9 +1093,13 @@ void TextEditor::Render()
 				auto it = mLanguageDefinition.mIdentifiers.find(id);
 				if (it != mLanguageDefinition.mIdentifiers.end())
 				{
-					ImGui::BeginTooltip();
-					ImGui::TextUnformatted(it->second.mDeclaration.c_str());
-					ImGui::EndTooltip();
+					if (!it->second.mDeclaration.empty())
+					{
+						ImGui::BeginTooltip();
+						ImGui::SetWindowFontScale(fontScale);
+						ImGui::TextUnformatted(it->second.mDeclaration.c_str());
+						ImGui::EndTooltip();
+					}
 				}
 				else
 				{
@@ -1103,6 +1107,7 @@ void TextEditor::Render()
 					if (pi != mLanguageDefinition.mPreprocIdentifiers.end())
 					{
 						ImGui::BeginTooltip();
+						ImGui::SetWindowFontScale(fontScale);
 						ImGui::TextUnformatted(pi->second.mDeclaration.c_str());
 						ImGui::EndTooltip();
 					}
@@ -1120,13 +1125,11 @@ void TextEditor::Render()
 		ImGui::SetWindowFocus();
 		mScrollToCursor = false;
 	}
-	
-	if (font)
-		ImGui::PopFont();
 }
 
 void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 {
+	float rootFontScale = ImGui::GetCurrentWindow()->FontWindowScale;
 	mWithinRender = true;
 	mTextChanged = false;
 	mCursorPositionChanged = false;
@@ -1146,7 +1149,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 		HandleMouseInputs();
 
 	ColorizeInternal();
-	Render();
+	Render(rootFontScale);
 
 	if (mHandleKeyboardInputs)
 		ImGui::PopAllowKeyboardFocus();

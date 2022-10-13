@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <cassert>
 #include <map>
 #include <memory>
 #include <string>
@@ -13,14 +14,12 @@ public:
 	static SettingsManager& Instance();
 
 	template<class T, class ...TArgs>
-	std::enable_if_t<std::derived_from<T, ISettings>, std::shared_ptr<T>> AddSettings(TArgs&& ...args)
+	std::enable_if_t<std::derived_from<T, ISettings>, std::shared_ptr<T>> CreateSettings(TArgs&& ...args)
 	{
-		std::shared_ptr<ISettings> setting = std::make_shared<T>(args...);
-		auto it = _settings.find(setting->GetFilepath());
-		if (it != _settings.end())
-			return std::static_pointer_cast<T>(it->second);
+		std::shared_ptr<T> setting = std::make_shared<T>(args...);
+		assert(!_settings.contains(setting->GetFilepath()));
 		
-		_settings[setting->GetFilepath()] = setting;
+		_settings[setting->GetFilepath()] = {std::make_shared<T>(args...), setting};
 		
 		if (_bWasLoaded)
 			LoadSetting(setting.get());
@@ -28,29 +27,31 @@ public:
 		return std::static_pointer_cast<T>(setting);
 	}
 
-	void SetConfigDir(const std::string& configDir);
-	void SetDefaultConfigDir(const std::string& configDir);
-
-	const std::string& GetConfigDir() const { return _configDir; }
-	const std::string& GetDefaultConfigDir() const { return _defaultConfigDir; }
+	static const std::string& GetConfigDir();
+	static const std::string& GetDefaultConfigDir();
 
 	void LoadAll();
 	void SaveAll();
 	
 	
 private:
-	std::string _defaultConfigDir = "Configs";
-	std::string _configDir = "E:\\Projects\\Cpp\\Ranok\\VsProject";
+	struct SettingData
+	{
+		std::shared_ptr<ISettings> defaultSetting;
+		std::shared_ptr<ISettings> userSetting;
+	};
+	
 	bool _bWasLoaded = false;
 	
-	std::map<std::string, std::shared_ptr<ISettings>> _settings;
+	std::map<std::string, SettingData> _settings;
 
 	std::string GetFullPath(ISettings* setting);
 	std::string GetFullDefaultPath(ISettings* setting);
 	
-	void LoadSetting(ISettings* settings);
-	void LoadDefaultSetting(ISettings* settings);
+	void LoadSetting(SettingData& settings);
+	void LoadDefaultSetting(std::shared_ptr<ISettings>& settings);
 	
-	void SaveSetting(ISettings* settings);
+	void SaveSetting(SettingData& settings);
+	void SaveDefaultSetting(std::shared_ptr<ISettings>& settings);
 };
 }

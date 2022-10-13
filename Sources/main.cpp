@@ -296,7 +296,7 @@ void Preinit()
 		int val{};
 		float val2{};
 	};
-	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().AddSettings<SomeSettings>();
+	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().CreateSettings<SomeSettings>();
 	SettingsManager::Instance().LoadAll();
 	
 	Logger::Log(fmt::format("{}", setting->val));

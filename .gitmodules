@@ -2,6 +2,3 @@
 	path = ThirdParty/ImGui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "ThirdParty/RapidJson"]
-	path = ThirdParty/RapidJson
-	url = https://github.com/Tencent/rapidjson.git

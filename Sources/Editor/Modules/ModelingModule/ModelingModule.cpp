@@ -43,6 +43,14 @@ void ModelingModule::RenderWindowContent()
 			bool bOpen = true;
 			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen))
 			{
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(_textEditorTabs[i].filepath.c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
 				ImGui::SetWindowFontScale(_textEditorSettings.fontSize / _textEditorSettings.renderFontSize);
 				ImGui::PushFont(_textEditorFont);
 				_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());

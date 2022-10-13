@@ -59,9 +59,6 @@ find_package(OpenCL REQUIRED)
 set(ADDITIONAL_INCLUDE_DIRS ${ADDITIONAL_INCLUDE_DIRS} ${OpenCL_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${OpenCL_LIBRARY})
 
-# RapidJson
-# set(LIBS ${LIBS} RapidJson)
-
 # Fmt
 set(LIBS ${LIBS} fmt)
 
@@ -71,10 +68,20 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_INCLUDE_DIRS})
 target_link_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_LINK_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 
+set(CONFIG_DEFAULT_DIR ${PROJECT_RESOURCE_DIR}/DefaultConfig)
+set(CONFIG_DIR ${PROJECT_BINARY_DIR}/Config)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE "CONFIG_DIR=\"${CONFIG_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RESOURCE_DIR=\"${PROJECT_RESOURCE_DIR}\"")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "CONFIG_DEFAULT_DIR=\"${CONFIG_DEFAULT_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "SDL_LIBRARY_DIR=\"${PROJECT_RESOURCE_DIR}/StdLibrary\"")
 set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${PROJECT_RESOURCES}")
 
+set(DIRS_TO_CREATE ${CONFIG_DIR})
+foreach (DIR ${DIRS_TO_CREATE})
+    file(MAKE_DIRECTORY ${DIR})
+    message("MAKE_DIRECTORY ${DIR}")
+endforeach()
 
 # Copy dll files
 foreach(BINARY ${BINARIES})

@@ -267,8 +267,6 @@ public:
 	static const Palette& GetLightPalette();
 	static const Palette& GetRetroBluePalette();
 
-	ImFont* font{};
-
 private:
 	typedef std::vector<std::pair<std::regex, PaletteIndex>> RegexList;
 
@@ -349,7 +347,7 @@ private:
 
 	void HandleKeyboardInputs();
 	void HandleMouseInputs();
-	void Render();
+	void Render(float fontScale = 1);
 
 	float mLineSpacing;
 	Lines mLines;

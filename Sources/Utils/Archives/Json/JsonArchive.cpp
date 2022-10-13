@@ -11,9 +11,8 @@ JsonArchiveReader::JsonArchiveReader(std::string filepath):
 	
 }
 
-void JsonArchiveReader::Read(rapidjson::Document& doc)
+void JsonArchiveReader::Read(nlohmann::json& doc)
 {
-	doc.Parse(ReadAll().c_str());
 }
 
 JsonArchiveWriter::JsonArchiveWriter(std::string filepath):
@@ -22,14 +21,7 @@ JsonArchiveWriter::JsonArchiveWriter(std::string filepath):
 	
 }
 
-void JsonArchiveWriter::Write(const rapidjson::Document& doc)
+void JsonArchiveWriter::Write(const nlohmann::json& doc)
 {
-	if (doc.IsObject() || doc.IsArray())
-	{
-		rapidjson::StringBuffer buffer;
-		rapidjson::Writer writer(buffer);
-		doc.Accept(writer);
-		FileArchive::Write(std::string(buffer.GetString()));
-	}
 }
 }
