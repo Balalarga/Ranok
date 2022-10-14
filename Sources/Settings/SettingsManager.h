@@ -12,6 +12,7 @@ class SettingsManager
 	friend class ISettings;
 public:
 	static SettingsManager& Instance();
+	~SettingsManager();
 
 	template<class T, class ...TArgs>
 	std::enable_if_t<std::derived_from<T, ISettings>, std::shared_ptr<T>> CreateSettings(TArgs&& ...args)
@@ -23,18 +24,18 @@ public:
 		
 		_settings[settingData.defaultSetting->GetFilepath()] = settingData;
 		
-		if (_bWasLoaded)
-			LoadSetting(settingData);
-		
+		LoadSetting(settingData);
+		if (settingData.defaultSetting->IsDefaultOnly())
+			return std::static_pointer_cast<T>(settingData.defaultSetting);
 		return std::static_pointer_cast<T>(settingData.userSetting);
 	}
 
 	static const std::string& GetConfigDir();
 	static const std::string& GetDefaultConfigDir();
 
-	void LoadAll();
+	void SaveSetting(ISettings* settings);
 	void SaveAll();
-	
+
 	
 private:
 	struct SettingData
@@ -42,8 +43,6 @@ private:
 		std::shared_ptr<ISettings> defaultSetting;
 		std::shared_ptr<ISettings> userSetting;
 	};
-	
-	bool _bWasLoaded = false;
 	
 	std::map<std::string, SettingData> _settings;
 

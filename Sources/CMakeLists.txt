@@ -71,6 +71,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 set(CONFIG_DEFAULT_DIR ${PROJECT_RESOURCE_DIR}/DefaultConfig)
 set(CONFIG_DIR ${PROJECT_BINARY_DIR}/Config)
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "OVERRIDE_DEFAULT_CONFIG=1")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "CONFIG_DIR=\"${CONFIG_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RESOURCE_DIR=\"${PROJECT_RESOURCE_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "CONFIG_DEFAULT_DIR=\"${CONFIG_DEFAULT_DIR}\"")

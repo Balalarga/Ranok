@@ -21,6 +21,7 @@
 #include "Executor/OpenclExecutor.h"
 
 #include "Language/Generators/OpenclGenerator.h"
+#include "Localization/LocalizationSystem.h"
 
 #include "Settings/ISettings.h"
 #include "Settings/SettingsManager.h"
@@ -276,28 +277,6 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 
 void Preinit()
 {
-    Logger::AddOutputDevice(new CmdOutput());
-	
-	class SomeSettings: public ISettings
-	{
-	public:
-		SomeSettings(): ISettings("SomeSettings.json")
-		{
-		}
-		
-		void Serialize(JsonArchive& archive) override
-		{
-			archive.Serialize("someName", val);
-		}
-		
-		int val{};
-		float val2{};
-	};
-	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().CreateSettings<SomeSettings>();
-	
-	Logger::Log(fmt::format("{}", setting->val));
-	setting->val = 10;
-	Logger::Log(fmt::format("{}", setting->val));
 }
 
 void LoadAssets()
@@ -319,8 +298,6 @@ void LoadAssets()
 
 void Init()
 {
-	SettingsManager::Instance().LoadAll();
-	
 	Editor::Instance();
 	LoadAssets();
 	CustomStyle();
@@ -335,16 +312,35 @@ void Init()
 	
 	Editor::EditorSystem.Init();
 	Logger::Log("Editor module system inited");
-}
-
-void Predeinit()
-{
 	
+	
+	class SomeSettings: public ISettings
+	{
+	public:
+		SomeSettings(): ISettings("SomeSettings")
+		{
+		}
+		
+		void Serialize(JsonArchive& archive) override
+		{
+			archive.Serialize("someName", val);
+			archive.Serialize("otherName", vec);
+		}
+		
+		std::vector<int> vec;
+		int val{};
+		float val2{};
+	};
+	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().CreateSettings<SomeSettings>();
 }
 
-void Deinit()
+void PreDestroy()
 {
 	SettingsManager::Instance().SaveAll();
+}
+
+void Destroy()
+{
 }
 
 int main(int argc, char** argv)
@@ -408,7 +404,7 @@ int main(int argc, char** argv)
 		cout << "No tests made\n";
 	}
 
-    Predeinit();
-    Deinit();
+    PreDestroy();
+    Destroy();
 	return 0;
 }

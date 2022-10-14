@@ -2,8 +2,9 @@
 
 namespace Ranok
 {
-ISettings::ISettings(const std::string& filepath):
-	_filepath(filepath)
+ISettings::ISettings(const std::string& filepath, bool bDefaultOnly):
+	_filepath(filepath + ".json"),
+	_bDefaultOnly(bDefaultOnly)
 {
 }
 }

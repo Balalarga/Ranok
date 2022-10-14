@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <optional>
@@ -15,11 +16,6 @@ inline std::string GetAssetPath(const std::string& relativePath)
 	return fmt::format("{}/{}", RESOURCE_DIR, relativePath);
 }
 
-inline std::string GetDefaultLayoutConfigPath()
-{
-	return GetAssetPath("Config/DefaultLayout.ini");
-}
-
 inline bool IsFileExists(const std::string& path)
 {
 	std::ifstream file(path);
@@ -31,6 +27,21 @@ inline bool IsFileExists(const std::string& path)
 inline bool IsAssetExists(const std::string& relativePath)
 {
 	return IsFileExists(GetAssetPath(relativePath));
+}
+
+/// Create file and all parent directories for path
+inline void CreateFile(const std::string& filepath)
+{
+	const std::filesystem::path path(filepath);
+	std::filesystem::create_directories(path.parent_path());
+	
+	std::ofstream file(filepath);
+	file.close();
+}
+
+inline void CreateAsset(const std::string& relativePath)
+{
+	CreateFile(GetAssetPath(relativePath));
 }
 
 inline std::optional<std::string> ReadFile(const std::string& path)

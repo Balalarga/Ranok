@@ -11,6 +11,6 @@ LoggerOutputDevice::LoggerOutputDevice(LoggerModule& logger):
 
 void LoggerOutputDevice::Write(const LogLevel& level, std::string &&text)
 {
-	_logger.AddLog(text);
+	_logger.AddLog(level, text);
 }
 }

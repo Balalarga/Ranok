@@ -4,37 +4,33 @@
 #include <string>
 #include <vector>
 
-#define DEFINE_LOCTEXT(tagId, text) static size_t tagId = LocalizationSystem::Get().AddText(#tagId, text);
-#define LOCTEXT(tagId) LocalizationSystem::Get().GetText(tagId).c_str()
-#define LOCTEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId)
-#define DEFAULT_LOCTEXT(tagId) LocalizationSystem::Get().GetDefaultText(tagId).c_str()
-#define DEFAULT_LOCTEXTSTR(tagId) LocalizationSystem::Get().GetDefaultText(tagId)
+#define DEFINE_LOCTEXT(tagId, text) static std::string tagId#__FILE__ = LocalizationSystem::Get().AddText(#tagId, text);
+#define LOCTEXT(tagId) LocalizationSystem::Get().GetText(tagId#__FILE__).c_str()
+#define LOCTEXTSTR(tagId) LocalizationSystem::Get().GetText(tagId#__FILE__)
+#define DEFAULT_LOCTEXT(tagId) LocalizationSystem::Get().GetDefaultText(tagId#__FILE__).c_str()
+#define DEFAULT_LOCTEXTSTR(tagId) LocalizationSystem::Get().GetDefaultText(tagId#__FILE__)
 
 namespace Ranok
 {
 class LocalizationSystem
 {
 public:
-    using LocalesMap = std::map<std::string, std::vector<std::string>>;
+    using LocalesMap = std::map<std::string, std::map<std::string, std::string>>;
     static LocalizationSystem& Get();
+
+    ~LocalizationSystem();
 
     bool AddLocale(const std::string& name);
     bool EnableLocale(const std::string& name);
 
-    const LocalesMap& GetLocales() const { return _locales; }
-    const std::string& GetActiveLocale() { return _currentLocaleName; }
+    const std::string& GetActiveLocale();
 
-    size_t AddText(const std::string& tag, const std::string& text);
-    std::string GetText(size_t id) { return id < _currentLocale->size() ? _currentLocale->at(id) : "<unknown_id>"; }
-    std::string GetDefaultText(size_t id) { return _locales.begin()->second.at(id); }
+    std::string AddText(const std::string& tag, const std::string& text);
+    std::string GetText(const std::string& id) const;
+    std::string GetDefaultText(const std::string& id);
 
 private:
     LocalizationSystem();
-    std::vector<std::string>* FindLocale(const std::string& name);
-
-    std::string _currentLocaleName;
-    LocalesMap _locales;
-    std::vector<std::string>* _currentLocale{};
-    std::vector<std::string> _textNames;
+    std::map<std::string, std::string>* FindLocale(const std::string& name);
 };
 }

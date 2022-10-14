@@ -4,7 +4,11 @@
 
 namespace Ranok
 {
-std::vector<std::unique_ptr<ILogOutputDevice>> Logger::devices = {};
+Logger& Logger::Instance()
+{
+	static Logger logger;
+	return logger;
+}
 
 void Logger::Print(LogLevel level, std::string&& text)
 {
@@ -28,43 +32,58 @@ void Logger::Print(LogLevel level, std::string&& text)
 
 	for (const std::unique_ptr<ILogOutputDevice>& device : devices)
 	{
-		if (static_cast<int>(level) >= static_cast<int>(device->GetMinLogLevel()))
+		if (static_cast<uint8_t>(level) >= static_cast<uint8_t>(device->GetMinLogLevel()))
 			device->Write(level, std::forward<std::string>(leveledText));
 	}
 }
 
 void Logger::AddOutputDevice(ILogOutputDevice* device)
 {
-	devices.push_back(std::unique_ptr<ILogOutputDevice>(device));
+	Instance().devices.push_back(std::unique_ptr<ILogOutputDevice>(device));
 }
 
 void Logger::Log(std::string&& text)
 {
-	Print(LogLevel::Log, fmt::format("{}", text));
+	Instance().Print(LogLevel::Log, text.c_str());
 }
 
 void Logger::Warning(std::string&& text)
 {
-	Print(LogLevel::Warning, fmt::format("{}", text));
+	Instance().Print(LogLevel::Warning, text.c_str());
 }
 
 void Logger::Error(std::string&& text)
 {
-	Print(LogLevel::Error, fmt::format("{}", text));
+	Instance().Print(LogLevel::Error, text.c_str());
+}
+
+void Logger::Verbose(std::string&& text)
+{
+	Instance().Print(LogLevel::Verbose, text.c_str());
 }
 
 void Logger::Log(const std::string& text)
 {
-	Print(LogLevel::Log, fmt::format("{}", text));
+	Instance().Print(LogLevel::Log, text.c_str());
 }
 
 void Logger::Warning(const std::string& text)
 {
-	Print(LogLevel::Warning, fmt::format("{}", text));
+	Instance().Print(LogLevel::Warning, text.c_str());
 }
 
 void Logger::Error(const std::string& text)
 {
-	Print(LogLevel::Error, fmt::format("{}", text));
+	Instance().Print(LogLevel::Error, text.c_str());
+}
+
+void Logger::Verbose(const std::string&& text)
+{
+	Instance().Print(LogLevel::Verbose, text.c_str());
+}
+
+Logger::Logger()
+{
+	devices.push_back(std::make_unique<CmdOutput>());
 }
 }

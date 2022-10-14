@@ -7,57 +7,82 @@
 namespace Ranok
 {
 
-std::string _sDefaultConfigDir = CONFIG_DEFAULT_DIR;
-std::string _sConfigDir = CONFIG_DIR;
-
 SettingsManager& SettingsManager::Instance()
 {
 	static SettingsManager manager;
 	return manager;
 }
 
+SettingsManager::~SettingsManager()
+{
+}
+
 const std::string& SettingsManager::GetConfigDir()
 {
-	return _sConfigDir;
+	return CONFIG_DIR;
 }
 
 const std::string& SettingsManager::GetDefaultConfigDir()
 {
-	return _sDefaultConfigDir;
+	return CONFIG_DEFAULT_DIR;
 }
 
-void SettingsManager::LoadAll()
+void SettingsManager::SaveSetting(ISettings* settings)
 {
-	for (auto& [_, setting]: _settings)
-		LoadSetting(setting);
-	
-	_bWasLoaded = true;
+	auto it = _settings.find(settings->GetFilepath());
+	if (it == _settings.end())
+	{
+		Logger::Warning(fmt::format("Try to save settings {} with out adding to SettingsManager", settings->GetFilepath()));
+		return;
+	}
+	if (!settings->IsDefaultOnly() && settings != it->second.defaultSetting.get())
+	{
+		SaveSetting(settings);
+	}
+#if OVERRIDE_DEFAULT_CONFIG
+	SaveDefaultSetting(it->second.defaultSetting);
+#endif
 }
 
 void SettingsManager::SaveAll()
 {
 	for (auto& [_, setting]: _settings)
-		SaveSetting(setting);
+	{
+		if (!setting.defaultSetting->IsDefaultOnly() &&
+			setting.userSetting.get() != setting.defaultSetting.get())
+		{
+			SaveSetting(setting);
+		}
+#if OVERRIDE_DEFAULT_CONFIG
+		SaveDefaultSetting(setting.defaultSetting);
+#endif
+	}
 }
 
 std::string SettingsManager::GetFullPath(ISettings* setting)
 {
-	return _sConfigDir+"/"+setting->GetFilepath();
+	return CONFIG_DIR"/"+setting->GetFilepath();
 }
 
 std::string SettingsManager::GetFullDefaultPath(ISettings* setting)
 {
-	return _sDefaultConfigDir+"/"+setting->GetFilepath();
+	return CONFIG_DEFAULT_DIR"/"+setting->GetFilepath();
 }
 
 void SettingsManager::LoadSetting(SettingData& settings)
 {
 	LoadDefaultSetting(settings.defaultSetting);
+	if (settings.defaultSetting->IsDefaultOnly())
+		return;
+	
 	std::string path = GetFullPath(settings.userSetting.get());
 	if (Files::IsFileExists(path))
 	{
 		JsonArchive serializer(path, ArchiveMode::Read);
-		settings.userSetting->Serialize(serializer);
+		if (serializer.Open())
+			settings.userSetting->Serialize(serializer);
+		else
+			Logger::Error(fmt::format("Couldn't open {}", path));
 	}
 }
 
@@ -67,7 +92,10 @@ void SettingsManager::LoadDefaultSetting(std::shared_ptr<ISettings>& setting)
 	if (Files::IsFileExists(path))
 	{
 		JsonArchive serializer(path, ArchiveMode::Read);
-		setting->Serialize(serializer);
+		if (serializer.Open())
+			setting->Serialize(serializer);
+		else
+			Logger::Error(fmt::format("Couldn't open {}", path));
 	}
 }
 
@@ -75,19 +103,19 @@ void SettingsManager::SaveSetting(SettingData& setting)
 {
 	std::string path = GetFullPath(setting.userSetting.get());
 	JsonArchive serializer(path, ArchiveMode::Write);
-	serializer.Open();
-	setting.userSetting->Serialize(serializer);
-	serializer.Close();
-	Logger::Log(path);
+	if (serializer.Open())
+		setting.userSetting->Serialize(serializer);
+	else
+		Logger::Error(fmt::format("Couldn't open {}", path));
 }
 
 void SettingsManager::SaveDefaultSetting(std::shared_ptr<ISettings>& setting)
 {
-	std::string path = GetFullPath(setting.get());
+	std::string path = GetFullDefaultPath(setting.get());
 	JsonArchive serializer(path, ArchiveMode::Write);
-	serializer.Open();
-	setting->Serialize(serializer);
-	serializer.Close();
-	Logger::Log(path);
+	if (serializer.Open())
+		setting->Serialize(serializer);
+	else
+		Logger::Error(fmt::format("Couldn't open {}", path));
 }
 }

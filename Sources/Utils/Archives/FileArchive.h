@@ -35,6 +35,8 @@ public:
 	
 	std::string ReadAll() const;
 
+	const std::string& GetFilepath() const { return _filepath; }
+	
 	template<class T>
 	void Serialize(T& val)
 	{

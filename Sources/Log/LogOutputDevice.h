@@ -12,8 +12,6 @@ public:
     virtual void Write(const LogLevel& level, std::string&& text) = 0;
     
     const LogLevel& GetMinLogLevel() const { return _minLevel; }
-    
-protected:
     void SetMinLogLevel(LogLevel level);
     
 private:

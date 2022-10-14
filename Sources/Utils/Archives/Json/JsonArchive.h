@@ -11,6 +11,7 @@ class JsonArchive: public FileArchive
 {
 public:
 	JsonArchive(std::string filepath, ArchiveMode mode);
+	~JsonArchive() override;
 
 	bool Open() override;
 	void Close() override;
@@ -19,18 +20,22 @@ public:
 	using FileArchive::Write;
 
 	template<class T>
-	void Serialize(const std::string& tag, T& val)
+	bool Serialize(const std::string& tag, T& val)
 	{
 		if (GetMode() == ArchiveMode::Read)
 		{
-			val = _json[tag];
+			if (!_json.contains(tag))
+				return false;
+			
+			val = _json[tag].get<T>();
 		}
 		else if (GetMode() == ArchiveMode::Write)
 		{
 			_json[tag] = val;
 		}
+		return true;
 	}
-	
+
 private:
 	nlohmann::json _json;
 };

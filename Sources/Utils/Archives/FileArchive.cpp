@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "Utils/FileUtils.h"
+
 namespace Ranok
 {
 template<class T>
@@ -21,7 +23,8 @@ void FileArchive::StreamRead(T& val)
 FileArchive::FileArchive(std::string filepath, ArchiveMode mode):
 	IArchive(mode),
 	_filepath(std::move(filepath))
-{}
+{
+}
 
 FileArchive::~FileArchive()
 {
@@ -31,9 +34,15 @@ FileArchive::~FileArchive()
 bool FileArchive::Open()
 {
 	if (GetMode() == ArchiveMode::Read)
+	{
 		_stdFlags = static_cast<std::_Iosb<int>::_Openmode>(_stdFlags | std::ios_base::in);
+	}
 	else if (GetMode() == ArchiveMode::Write)
+	{
+		if (!Files::IsFileExists(_filepath))
+			Files::CreateFile(_filepath);
 		_stdFlags = static_cast<std::_Iosb<int>::_Openmode>(_stdFlags | std::ios_base::out);
+	}
 	
 	_stream.open(_filepath, _stdFlags);
 	return _stream.is_open();

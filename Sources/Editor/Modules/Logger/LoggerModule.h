@@ -26,7 +26,26 @@ public:
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0,1));
 		if (copy)
 			ImGui::LogToClipboard();
-		ImGui::TextUnformatted(_textBuffer.begin());
+		for (const LogInfo& logInfo : _logs)
+		{
+			ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+			switch(logInfo.level)
+			{
+			case LogLevel::Log:
+				break;
+			case LogLevel::Warning:
+				color = {1.0f, 0.5f, 0.0f, 1.0f};
+				break;
+			case LogLevel::Error:
+				color = {1.0f, 0.1f, 0.0f, 1.0f};
+				break;
+			case LogLevel::Verbose:
+				color = {0.3f, 1.f, 0.5f, 1.0f};
+				break;
+			}
+			ImGui::TextColored(color, logInfo.text.c_str());
+		}
+		
 		if (_bScrollToBottom)
 			ImGui::SetScrollHereY(1.0f);
     
@@ -35,20 +54,24 @@ public:
 		ImGui::EndChild();
 	}
 
-	void AddLog(const std::string& text)
+	void AddLog(LogLevel level, const std::string& text)
 	{
-		_textBuffer.append(text.c_str());
-		_textBuffer.append("\n");
+		_logs.push_back({level, {text}});
 		_bScrollToBottom = true;
 	}
 	
 	void Clear()
 	{
-		_textBuffer.clear();
+		_logs.clear();
 	}
 
 protected:
+	struct LogInfo
+	{
+		LogLevel level;
+		std::string text;
+	};
+	std::vector<LogInfo> _logs;
 	bool _bScrollToBottom = true;
-	ImGuiTextBuffer _textBuffer;
 };
 }

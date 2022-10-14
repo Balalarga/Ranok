@@ -1,18 +1,36 @@
 #include "Editor.h"
-
 #include "imgui.h"
-#include "ImGuiFileDialog.h"
 #include "Modules/EditorModule.h"
 #include "Localization/LocalizationSystem.h"
 #include "Log/Logger.h"
+#include "Settings/ISettings.h"
+#include "Settings/SettingsManager.h"
 #include "Utils/FileUtils.h"
 #include "Utils/WindowsUtils.h"
+#include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
 DEFINE_LOCTEXT(FileMenu, "File")
 DEFINE_LOCTEXT(ModulesMenu, "Modules")
 DEFINE_LOCTEXT(SettinsMenu, "Settings")
+
+
+class EditorSettings: public ISettings
+{
+public:
+	EditorSettings(): ISettings("Editor/EditorSettings")
+	{}
+	
+	void Serialize(JsonArchive& archive) override
+	{
+		archive.Serialize("DefaultLayoutIniPath", defaultLayoutIni);
+	}
+
+	std::string defaultLayoutIni;
+};
+std::shared_ptr<EditorSettings> editorSettings;
+
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
@@ -24,11 +42,11 @@ Editor& Editor::Instance()
 
 Editor::~Editor()
 {
-
 }
 
 Editor::Editor()
 {
+	editorSettings = SettingsManager::Instance().CreateSettings<EditorSettings>();
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 }
@@ -78,7 +96,7 @@ void Editor::GuiRender()
 		if (ImGui::BeginMenu(LOCTEXT(SettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
-				ImGui::SaveIniSettingsToDisk(Files::GetDefaultLayoutConfigPath().c_str());
+				ImGui::SaveIniSettingsToDisk(editorSettings->defaultLayoutIni.c_str());
 			ImGui::EndMenu();
 		}
 		
@@ -102,15 +120,14 @@ void Editor::GuiRender()
 
 void Editor::TryLoadDefaultLayout()
 {
-	std::string layoutPath = Files::GetDefaultLayoutConfigPath();
-	if (Files::IsFileExists(layoutPath))
+	if (Files::IsFileExists(editorSettings->defaultLayoutIni))
 	{
-		Logger::Error(fmt::format("Default layout loaded from {}", layoutPath));
-		ImGui::LoadIniSettingsFromDisk(layoutPath.c_str());
+		Logger::Error(fmt::format("Default layout loaded from {}", editorSettings->defaultLayoutIni));
+		ImGui::LoadIniSettingsFromDisk(editorSettings->defaultLayoutIni.c_str());
 	}
 	else
 	{
-		Logger::Error(fmt::format("Couldn't load default layout from {}", layoutPath));
+		Logger::Error(fmt::format("Couldn't load default layout from {}", editorSettings->defaultLayoutIni));
 	}
 }
 }
