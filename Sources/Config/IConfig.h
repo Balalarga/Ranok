@@ -7,11 +7,11 @@ namespace Ranok
 class JsonArchive;
 class IArchive;
 
-class ISettings: public ISerializable
+class IConfig: public ISerializable
 {
 public:
-	ISettings(const std::string& filepath, bool bDefaultOnly = false);
-	~ISettings() override = default;
+	IConfig(const std::string& filepath, bool bDefaultOnly = false);
+	~IConfig() override = default;
 	
 	const std::string& GetFilepath() const { return _filepath; }
 	bool IsDefaultOnly() const { return _bDefaultOnly; }

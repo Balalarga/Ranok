@@ -27,7 +27,7 @@ std::string OpenFileDialog(const std::string& filters)
 	if(GetOpenFileNameA(&ofn))
 		result = ofn.lpstrFile;
 	
-	std::filesystem::current_path(path); //setting path
+	std::filesystem::current_path(path); //config path
 	return result;
 }
 
@@ -53,7 +53,7 @@ std::string SaveFileDialog(const std::string& filters)
 	if(GetSaveFileNameA(&ofn))
 		result = ofn.lpstrFile;
 	
-	std::filesystem::current_path(path); //setting path
+	std::filesystem::current_path(path); //config path
 	return result;
 }
 #endif

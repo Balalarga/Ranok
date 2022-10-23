@@ -4,10 +4,10 @@
 
 namespace Ranok
 {
-DEFINE_LOCTEXT(ModuleName, "Mimage Compute")
+DEFINE_LOCTEXT(MimageComputeModuleName, "Mimage Compute")
 
 MImageComputeModule::MImageComputeModule():
-	IEditorModule(LOCTEXTSTR(ModuleName)),
+	IEditorModule(LOCTEXTSTR(MimageComputeModuleName)),
     _viewport({800, 600})
 {
 	_viewport.Create();

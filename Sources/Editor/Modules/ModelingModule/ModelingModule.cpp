@@ -5,23 +5,25 @@
 
 namespace Ranok
 {
-DEFINE_LOCTEXT(ModuleName, "Modeling")
-DEFINE_LOCTEXT(CloseTabTitle, "Close code")
-DEFINE_LOCTEXT(CloseTabText, "Do you want to save code before closing?")
-DEFINE_LOCTEXT(CloseTabSaveText, "Save")
-DEFINE_LOCTEXT(CloseTabSaveAsText, "Save as...")
-DEFINE_LOCTEXT(CloseTabCloseText, "Close")
-DEFINE_LOCTEXT(CloseTabCancelText, "Cancel")
+DEFINE_LOCTEXT(ModelingModuleName, "Modeling")
+DEFINE_LOCTEXT(ModelingCloseTabTitle, "Close code")
+DEFINE_LOCTEXT(ModelingCloseTabText, "Do you want to save code before closing?")
+DEFINE_LOCTEXT(ModelingCloseTabSaveText, "Save")
+DEFINE_LOCTEXT(ModelingCloseTabSaveAsText, "Save as...")
+DEFINE_LOCTEXT(ModelingCloseTabCloseText, "Close")
+DEFINE_LOCTEXT(ModelingCloseTabCancelText, "Cancel")
 
 ModelingModule::ModelingModule():
-	IEditorModule(LOCTEXTSTR(ModuleName)),
+	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
 	_viewport({800, 600})
 {
+	SetNoClosing(true);
+	
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
-	const std::string fontPath = Files::GetAssetPath(_textEditorSettings.textFont);
+	const std::string fontPath = Files::GetAssetPath(_textEditorconfigs.textFont);
 	_textEditorFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(),
-		_textEditorSettings.renderFontSize,
+		_textEditorconfigs.renderFontSize,
 		nullptr,
 		io.Fonts->GetGlyphRangesCyrillic());
 }
@@ -51,7 +53,7 @@ void ModelingModule::RenderWindowContent()
 					ImGui::PopTextWrapPos();
 					ImGui::EndTooltip();
 				}
-				ImGui::SetWindowFontScale(_textEditorSettings.fontSize / _textEditorSettings.renderFontSize);
+				ImGui::SetWindowFontScale(_textEditorconfigs.fontSize / _textEditorconfigs.renderFontSize);
 				ImGui::PushFont(_textEditorFont);
 				_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
 				ImGui::PopFont();
@@ -61,18 +63,18 @@ void ModelingModule::RenderWindowContent()
 			if (!bOpen)
 			{
 				idToClose = static_cast<int>(i);
-				ImGui::OpenPopup(LOCTEXT(CloseTabTitle));
+				ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
 				break;
 			}
 		}
 		
-		if (ImGui::BeginPopupModal(LOCTEXT(CloseTabTitle)))
+		if (ImGui::BeginPopupModal(LOCTEXT(ModelingCloseTabTitle)))
 		{
-			ImGui::Text(LOCTEXT(CloseTabText));
+			ImGui::Text(LOCTEXT(ModelingCloseTabText));
 			ImGui::Text("\n");
 			ImGui::Separator();
 			
-			if (ImGui::Button(LOCTEXT(CloseTabSaveText)))
+			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveText)))
 			{
 				TextEditorInfo& currentTab = _textEditorTabs[idToClose];
 				if (!currentTab.filepath.empty() &&
@@ -85,7 +87,7 @@ void ModelingModule::RenderWindowContent()
 			}
 			
 			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(CloseTabSaveAsText)))
+			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveAsText)))
 			{
 				std::string toSave = SaveFileDialog();
 				if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[idToClose].editor.GetText()))
@@ -97,14 +99,14 @@ void ModelingModule::RenderWindowContent()
 			}
 			
 			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(CloseTabCloseText)))
+			if (ImGui::Button(LOCTEXT(ModelingCloseTabCloseText)))
 			{
 				ImGui::CloseCurrentPopup();
 				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
 			}
 			
 			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(CloseTabCancelText)))
+			if (ImGui::Button(LOCTEXT(ModelingCloseTabCancelText)))
 				ImGui::CloseCurrentPopup();
 			
 			ImGui::EndPopup();

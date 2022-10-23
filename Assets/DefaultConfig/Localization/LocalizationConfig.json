@@ -1,17 +1,1 @@
-{
-    "activeLocaleName": "en",
-    "locales": {
-        "en": {
-            "CloseTabCancelText": "Cancel",
-            "CloseTabCloseText": "Close",
-            "CloseTabSaveAsText": "Save as...",
-            "CloseTabSaveText": "Save",
-            "CloseTabText": "Do you want to save code before closing?",
-            "CloseTabTitle": "Close code",
-            "FileMenu": "File",
-            "ModuleName": "Mimage Compute",
-            "ModulesMenu": "Modules",
-            "SettinsMenu": "Settings"
-        }
-    }
-}
+{}

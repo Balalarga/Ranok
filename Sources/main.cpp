@@ -23,8 +23,8 @@
 #include "Language/Generators/OpenclGenerator.h"
 #include "Localization/LocalizationSystem.h"
 
-#include "Settings/ISettings.h"
-#include "Settings/SettingsManager.h"
+#include "Config/IConfig.h"
+#include "Config/ConfigManager.h"
 
 #include "Utils/TextureManager.h"
 #include "Utils/Archives/Json/JsonArchive.h"
@@ -314,10 +314,10 @@ void Init()
 	Logger::Log("Editor module system inited");
 	
 	
-	class SomeSettings: public ISettings
+	class Someconfigs: public IConfig
 	{
 	public:
-		SomeSettings(): ISettings("SomeSettings")
+		Someconfigs(): IConfig("Someconfigs")
 		{
 		}
 		
@@ -331,12 +331,12 @@ void Init()
 		int val{};
 		float val2{};
 	};
-	std::shared_ptr<SomeSettings> setting = SettingsManager::Instance().CreateSettings<SomeSettings>();
+	std::shared_ptr<Someconfigs> config = ConfigManager::Instance().Createconfigs<Someconfigs>();
 }
 
 void PreDestroy()
 {
-	SettingsManager::Instance().SaveAll();
+	ConfigManager::Instance().SaveAll();
 }
 
 void Destroy()

@@ -33,7 +33,7 @@ private:
 		std::string filepath;
 		TextEditor editor;
 	};
-	TextEditorSettings _textEditorSettings;
+	TextEditorconfigs _textEditorconfigs;
 	std::vector<TextEditorInfo> _textEditorTabs;
 	FrameBuffer _viewport;
 	ImFont* _textEditorFont;

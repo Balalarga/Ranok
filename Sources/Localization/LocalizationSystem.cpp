@@ -1,36 +1,38 @@
 #include "LocalizationSystem.h"
 #include <memory>
-#include "Settings/ISettings.h"
-#include "Settings/SettingsManager.h"
+#include "Config/ConfigManager.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 
 namespace Ranok
 {
-class LocalizationSettings: public ISettings
+class LocalizationConfig: public IConfig
 {
 public:
-    LocalizationSettings(): ISettings("Localization/LocalizationConfig", true)
+    LocalizationConfig(): IConfig("Localization/LocalizationConfig", true)
     {
     }
     
     void Serialize(JsonArchive& archive) override
     {
-        archive.Serialize("activeLocaleName", localeName);
-        archive.Serialize("locales", locales);
+        // TODO
+        // archive.Serialize("localeIndex", localeIndex);
+        // archive.Serialize("activeLocaleName", localeName);
+        // archive.Serialize("locales", locales);
     }
     
     const std::string defaultLocaleName = "en";
     
     std::string localeName = defaultLocaleName;
+    std::map<std::string, size_t> localeIndex;
     LocalizationSystem::LocalesMap locales{{defaultLocaleName, {}}};
 };
 
-std::shared_ptr<LocalizationSettings> settings;
+std::shared_ptr<LocalizationConfig> config;
 
 LocalizationSystem::LocalizationSystem()
 {
-    settings = SettingsManager::Instance().CreateSettings<LocalizationSettings>();
+    config = ConfigManager::Instance().Createconfigs<LocalizationConfig>();
 }
 
 LocalizationSystem &LocalizationSystem::Get()
@@ -41,12 +43,12 @@ LocalizationSystem &LocalizationSystem::Get()
 
 LocalizationSystem::~LocalizationSystem()
 {
-    SettingsManager::Instance().SaveSetting(settings.get());
+    ConfigManager::Instance().Saveconfig(config.get());
 }
 
-std::string LocalizationSystem::GetDefaultText(const std::string& id)
+std::string LocalizationSystem::GetDefaultText(const size_t& id)
 {
-    return settings->locales[settings->defaultLocaleName][id];
+    return config->locales[config->defaultLocaleName][id];
 }
 
 bool LocalizationSystem::AddLocale(const std::string &name)
@@ -54,7 +56,7 @@ bool LocalizationSystem::AddLocale(const std::string &name)
     if (FindLocale(name))
         return false;
 
-    settings->locales[name] = settings->locales[settings->defaultLocaleName];
+    config->locales[name] = config->locales[config->defaultLocaleName];
     return true;
 }
 
@@ -62,7 +64,7 @@ bool LocalizationSystem::EnableLocale(const std::string& name)
 {
     if (FindLocale(name))
     {
-        settings->localeName = name;
+        config->localeName = name;
         return true;
     }
     return false;
@@ -70,29 +72,30 @@ bool LocalizationSystem::EnableLocale(const std::string& name)
 
 const std::string& LocalizationSystem::GetActiveLocale()
 {
-    return settings->localeName;
+    return config->localeName;
 }
 
-std::string LocalizationSystem::AddText(const std::string& tag, const std::string& text)
+size_t LocalizationSystem::AddText(const std::string& tag, const std::string& text)
 {
-    std::map<std::string, std::string>& currentLocale = settings->locales[settings->localeName];
-    if (currentLocale.contains(tag))
-        return currentLocale[tag];
-    
-    currentLocale.insert({tag, text});
-    return tag;
+    std::vector<std::string>& currentLocale = config->locales[config->localeName];
+    auto it = config->localeIndex.find(tag);
+    if (it != config->localeIndex.end())
+        return it->second;
+    currentLocale.push_back(text);
+    config->localeIndex[tag] = currentLocale.size();
+    return currentLocale.size()-1;
 }
 
-std::string LocalizationSystem::GetText(const std::string& id) const
+std::string LocalizationSystem::GetText(const size_t& id) const
 {
-    std::map<std::string, std::string>& currnetLocale = settings->locales[settings->localeName];
-    return currnetLocale.contains(id) ? currnetLocale[id] : "<unknown_id>";
+    std::vector<std::string>& currnetLocale = config->locales[config->localeName];
+    return currnetLocale.size() > id ? currnetLocale[id] : "<unknown_id>";
 }
 
-std::map<std::string, std::string>* LocalizationSystem::FindLocale(const std::string &name)
+std::vector<std::string>* LocalizationSystem::FindLocale(const std::string &name)
 {
-    auto it = settings->locales.find(name);
-    if (it == settings->locales.end())
+    auto it = config->locales.find(name);
+    if (it == config->locales.end())
         return nullptr;
 
     return &it->second;

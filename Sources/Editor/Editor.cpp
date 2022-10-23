@@ -3,23 +3,23 @@
 #include "Modules/EditorModule.h"
 #include "Localization/LocalizationSystem.h"
 #include "Log/Logger.h"
-#include "Settings/ISettings.h"
-#include "Settings/SettingsManager.h"
+#include "Config/IConfig.h"
+#include "Config/ConfigManager.h"
 #include "Utils/FileUtils.h"
 #include "Utils/WindowsUtils.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
-DEFINE_LOCTEXT(FileMenu, "File")
-DEFINE_LOCTEXT(ModulesMenu, "Modules")
-DEFINE_LOCTEXT(SettinsMenu, "Settings")
+DEFINE_LOCTEXT(EditorFileMenu, "File")
+DEFINE_LOCTEXT(EditorModulesMenu, "Modules")
+DEFINE_LOCTEXT(EditorSettinsMenu, "Settings")
 
 
-class EditorSettings: public ISettings
+class Editorconfigs: public IConfig
 {
 public:
-	EditorSettings(): ISettings("Editor/EditorSettings")
+	Editorconfigs(): IConfig("Editor/Editorconfigs")
 	{}
 	
 	void Serialize(JsonArchive& archive) override
@@ -29,7 +29,7 @@ public:
 
 	std::string defaultLayoutIni;
 };
-std::shared_ptr<EditorSettings> editorSettings;
+std::shared_ptr<Editorconfigs> editorconfigs;
 
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
@@ -46,7 +46,7 @@ Editor::~Editor()
 
 Editor::Editor()
 {
-	editorSettings = SettingsManager::Instance().CreateSettings<EditorSettings>();
+	editorconfigs = ConfigManager::Instance().Createconfigs<Editorconfigs>();
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 }
@@ -72,7 +72,7 @@ void Editor::GuiRender()
 	
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu(LOCTEXT(FileMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(EditorFileMenu)))
 		{
 			if (ImGui::MenuItem("Open"))
 			{
@@ -93,14 +93,14 @@ void Editor::GuiRender()
 			ImGui::EndMenu();
 		}
 		
-		if (ImGui::BeginMenu(LOCTEXT(SettinsMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(EditorSettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
-				ImGui::SaveIniSettingsToDisk(editorSettings->defaultLayoutIni.c_str());
+				ImGui::SaveIniSettingsToDisk(editorconfigs->defaultLayoutIni.c_str());
 			ImGui::EndMenu();
 		}
 		
-		if (ImGui::BeginMenu(LOCTEXT(ModulesMenu)))
+		if (ImGui::BeginMenu(LOCTEXT(EditorModulesMenu)))
 		{
 			EditorSystem.EnumerateModules([](IEditorModule* module)
 			{
@@ -120,14 +120,14 @@ void Editor::GuiRender()
 
 void Editor::TryLoadDefaultLayout()
 {
-	if (Files::IsFileExists(editorSettings->defaultLayoutIni))
+	if (Files::IsFileExists(editorconfigs->defaultLayoutIni))
 	{
-		Logger::Error(fmt::format("Default layout loaded from {}", editorSettings->defaultLayoutIni));
-		ImGui::LoadIniSettingsFromDisk(editorSettings->defaultLayoutIni.c_str());
+		Logger::Error(fmt::format("Default layout loaded from {}", editorconfigs->defaultLayoutIni));
+		ImGui::SaveIniSettingsToDisk(editorconfigs->defaultLayoutIni.c_str());
 	}
 	else
 	{
-		Logger::Error(fmt::format("Couldn't load default layout from {}", editorSettings->defaultLayoutIni));
+		Logger::Error(fmt::format("Couldn't load default layout from {}", editorconfigs->defaultLayoutIni));
 	}
 }
 }

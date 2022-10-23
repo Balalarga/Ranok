@@ -4,7 +4,7 @@
 
 namespace Ranok
 {
-// Simple helper function to load an image into a OpenGL texture with common settings
+// Simple helper function to load an image into a OpenGL texture with common configs
 static bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height)
 {
 	// Load from file
