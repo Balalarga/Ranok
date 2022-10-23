@@ -1,4 +1,7 @@
 ﻿#include "ModelingModule.h"
+
+#include "Executor/OpenclExecutor.h"
+
 #include "Localization/LocalizationSystem.h"
 #include "Utils/FileUtils.h"
 #include "Utils/WindowsUtils.h"
@@ -12,6 +15,8 @@ DEFINE_LOCTEXT(ModelingCloseTabSaveText, "Save")
 DEFINE_LOCTEXT(ModelingCloseTabSaveAsText, "Save as...")
 DEFINE_LOCTEXT(ModelingCloseTabCloseText, "Close")
 DEFINE_LOCTEXT(ModelingCloseTabCancelText, "Cancel")
+DEFINE_LOCTEXT(ModelingCompile, "Compile")
+DEFINE_LOCTEXT(ModelingBuild, "Build")
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
@@ -30,15 +35,29 @@ ModelingModule::ModelingModule():
 
 void ModelingModule::RenderWindowContent()
 {
+	static int currentActiveTab = -1;
+	
 	ImGui::BeginChild("mainContainer");
 	static float w = ImGui::GetWindowContentRegionMax().x / 3.f;
 	const float trueH = ImGui::GetWindowContentRegionMax().y;
 	const float trueW = w >= 0 ? w : 1;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 10));
+	ImGui::BeginGroup();
+	if (ImGui::Button(LOCTEXT(ModelingCompile)))
+	{
+		CompileTab(currentActiveTab);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button(LOCTEXT(ModelingBuild)))
+	{
+		
+	}
+	ImGui::PopStyleVar();
+	ImGui::EndGroup();
 	if (!_textEditorTabs.empty())
 	{
-		static int idToClose = -1;
 		ImGui::BeginTabBar("##textEditorTabs");
 		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 		{
@@ -62,7 +81,7 @@ void ModelingModule::RenderWindowContent()
 			}
 			if (!bOpen)
 			{
-				idToClose = static_cast<int>(i);
+				currentActiveTab = static_cast<int>(i);
 				ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
 				break;
 			}
@@ -76,12 +95,12 @@ void ModelingModule::RenderWindowContent()
 			
 			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveText)))
 			{
-				TextEditorInfo& currentTab = _textEditorTabs[idToClose];
+				TextEditorInfo& currentTab = _textEditorTabs[currentActiveTab];
 				if (!currentTab.filepath.empty() &&
 					Files::WriteToFile(currentTab.filepath, currentTab.editor.GetText()))
 				{
 					Logger::Log(fmt::format("RCode saved to {}", currentTab.filepath));
-					_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+					_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
 					ImGui::CloseCurrentPopup();
 				}
 			}
@@ -90,9 +109,9 @@ void ModelingModule::RenderWindowContent()
 			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveAsText)))
 			{
 				std::string toSave = SaveFileDialog();
-				if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[idToClose].editor.GetText()))
+				if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[currentActiveTab].editor.GetText()))
 				{
-					_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+					_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
 					Logger::Log(fmt::format("RCode saved to {}", toSave));
 					ImGui::CloseCurrentPopup();
 				}
@@ -102,7 +121,7 @@ void ModelingModule::RenderWindowContent()
 			if (ImGui::Button(LOCTEXT(ModelingCloseTabCloseText)))
 			{
 				ImGui::CloseCurrentPopup();
-				_textEditorTabs.erase(_textEditorTabs.begin() + idToClose);
+				_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
 			}
 			
 			ImGui::SameLine();
@@ -156,5 +175,31 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	lastItem.filepath = filepath;
 	Logger::Log(fmt::format("RCode {} opened", filepath));
 	return true;
+}
+
+void ModelingModule::CompileTab(int tabId)
+{
+	if (tabId < 0 || tabId >= _textEditorTabs.size())
+		return;
+
+	TextEditorInfo& currentTab = _textEditorTabs[tabId];
+	std::string text = currentTab.editor.GetText();
+
+	Lexer lexer(text);
+	Parser parser;
+	ActionTree tree = parser.Parse(lexer);
+	if (parser.HasErrors())
+	{
+		for (const std::string& error : parser.Errors())
+			Logger::Error(error);
+	}
+	
+	if (!tree.Root())
+	{
+		Logger::Error("No main function founded");
+		return;
+	}
+	Logger::Log("Success");
+	
 }
 }

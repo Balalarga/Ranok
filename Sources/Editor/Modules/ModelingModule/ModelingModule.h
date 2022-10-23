@@ -25,6 +25,11 @@ public:
 	void PostRender() override;
 	
 	bool TryOpenFile(const std::string& filepath) override;
+
+	
+protected:
+	void CompileTab(int tabId);
+	
 	
 private:
 	struct TextEditorInfo
