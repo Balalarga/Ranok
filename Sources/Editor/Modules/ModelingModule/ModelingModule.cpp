@@ -22,8 +22,9 @@ ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
 	_viewport({800, 600})
 {
-	SetNoClosing(true);
+	Opencl::Executor::Init();
 	
+	SetNoClosing(true);
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
 	const std::string fontPath = Files::GetAssetPath(_textEditorconfigs.textFont);
@@ -52,7 +53,7 @@ void ModelingModule::RenderWindowContent()
 	ImGui::SameLine();
 	if (ImGui::Button(LOCTEXT(ModelingBuild)))
 	{
-		
+		BuildTab(currentActiveTab);
 	}
 	ImGui::PopStyleVar();
 	ImGui::EndGroup();
@@ -64,6 +65,7 @@ void ModelingModule::RenderWindowContent()
 			bool bOpen = true;
 			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen))
 			{
+				currentActiveTab = static_cast<int>(i);
 				if (ImGui::IsItemHovered())
 				{
 					ImGui::BeginTooltip();
@@ -81,7 +83,6 @@ void ModelingModule::RenderWindowContent()
 			}
 			if (!bOpen)
 			{
-				currentActiveTab = static_cast<int>(i);
 				ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
 				break;
 			}
@@ -192,6 +193,7 @@ void ModelingModule::CompileTab(int tabId)
 	{
 		for (const std::string& error : parser.Errors())
 			Logger::Error(error);
+		return;
 	}
 	
 	if (!tree.Root())
@@ -200,6 +202,47 @@ void ModelingModule::CompileTab(int tabId)
 		return;
 	}
 	Logger::Log("Success");
+}
+
+void ModelingModule::BuildTab(int tabId)
+{
+	if (tabId < 0 || tabId >= _textEditorTabs.size())
+		return;
+
+	TextEditorInfo& currentTab = _textEditorTabs[tabId];
+	std::string text = currentTab.editor.GetText();
+
+	Lexer lexer(text);
+	Parser parser;
+	ActionTree tree = parser.Parse(lexer);
+	if (parser.HasErrors())
+	{
+		for (const std::string& error : parser.Errors())
+			Logger::Error(error);
+		return;
+	}
 	
+	if (!tree.Root())
+	{
+		Logger::Error("No main function founded");
+		return;
+	}
+	
+	std::optional<std::string> res = _openclGenerator.Generate(tree);
+	if (!res)
+	{
+		Logger::Error("Generation failed");
+		return;
+	}
+	
+	Opencl::Executor exec;
+	int result = exec.Compile(res.value());
+	if (result != CL_SUCCESS)
+	{
+		Logger::Error(fmt::format("OpenCL compilation error: {}", result));
+		return;
+	}
+	
+	Logger::Log("Success");
 }
 }

@@ -4,6 +4,9 @@ namespace Ranok::Opencl
 {
 int Executor::Init()
 {
+	if (GetDeviceInfo().context != 0)
+		return CL_SUCCESS;
+	
 	if (GetDeviceInfo().ret == CL_SUCCESS)
 		return GetDeviceInfo().ret;
 	

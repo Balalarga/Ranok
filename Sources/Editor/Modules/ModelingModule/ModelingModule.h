@@ -2,6 +2,7 @@
 #include "TextEditor.h"
 #include "TextEditorSettings.h"
 #include "Editor/Modules/EditorModule.h"
+#include "Language/Generators/OpenclGenerator.h"
 #include "OpenGL/Core/FrameBuffer.h"
 
 namespace Ranok
@@ -29,6 +30,7 @@ public:
 	
 protected:
 	void CompileTab(int tabId);
+	void BuildTab(int tabId);
 	
 	
 private:
@@ -42,5 +44,7 @@ private:
 	std::vector<TextEditorInfo> _textEditorTabs;
 	FrameBuffer _viewport;
 	ImFont* _textEditorFont;
+	
+	OpenclGenerator _openclGenerator;
 };
 }
