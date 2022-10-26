@@ -2,6 +2,10 @@
 
 #include <sstream>
 
+#include "Graphics/Shading/ShaderPart.h"
+
+#include "Log/Logger.h"
+
 namespace Ranok
 {
 glm::fvec2 RayMarchingView::vertices[6] = {
@@ -15,11 +19,11 @@ glm::fvec2 RayMarchingView::vertices[6] = {
 };
 
 std::string RayMarchingView::shaderHeader = R"(
-#version 330
+#version 420 core
 
 out vec4 color;
 
-uniform float grad_step = 0.02;
+uniform float gradStep = 0.02;
 uniform vec2 resolution = vec2(800, 600);
 uniform vec3 cameraPosition = vec3(0, 0, 5);
 uniform vec2 cameraRotation = vec2(0, 0);
@@ -39,14 +43,14 @@ std::string RayMarchingView::shaderFooter = R"(
 // get distance in the world
 float dist_field( vec3 p ) {
     float params[3] = float[](p.x, p.y, p.z);
-    return -__resultFunc(params);
+    return -_main(params);
 }
 
 // get gradient in the world
 vec3 gradient( vec3 pos ) {
-    vec3 dx = vec3( grad_step, 0.0, 0.0 );
-    vec3 dy = vec3( 0.0, grad_step, 0.0 );
-    vec3 dz = vec3( 0.0, 0.0, grad_step );
+    vec3 dx = vec3( gradStep, 0.0, 0.0 );
+    vec3 dy = vec3( 0.0, gradStep, 0.0 );
+    vec3 dz = vec3( 0.0, 0.0, gradStep );
     return normalize (
                 vec3(
                     dist_field( pos + dx ) - dist_field( pos - dx ),
@@ -225,7 +229,7 @@ void main()
 )";
 
 std::string RayMarchingView::defaultFragmentShader = shaderHeader + R"(
-float __resultFunc(float s[3])
+float _resultFunc(float s[3])
 {
     return 1 - s[0]*s[0] - s[1]*s[1] - s[2]*s[2];
 }
@@ -235,39 +239,47 @@ Buffer RayMarchingView::bufferInfo(DataPtr(vertices, std::size(vertices), sizeof
 
 ShaderGenerator RayMarchingView::_codeGenerator;
 
-RayMarchingView::RayMarchingView(FrameBuffer& parent):
-    IRenderable(bufferInfo),
-    _parent(parent),
-    _vPart(ShaderPart::Type::Vertex, defaultVertexShader),
-    _fPart(ShaderPart::Type::Fragment, defaultFragmentShader),
-    _shader(&_vPart, &_fPart)
+std::shared_ptr<ShaderPart> RayMarchingView::_defaultVShader = std::make_shared<ShaderPart>(ShaderPart::Type::Vertex, defaultVertexShader);
+std::shared_ptr<ShaderPart> RayMarchingView::_defaultFShader = std::make_shared<ShaderPart>(ShaderPart::Type::Fragment, defaultFragmentShader);
+std::shared_ptr<Shader> RayMarchingView::_defaultShader = std::make_shared<Shader>(_defaultVShader, _defaultFShader);
+
+RaymarchingMaterial::RaymarchingMaterial(const std::shared_ptr<Shader>& shader):
+    IMaterial(shader)
 {
-    SetShader(&_shader);
+    
 }
 
-bool RayMarchingView::SetModel(ActionTree& function)
+void RaymarchingMaterial::SetupUniforms()
 {
-    std::optional<std::string> code = _codeGenerator.Generate(function);
+    SetUniform("gradStep", gradStep);
+    SetUniform("resolution", resolution);
+    SetUniform("cameraPosition", cameraPosition);
+    SetUniform("cameraRotation", cameraRotation);
+}
+
+RayMarchingView::RayMarchingView(glm::uvec2 size):
+    FrameBuffer(size),
+    Object(bufferInfo, nullptr),
+    _material(_defaultShader)
+{
+    SetMaterial(&_material);
+}
+
+std::optional<std::string> RayMarchingView::SetProgram(ActionTree& tree)
+{
+    std::optional<std::string> code = _codeGenerator.Generate(tree);
     if (!code.has_value())
-        return false;
+        return code;
     
     std::stringstream stream;
     stream << shaderHeader;
     stream << code.value();
     stream << shaderFooter;
-
-    GetShader()->Compile(true);
-    GetShader()->Bind();
-    GetShader()->AddUniforms({"grad_step", "resolution", "cameraPosition", "cameraRotation"});
-    GetShader()->SetUniform("resolution", glm::vec2(_parent.GetTextureSize().x, _parent.GetTextureSize().y));
-    GetShader()->SetUniform("cameraPosition", glm::vec3(0, 0, -5));
-    return GetShader()->UpdateShader(stream.str(), ShaderPart::Type::Fragment);
-}
-
-void RayMarchingView::Render()
-{
-    GetShader()->Bind();
-    // GetShader()->SetUniform("cameraRotation", glm::vec2(Parent()->GetCamera().Pitch/5.0f, -Parent()->GetCamera().Yaw/5.0f));
-    IRenderable::Render();
+    std::string fullCode = stream.str();
+    
+    bool status = GetMaterial()->GetShader().lock()->UpdateShaderPart(std::make_shared<ShaderPart>(ShaderPart::Type::Fragment, fullCode));
+    if (!status)
+        Logger::Error("Shader compilation error");
+    return fullCode;
 }
 }

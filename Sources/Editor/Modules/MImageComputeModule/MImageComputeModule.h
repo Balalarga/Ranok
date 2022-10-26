@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Editor/Modules/EditorModule.h"
-#include "OpenGL/Core/FrameBuffer.h"
+#include "Graphics/Buffers/FrameBuffer.h"
 
 namespace Ranok
 {

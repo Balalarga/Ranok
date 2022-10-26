@@ -1,10 +1,7 @@
 #pragma once
 
-#include <GL/glew.h>
 #include "glm/glm.hpp"
 
-namespace Ranok
-{
 class Texture
 {
 public:
@@ -26,4 +23,3 @@ private:
     unsigned _textureId;
     glm::uvec2 _size;
 };
-}

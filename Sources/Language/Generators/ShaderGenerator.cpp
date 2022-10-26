@@ -6,21 +6,14 @@
 
 namespace Ranok
 {
-std::string ShaderGenerator::ProcessHardcodedFunc(Hardcoded::FuncNames func)
-{
-	if (func == Hardcoded::FuncNames::Abs)
-		return "abs";
-	return CppGenerator::ProcessHardcodedFunc(func);
-}
-
 void ShaderGenerator::Predefines(std::stringstream& outCode)
 {
 	outCode <<
-R"(float __rv__Or(float a, float b)
+R"(float _rv_Or(float a, float b)
 {
 	return a + b + sqrt(pow(a, 2) + pow(b, 2));
 }
-float __rv__And(float a, float b)
+float _rv_And(float a, float b)
 {
 	return a + b - sqrt(pow(a, 2) + pow(b, 2));
 }
@@ -42,11 +35,11 @@ void ShaderGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* 
 	}
 	else if (type == Token::Type::Ampersand)
 	{
-		outCode << "__rv__And(";
+		outCode << "_rv_And(";
 	}
 	else if (type == Token::Type::Pipe)
 	{
-		outCode << "__rv__Or(";
+		outCode << "_rv_Or(";
 	}
 	
 	if (needLeftParent)
@@ -85,12 +78,17 @@ void ShaderGenerator::ProcessNode(std::stringstream& outCode, const BinaryNode* 
 
 void ShaderGenerator::ProcessNode(std::stringstream& outCode, const FunctionDeclarationNode* node)
 {
+	std::string nodeName;
+	if (node->Name() != "main")
+		nodeName = node->Name();
+	else
+		nodeName = "_main";
 	const std::vector<VariableDeclarationNode*>& sigArgs = node->Signature().Args();
 	if (const ArrayNode* arrBody = ActionNode::IsArray(node->Body()))
 	{
 		PrintIndent(outCode);
-		constexpr const char* outVarName = "__out__name";
-		outCode << fmt::format("void {}(", node->Name());
+		constexpr const char* outVarName = "_out_name";
+		outCode << fmt::format("void {}(", nodeName);
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
 			if (const ArrayNode* arr = ActionNode::IsArray(sigArgs[i]))
@@ -100,12 +98,12 @@ void ShaderGenerator::ProcessNode(std::stringstream& outCode, const FunctionDecl
 			
 			outCode << ", ";
 		}
-		outCode << "float* " << outVarName;
+		outCode << "inout float " << outVarName << "[" << arrBody->Values().size() << "]";
 		outCode << ")\n{\n";
 		for (size_t i = sigArgs.size(); i < node->Factory().DeclarationOrder().size(); ++i)
 			Process(outCode, node->Factory().DeclarationOrder()[i]);
 		
-		std::string outResName = "__out__res";
+		std::string outResName = "_out_res";
 		if (auto varRes = dynamic_cast<const VariableNode*>(node->Body()))
 		{
 			outResName = varRes->Name();
@@ -124,7 +122,7 @@ void ShaderGenerator::ProcessNode(std::stringstream& outCode, const FunctionDecl
 	}
 	else
 	{
-		outCode << fmt::format("float {}(", node->Name());
+		outCode << fmt::format("float {}(", nodeName);
 		for (size_t i = 0; i < sigArgs.size(); ++i)
 		{
 			if (const ArrayNode* asArr = ActionNode::IsArray(sigArgs[i]->Value()))

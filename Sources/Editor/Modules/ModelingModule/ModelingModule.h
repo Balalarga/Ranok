@@ -4,7 +4,6 @@
 #include "TextEditorSettings.h"
 #include "Editor/Modules/EditorModule.h"
 #include "Language/Generators/OpenclGenerator.h"
-#include "OpenGL/Core/FrameBuffer.h"
 
 namespace Ranok
 {
@@ -41,13 +40,12 @@ protected:
 	void BuildTab(int tabId);
 
 	void OnTextChanged(TextEditorInfo& info);
-	void UpdateViewport();
+	void UpdateViewport(ActionTree& tree);
 	
 private:
 	TextEditorConfigs _textEditorConfigs;
 	std::vector<TextEditorInfo> _textEditorTabs;
-	FrameBuffer _viewport;
-	RayMarchingView _rayMarchView;
+	RayMarchingView _viewport;
 	ImFont* _textEditorFont;
 	
 	OpenclGenerator _openclGenerator;

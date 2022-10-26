@@ -11,7 +11,6 @@ static Uint32 DefaultSdlSubsystems = SDL_INIT_EVERYTHING;
 
 ISdlWindow::ISdlWindow(const ISdlWindowParams& params):
     _params(params),
-    _scene(nullptr),
     _bShouldClose(false),
     _backColor(glm::vec4(0.15, 0.15, 0.15, 1.0))
 {

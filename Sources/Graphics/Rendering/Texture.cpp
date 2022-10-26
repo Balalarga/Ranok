@@ -1,8 +1,7 @@
 #include "Texture.h"
-#include "OpenGL/ErrorHandle.h"
 
-namespace Ranok
-{
+#include <GL/glew.h>
+
 Texture::Texture(glm::uvec2 size):
     _size(size)
 {
@@ -20,7 +19,7 @@ void Texture::Resize(glm::uvec2 size)
     
     _size = size;
     glBindTexture(GL_TEXTURE_2D, _textureId);
-    GLCall(glTexImage2D(GL_TEXTURE_2D,
+    glTexImage2D(GL_TEXTURE_2D,
                  0,
                  GL_RGB,
                  _size.x,
@@ -28,20 +27,20 @@ void Texture::Resize(glm::uvec2 size)
                  0,
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
-                 NULL))
+                 NULL);
     
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR))
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR))
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 unsigned Texture::Create()
 {
-    GLCall(glGenTextures(1, &_textureId))
-    GLCall(glBindTexture(GL_TEXTURE_2D, _textureId))
+    glGenTextures(1, &_textureId);
+    glBindTexture(GL_TEXTURE_2D, _textureId);
 
-    GLCall(glTexImage2D(GL_TEXTURE_2D,
+    glTexImage2D(GL_TEXTURE_2D,
                  0,
                  GL_RGB,
                  _size.x,
@@ -49,11 +48,11 @@ unsigned Texture::Create()
                  0,
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
-                 NULL))
+                 NULL);
 
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR))
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR))
-    GLCall(glBindTexture(GL_TEXTURE_2D, 0))
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return _textureId;
 }
 
@@ -65,5 +64,4 @@ void Texture::Bind()
 void Texture::Release()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
-}
 }

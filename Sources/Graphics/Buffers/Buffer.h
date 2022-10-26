@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "BufferLayout.h"
 
 
@@ -29,9 +28,9 @@ struct Buffer
 
     DataPtr Data;
     BufferLayout Layout;
-    unsigned DrawType = GL_TRIANGLES;
-    unsigned Type = GL_ARRAY_BUFFER;
-    unsigned Mode = GL_STATIC_DRAW;
+    unsigned DrawType;
+    unsigned Type;
+    unsigned Mode;
 
     unsigned Create();
 };

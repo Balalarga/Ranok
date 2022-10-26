@@ -1,22 +1,24 @@
-#pragma once
+﻿#pragma once
 #include <string>
-
 
 class ShaderPart
 {
 public:
-	enum class Type
+	enum class Type: uint8_t
 	{
-		Vertex, Fragment, Geometry
+		Vertex = 0,
+		Fragment,
+		Geometry,
+		Count
 	};
-
+	
 	ShaderPart() = default;
 	ShaderPart(Type type, const std::string& code);
 	virtual ~ShaderPart();
 	
 	void Setup(Type type, const std::string& code);
 	
-	bool IsInited() const { return _handler != 0; }
+	bool IsInit() const { return _glHandler != 0; }
 	
 	bool Compile();
 	void Destroy();
@@ -24,7 +26,7 @@ public:
 	const Type& GetType() const { return _type; }
 	unsigned GetGLType() const { return GetGLType(_type); }
 	const std::string& GetCode() const { return _code; }
-	const unsigned& GetHandler() const { return _handler; }
+	const unsigned& GetHandler() const { return _glHandler; }
 
 
 protected:
@@ -37,5 +39,5 @@ private:
 	Type _type = Type::Vertex;
 	std::string _code;
 	
-	unsigned _handler = 0;
+	unsigned _glHandler = 0;
 };

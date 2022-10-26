@@ -2,9 +2,6 @@
 
 #include <GL/glew.h>
 
-#include "OpenGL/Core/IRenderable.h"
-#include "OpenGL/Core/Scene.h"
-
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_opengl3.h>
 
@@ -53,15 +50,6 @@ void OpenglWindow::SetBackgroundColor(const glm::vec4& newColor)
 
 void OpenglWindow::Render()
 {
-    if (Scene* scene = GetScene())
-    {
-        for (auto& Obj : scene->GetShaders())
-        {
-            Obj->Bind();
-            Obj->BatchRender();
-            Obj->Unbind();
-        }
-    }
 }
 
 void OpenglWindow::PostRender()

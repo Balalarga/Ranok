@@ -9,8 +9,6 @@
 #include "GuiLayer.h"
 #include "InputSystem.h"
 
-class Scene;
-
 struct ISdlWindowParams
 {
     ISdlWindowParams(const std::string& title = "New Window"):
@@ -39,7 +37,7 @@ public:
     void Show();
     void Close();
 
-    inline const glm::vec4& GetBackgroundColor() { return _backColor; }
+    const glm::vec4& GetBackgroundColor() { return _backColor; }
     virtual void SetBackgroundColor(const glm::vec4& newColor);
     
     virtual void HandleEvents(SDL_Event& event);
@@ -50,24 +48,17 @@ public:
     virtual void SetVSync(bool enabled);
     bool GetVSync() const { return _params.vsync; }
 
-
-    void SetScene(Scene* scene) { _scene = scene; }
-    Scene* GetScene() { return _scene; }
-    void ResetScene() { _scene = nullptr; }
-
     virtual void ClearImGui();
     virtual void RenderImGui();
     virtual void PostRenderImGui();
 
-    inline SDL_Window* GetSdlWindow() const { return _sdlWindow; }
-    inline const ISdlWindowParams& GetParams() const { return _params; }
+    SDL_Window* GetSdlWindow() const { return _sdlWindow; }
+    const ISdlWindowParams& GetParams() const { return _params; }
 
 
 private:
     ISdlWindowParams _params;
     SDL_Window* _sdlWindow;
-    
-    Scene* _scene;
 
     bool _bShouldClose;
     glm::vec4 _backColor;

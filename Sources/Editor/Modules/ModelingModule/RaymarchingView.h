@@ -2,29 +2,40 @@
 
 #include <glm/glm.hpp>
 
+#include "Graphics/Buffers/Buffer.h"
+#include "Graphics/Buffers/FrameBuffer.h"
+#include "Graphics/Materials/IMaterial.h"
+#include "Graphics/Rendering/Object.h"
+
 #include "Language/Generators/ShaderGenerator.h"
-#include "OpenGL/Core/Buffer.h"
-#include "OpenGL/Core/FrameBuffer.h"
-#include "OpenGL/Core/IRenderable.h"
 
 class Scene;
 
 namespace Ranok
 {
-class RayMarchingView: public IRenderable
+class RaymarchingMaterial: public IMaterial
 {
 public:
-	RayMarchingView(FrameBuffer& parent);
-	bool SetModel(ActionTree& function);
+	RaymarchingMaterial(const std::shared_ptr<Shader>& shader);
+	void SetupUniforms() override;
 
-	void Render() override;
+	float gradStep = 0.02f;
+	glm::vec2 resolution{800, 600};
+	glm::vec3 cameraPosition{0, 0, 5};
+	glm::vec2 cameraRotation{0, 0};
+
+};
+
+
+class RayMarchingView: public FrameBuffer, public Object
+{
+public:
+	RayMarchingView(glm::uvec2 size);
+	std::optional<std::string> SetProgram(ActionTree& tree);
 
 
 private:
-	FrameBuffer& _parent;
-	ShaderPart _vPart;
-	ShaderPart _fPart;
-	Shader _shader;
+	RaymarchingMaterial _material;
 	
 	static glm::fvec2 vertices[6];
 	static Buffer bufferInfo;
@@ -32,7 +43,10 @@ private:
 	static std::string shaderFooter;
 	static std::string defaultFragmentShader;
 	static std::string defaultVertexShader;
-
+	
 	static ShaderGenerator _codeGenerator;
+	static std::shared_ptr<ShaderPart> _defaultVShader;
+	static std::shared_ptr<ShaderPart> _defaultFShader;
+	static std::shared_ptr<Shader> _defaultShader;
 };
 }

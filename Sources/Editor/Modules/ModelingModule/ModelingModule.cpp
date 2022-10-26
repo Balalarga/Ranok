@@ -19,8 +19,7 @@ DEFINE_LOCTEXT(ModelingBuild, "Build")
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
-	_viewport({800, 600}),
-	_rayMarchView(_viewport)
+	_viewport({800, 600})
 {
 	Opencl::Executor::Init();
 	
@@ -197,7 +196,6 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	lastItem.editor.SetLanguageDefinition(TextEditor::LanguageDefinition::RanokLanguageDefinition());
 	lastItem.filename = filepath.substr(nameStart);
 	lastItem.filepath = filepath;
-	// OnTextChanged(lastItem);
 	Logger::Log(fmt::format("RCode {} opened", filepath));
 	return true;
 }
@@ -225,8 +223,7 @@ void ModelingModule::CompileTab(int tabId)
 		Logger::Error("No main function founded");
 		return;
 	}
-	_rayMarchView.SetModel(tree);
-	UpdateViewport();
+	UpdateViewport(tree);
 }
 
 void ModelingModule::BuildTab(int tabId)
@@ -284,9 +281,18 @@ void ModelingModule::OnTextChanged(TextEditorInfo& info)
 	}
 }
 
-void ModelingModule::UpdateViewport()
+void ModelingModule::UpdateViewport(ActionTree& tree)
 {
+	std::optional<std::string> code = _viewport.SetProgram(tree);
+	if (!code.has_value())
+	{
+		Logger::Error("Shader compilation error");
+		return;
+	}
+	
+	Logger::Verbose(fmt::format("{}", code.value()));
 	_viewport.Bind();
-	_rayMarchView.Render();
+	_viewport.Render();
+	_viewport.Release();
 }
 }
