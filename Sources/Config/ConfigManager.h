@@ -12,36 +12,36 @@ class ConfigManager
 	friend class IConfig;
 public:
 	static ConfigManager& Instance();
-	~ConfigManager();
+	~ConfigManager() = default;
 
 	template<class T, class ...TArgs>
-	std::enable_if_t<std::derived_from<T, IConfig>, std::shared_ptr<T>> Createconfigs(TArgs&& ...args)
+	std::enable_if_t<std::derived_from<T, IConfig>, std::shared_ptr<T>> CreateConfigs(TArgs&& ...args)
 	{
 		ConfigData configData;
-		configData.userconfig = std::make_shared<T>(args...);
-		configData.defaultconfig = std::make_shared<T>(args...);
-		assert(!_configs.contains(configData.defaultconfig->GetFilepath()));
+		configData.userConfig = std::make_shared<T>(args...);
+		configData.defaultConfig = std::make_shared<T>(args...);
+		assert(!_configs.contains(configData.defaultConfig->GetFilepath()));
 		
-		_configs[configData.defaultconfig->GetFilepath()] = configData;
+		_configs[configData.defaultConfig->GetFilepath()] = configData;
 		
-		Loadconfig(configData);
-		if (configData.defaultconfig->IsDefaultOnly())
-			return std::static_pointer_cast<T>(configData.defaultconfig);
-		return std::static_pointer_cast<T>(configData.userconfig);
+		LoadConfig(configData);
+		if (configData.defaultConfig->IsDefaultOnly())
+			return std::static_pointer_cast<T>(configData.defaultConfig);
+		return std::static_pointer_cast<T>(configData.userConfig);
 	}
 
 	static const std::string& GetConfigDir();
 	static const std::string& GetDefaultConfigDir();
 
-	void Saveconfig(IConfig* configs);
+	void SaveConfig(IConfig* configs);
 	void SaveAll();
 
 	
 private:
 	struct ConfigData
 	{
-		std::shared_ptr<IConfig> defaultconfig;
-		std::shared_ptr<IConfig> userconfig;
+		std::shared_ptr<IConfig> defaultConfig;
+		std::shared_ptr<IConfig> userConfig;
 	};
 	
 	std::map<std::string, ConfigData> _configs;
@@ -49,10 +49,10 @@ private:
 	static std::string GetFullPath(IConfig* config);
 	static std::string GetFullDefaultPath(IConfig* config);
 	
-	void Loadconfig(ConfigData& configs);
-	void LoadDefaultconfig(std::shared_ptr<IConfig>& configs);
+	void LoadConfig(ConfigData& configs);
+	void LoadDefaultConfig(std::shared_ptr<IConfig>& configs);
 	
-	void Saveconfig(ConfigData& configs);
-	void SaveDefaultconfig(std::shared_ptr<IConfig>& configs);
+	void SaveConfig(ConfigData& configs);
+	void SaveDefaultConfig(std::shared_ptr<IConfig>& configs);
 };
 }

@@ -12,10 +12,6 @@ ConfigManager& ConfigManager::Instance()
 	return manager;
 }
 
-ConfigManager::~ConfigManager()
-{
-}
-
 const std::string& ConfigManager::GetConfigDir()
 {
 	return CONFIG_DIR;
@@ -26,7 +22,7 @@ const std::string& ConfigManager::GetDefaultConfigDir()
 	return CONFIG_DEFAULT_DIR;
 }
 
-void ConfigManager::Saveconfig(IConfig* configs)
+void ConfigManager::SaveConfig(IConfig* configs)
 {
 	auto it = _configs.find(configs->GetFilepath());
 	if (it == _configs.end())
@@ -34,12 +30,12 @@ void ConfigManager::Saveconfig(IConfig* configs)
 		Logger::Warning(fmt::format("Try to save configs {} with out adding to ConfigManager", configs->GetFilepath()));
 		return;
 	}
-	if (!configs->IsDefaultOnly() && configs != it->second.defaultconfig.get())
+	if (!configs->IsDefaultOnly() && configs != it->second.defaultConfig.get())
 	{
-		Saveconfig(configs);
+		SaveConfig(configs);
 	}
 #if OVERRIDE_DEFAULT_CONFIG
-	SaveDefaultconfig(it->second.defaultconfig);
+	SaveDefaultConfig(it->second.defaultConfig);
 #endif
 }
 
@@ -47,13 +43,13 @@ void ConfigManager::SaveAll()
 {
 	for (auto& [_, config]: _configs)
 	{
-		if (!config.defaultconfig->IsDefaultOnly() &&
-			config.userconfig.get() != config.defaultconfig.get())
+		if (!config.defaultConfig->IsDefaultOnly() &&
+			config.userConfig.get() != config.defaultConfig.get())
 		{
-			Saveconfig(config);
+			SaveConfig(config);
 		}
 #if OVERRIDE_DEFAULT_CONFIG
-		SaveDefaultconfig(config.defaultconfig);
+		SaveDefaultConfig(config.defaultConfig);
 #endif
 	}
 }
@@ -68,24 +64,24 @@ std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 	return CONFIG_DEFAULT_DIR"/"+config->GetFilepath();
 }
 
-void ConfigManager::Loadconfig(ConfigData& configs)
+void ConfigManager::LoadConfig(ConfigData& configs)
 {
-	LoadDefaultconfig(configs.defaultconfig);
-	if (configs.defaultconfig->IsDefaultOnly())
+	LoadDefaultConfig(configs.defaultConfig);
+	if (configs.defaultConfig->IsDefaultOnly())
 		return;
 	
-	std::string path = GetFullPath(configs.userconfig.get());
+	std::string path = GetFullPath(configs.userConfig.get());
 	if (Files::IsFileExists(path))
 	{
 		JsonArchive serializer(path, ArchiveMode::Read);
 		if (serializer.Open())
-			configs.userconfig->Serialize(serializer);
+			configs.userConfig->Serialize(serializer);
 		else
 			Logger::Error(fmt::format("Couldn't open {}", path));
 	}
 }
 
-void ConfigManager::LoadDefaultconfig(std::shared_ptr<IConfig>& config)
+void ConfigManager::LoadDefaultConfig(std::shared_ptr<IConfig>& config)
 {
 	std::string path = GetFullDefaultPath(config.get());
 	if (Files::IsFileExists(path))
@@ -98,17 +94,17 @@ void ConfigManager::LoadDefaultconfig(std::shared_ptr<IConfig>& config)
 	}
 }
 
-void ConfigManager::Saveconfig(ConfigData& config)
+void ConfigManager::SaveConfig(ConfigData& config)
 {
-	std::string path = GetFullPath(config.userconfig.get());
+	std::string path = GetFullPath(config.userConfig.get());
 	JsonArchive serializer(path, ArchiveMode::Write);
 	if (serializer.Open())
-		config.userconfig->Serialize(serializer);
+		config.userConfig->Serialize(serializer);
 	else
 		Logger::Error(fmt::format("Couldn't open {}", path));
 }
 
-void ConfigManager::SaveDefaultconfig(std::shared_ptr<IConfig>& config)
+void ConfigManager::SaveDefaultConfig(std::shared_ptr<IConfig>& config)
 {
 	std::string path = GetFullDefaultPath(config.get());
 	JsonArchive serializer(path, ArchiveMode::Write);

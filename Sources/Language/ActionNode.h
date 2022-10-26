@@ -250,6 +250,8 @@ class FunctionDeclarationNode: public ActionNode
 {
 public:
 	FunctionDeclarationNode(const FunctionSignature& signature, ActionNode* body);
+
+	static std::string GetDescription(FunctionDeclarationNode* func);
 	
 	std::queue<ActionNode*> WalkDown() const override;
 	

@@ -30,6 +30,8 @@ public:
 	
     void Bind() const;
     void Unbind() const;
+
+	bool UpdateShader(const std::string& part, ShaderPart::Type type);
 	
 	bool AddUniform(const std::string& name);
 	bool AddUniforms(const std::vector<std::string>& names);

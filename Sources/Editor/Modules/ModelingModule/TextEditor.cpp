@@ -11,7 +11,9 @@
 
 #include "imgui.h" // for imGui::GetCurrentWindow()
 #include "Language/HardcodedConstructions.h"
+#include "Language/LibraryStorage.h"
 #include "Language/Parser.h"
+#include "fmt/format.h"
 
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
@@ -2766,6 +2768,14 @@ const TextEditor::LanguageDefinition &TextEditor::LanguageDefinition::RanokLangu
 		for (auto& [_, name]: Ranok::Hardcoded::Get().VariableNames)
 			identifiers.push_back({"Base variable", name});
 
+		for (auto& [libName, lib]: Ranok::LibraryStorage::GetLibs())
+		{
+			for (const std::pair<const std::string, Ranok::FunctionDeclarationNode*>& func : lib.Functions())
+			{
+				identifiers.push_back({fmt::format("{}\n\n{}", libName, Ranok::FunctionDeclarationNode::GetDescription(func.second)), func.first});
+			}
+		}
+		
 		langDef.mIdentifiers.clear();
 		for (auto& k : identifiers)
 		{

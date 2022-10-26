@@ -3,7 +3,7 @@
 
 namespace Ranok
 {
-struct TextEditorconfigs
+struct TextEditorConfigs
 {
 	std::string textFont = "Fonts/UbuntuMono/UbuntuMono-Regular.ttf";
 	float fontSize = 16.f;

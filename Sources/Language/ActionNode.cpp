@@ -1,5 +1,7 @@
 ﻿#include "ActionNode.h"
 
+#include <sstream>
+
 namespace Ranok
 {
 std::shared_ptr<ActionNodeFactory::Commitable<FunctionDeclarationNode>> ActionNodeFactory::TempCreateFunction(
@@ -208,6 +210,28 @@ FunctionDeclarationNode::FunctionDeclarationNode(const FunctionSignature& signat
 	_signature(signature),
 	_body(body)
 {
+}
+
+std::string FunctionDeclarationNode::GetDescription(FunctionDeclarationNode* func)
+{
+	std::stringstream descr;
+	descr << func->Name() << "(";
+	for (size_t i = 0; i < func->Signature().Args().size(); ++i)
+	{
+		VariableDeclarationNode* arg = func->Signature().Args()[i];
+		descr << arg->Name();
+		if (const ArrayNode* arr = IsArray(arg))
+			descr << "[" << arr->Values().size() << "]";
+		if (i < func->Signature().Args().size()-1)
+			descr << ", ";
+	}
+	descr << ") -> ";
+	if (const ArrayNode* res = IsArray(func->Body()))
+		descr << "[" << res->Values().size() << "]";
+	else
+		descr << "number";
+			
+	return descr.str();
 }
 
 std::queue<ActionNode*> FunctionDeclarationNode::WalkDown() const

@@ -5,8 +5,7 @@
 #include <optional>
 #include <string>
 #include <fmt/format.h>
-#include "Language/ActionNode.h"
-#include "Language/Parser.h"
+
 #include "Log/Logger.h"
 
 namespace Ranok::Files
@@ -33,7 +32,7 @@ inline bool IsAssetExists(const std::string& relativePath)
 inline void CreateFile(const std::string& filepath)
 {
 	const std::filesystem::path path(filepath);
-	std::filesystem::create_directories(path.parent_path());
+	create_directories(path.parent_path());
 	
 	std::ofstream file(filepath);
 	file.close();
@@ -75,32 +74,5 @@ inline bool WriteToFile(const std::string& path, const std::string& data)
 inline std::optional<std::string> ReadAsset(const std::string& relativePath)
 {
 	return ReadFile(GetAssetPath(relativePath));
-}
-
-inline std::optional<ActionNodeFactory> LoadLibrary(const std::string& path)
-{
-	Parser parser;
-	std::optional<std::string> code = ReadFile(path);
-	if (!code.has_value())
-		return std::nullopt;
-	
-	ActionTree tree = parser.Parse(Lexer(code.value()));
-	
-	if (parser.HasErrors())
-	{
-		std::stringstream errorText;
-		errorText << "----------------------------------------\n";
-		errorText << path << std::endl;
-		for(auto& err: parser.Errors())
-			errorText << err << std::endl;
-		errorText << "----------------------------------------\n";
-		Logger::Error(errorText.str());
-	}
-	return tree.GlobalFactory();
-}
-
-inline std::optional<ActionNodeFactory> LoadAssetLibrary(const std::string& relativePath)
-{
-	return LoadLibrary(fmt::format("{}/{}", SDL_LIBRARY_DIR, relativePath));
 }
 }

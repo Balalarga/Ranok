@@ -86,6 +86,23 @@ bool Shader::HasErrors(unsigned shaderId)
     return false;
 }
 
+bool Shader::UpdateShader(const std::string& code, ShaderPart::Type type)
+{
+    if (type == ShaderPart::Type::Vertex)
+    {
+        Destroy();
+        _parts.vShader = new ShaderPart(type, code);
+        return Compile();
+    }   
+    if (type == ShaderPart::Type::Fragment)
+    {
+        Destroy();
+        _parts.fShader = new ShaderPart(type, code);
+        return Compile();
+    }
+    return false;
+}
+
 void Shader::Destroy()
 {
     if (_handler)

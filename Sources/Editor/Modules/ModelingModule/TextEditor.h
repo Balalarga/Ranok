@@ -188,6 +188,7 @@ public:
 
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
 	const LanguageDefinition& GetLanguageDefinition() const { return mLanguageDefinition; }
+	LanguageDefinition& EditLanguageDefinition() { return mLanguageDefinition; }
 
 	const Palette& GetPalette() const { return mPaletteBase; }
 	void SetPalette(const Palette& aValue);

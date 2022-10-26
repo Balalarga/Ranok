@@ -16,11 +16,12 @@ DEFINE_LOCTEXT(EditorModulesMenu, "Modules")
 DEFINE_LOCTEXT(EditorSettinsMenu, "Settings")
 
 
-class Editorconfigs: public IConfig
+class EditorConfigs: public IConfig
 {
 public:
-	Editorconfigs(): IConfig("Editor/Editorconfigs")
-	{}
+	EditorConfigs(): IConfig("Editor/EditorConfigs", true)
+	{
+	}
 	
 	void Serialize(JsonArchive& archive) override
 	{
@@ -29,7 +30,7 @@ public:
 
 	std::string defaultLayoutIni;
 };
-std::shared_ptr<Editorconfigs> editorconfigs;
+std::shared_ptr<EditorConfigs> editorConfigs;
 
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
@@ -46,7 +47,7 @@ Editor::~Editor()
 
 Editor::Editor()
 {
-	editorconfigs = ConfigManager::Instance().Createconfigs<Editorconfigs>();
+	editorConfigs = ConfigManager::Instance().CreateConfigs<EditorConfigs>();
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 }
@@ -79,7 +80,6 @@ void Editor::GuiRender()
 				std::string filepathStr = OpenFileDialog();
 				if (!filepathStr.empty())
 				{
-					Logger::Log(std::forward<std::string>(filepathStr));
 					bool bProcessed = false;
 					EditorSystem.EnumerateModules([&bProcessed, &filepathStr](IEditorModule* module)
 					{
@@ -96,7 +96,7 @@ void Editor::GuiRender()
 		if (ImGui::BeginMenu(LOCTEXT(EditorSettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
-				ImGui::SaveIniSettingsToDisk(editorconfigs->defaultLayoutIni.c_str());
+				ImGui::SaveIniSettingsToDisk(editorConfigs->defaultLayoutIni.c_str());
 			ImGui::EndMenu();
 		}
 		
@@ -120,14 +120,15 @@ void Editor::GuiRender()
 
 void Editor::TryLoadDefaultLayout()
 {
-	if (Files::IsFileExists(editorconfigs->defaultLayoutIni))
+	std::string path = Files::GetAssetPath(editorConfigs->defaultLayoutIni);
+	if (Files::IsFileExists(path))
 	{
-		Logger::Error(fmt::format("Default layout loaded from {}", editorconfigs->defaultLayoutIni));
-		ImGui::SaveIniSettingsToDisk(editorconfigs->defaultLayoutIni.c_str());
+		ImGui::LoadIniSettingsFromDisk(path.c_str());
+		Logger::Verbose(fmt::format("Default layout loaded from {}", path));
 	}
 	else
 	{
-		Logger::Error(fmt::format("Couldn't load default layout from {}", editorconfigs->defaultLayoutIni));
+		Logger::Error(fmt::format("Couldn't load default layout from {}", path));
 	}
 }
 }

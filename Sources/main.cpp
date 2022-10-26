@@ -26,6 +26,9 @@
 #include "Config/IConfig.h"
 #include "Config/ConfigManager.h"
 
+#include "Language/CodeLibraryLoader.h"
+#include "Language/LibraryStorage.h"
+
 #include "Utils/TextureManager.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
@@ -70,16 +73,7 @@ std::optional<ActionTree> ReadCode(const std::string& codeAssetPath, const std::
 	
 	Lexer lexer(code.value());
 	Parser parser;
-	for (const std::string& libPath : libAssetPaths)
-	{
-		std::optional<ActionNodeFactory> lib = Files::LoadAssetLibrary(libPath);
-		if (!lib.has_value())
-		{
-			cerr << "Couldn't load " << libPath << " library\n";
-			return {};
-		}
-		parser.AddGlobalData(lib.value());
-	}
+
 	ActionTree tree = parser.Parse(lexer);
 	if (parser.HasErrors())
 	{
@@ -277,6 +271,7 @@ bool TestOpencl(const std::string& codeAssetPath, const std::vector<std::string>
 
 void Preinit()
 {
+	LibraryStorage::LoadDefaults();
 }
 
 void LoadAssets()
@@ -301,6 +296,7 @@ void Init()
 	Editor::Instance();
 	LoadAssets();
 	CustomStyle();
+	LoadDefaultLibraries();
 	
 	auto& logger = Editor::EditorSystem.AddModule<LoggerModule>("Log");
 	logger.bWorks = true;
@@ -331,7 +327,7 @@ void Init()
 		int val{};
 		float val2{};
 	};
-	std::shared_ptr<Someconfigs> config = ConfigManager::Instance().Createconfigs<Someconfigs>();
+	std::shared_ptr<Someconfigs> config = ConfigManager::Instance().CreateConfigs<Someconfigs>();
 }
 
 void PreDestroy()

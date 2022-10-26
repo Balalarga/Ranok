@@ -1,7 +1,6 @@
 ﻿#include "ModelingModule.h"
-
 #include "Executor/OpenclExecutor.h"
-
+#include "Language/Parser.h"
 #include "Localization/LocalizationSystem.h"
 #include "Utils/FileUtils.h"
 #include "Utils/WindowsUtils.h"
@@ -20,16 +19,17 @@ DEFINE_LOCTEXT(ModelingBuild, "Build")
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
-	_viewport({800, 600})
+	_viewport({800, 600}),
+	_rayMarchView(_viewport)
 {
 	Opencl::Executor::Init();
 	
 	SetNoClosing(true);
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
-	const std::string fontPath = Files::GetAssetPath(_textEditorconfigs.textFont);
+	const std::string fontPath = Files::GetAssetPath(_textEditorConfigs.textFont);
 	_textEditorFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(),
-		_textEditorconfigs.renderFontSize,
+		_textEditorConfigs.renderFontSize,
 		nullptr,
 		io.Fonts->GetGlyphRangesCyrillic());
 }
@@ -63,7 +63,14 @@ void ModelingModule::RenderWindowContent()
 		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 		{
 			bool bOpen = true;
-			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen))
+			if (_textEditorTabs[i].editor.IsTextChanged())
+				OnTextChanged(_textEditorTabs[i]);
+			
+			ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+			if (_textEditorTabs[i].editor.CanUndo())
+				flags |= ImGuiTabItemFlags_UnsavedDocument;
+			
+			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags))
 			{
 				currentActiveTab = static_cast<int>(i);
 				if (ImGui::IsItemHovered())
@@ -74,7 +81,7 @@ void ModelingModule::RenderWindowContent()
 					ImGui::PopTextWrapPos();
 					ImGui::EndTooltip();
 				}
-				ImGui::SetWindowFontScale(_textEditorconfigs.fontSize / _textEditorconfigs.renderFontSize);
+				ImGui::SetWindowFontScale(_textEditorConfigs.fontSize / _textEditorConfigs.renderFontSize);
 				ImGui::PushFont(_textEditorFont);
 				_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
 				ImGui::PopFont();
@@ -83,8 +90,13 @@ void ModelingModule::RenderWindowContent()
 			}
 			if (!bOpen)
 			{
-				ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
-				break;
+				if (_textEditorTabs[i].editor.CanUndo())
+				{
+					ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
+					break;
+				}
+				_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
+				--i;
 			}
 		}
 		
@@ -167,13 +179,25 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	std::optional<std::string> data = Files::ReadFile(filepath);
 	if (!data.has_value())
 		return false;
+
+	size_t nameStart = filepath.find_last_of("\\")+1;
+	auto existsItem = std::ranges::find_if(_textEditorTabs,
+	                                       [&filepath, &nameStart](const TextEditorInfo& info)
+	                                       {
+		                                       return info.filename == filepath.substr(nameStart);
+	                                       });
+	if (existsItem != _textEditorTabs.end())
+	{
+		Logger::Log(fmt::format("RCode {} already opened", filepath));
+		return true;
+	}
 	
 	TextEditorInfo& lastItem = _textEditorTabs.emplace_back();
 	lastItem.editor.SetText(data.value());
 	lastItem.editor.SetLanguageDefinition(TextEditor::LanguageDefinition::RanokLanguageDefinition());
-	size_t nameStart = filepath.find_last_of("\\")+1;
 	lastItem.filename = filepath.substr(nameStart);
 	lastItem.filepath = filepath;
+	// OnTextChanged(lastItem);
 	Logger::Log(fmt::format("RCode {} opened", filepath));
 	return true;
 }
@@ -201,7 +225,8 @@ void ModelingModule::CompileTab(int tabId)
 		Logger::Error("No main function founded");
 		return;
 	}
-	Logger::Log("Success");
+	_rayMarchView.SetModel(tree);
+	UpdateViewport();
 }
 
 void ModelingModule::BuildTab(int tabId)
@@ -244,5 +269,24 @@ void ModelingModule::BuildTab(int tabId)
 	}
 	
 	Logger::Log("Success");
+}
+
+void ModelingModule::OnTextChanged(TextEditorInfo& info)
+{
+	Lexer lexer(info.editor.GetText());
+	Parser parser;
+	ActionTree tree = parser.Parse(lexer);
+	for (std::pair<const std::string, FunctionDeclarationNode*>& func : tree.GlobalFactory().Functions())
+	{
+		TextEditor::Identifier id;
+		id.mDeclaration = FunctionDeclarationNode::GetDescription(func.second);
+		info.editor.EditLanguageDefinition().mIdentifiers.insert(std::make_pair(func.first, id));
+	}
+}
+
+void ModelingModule::UpdateViewport()
+{
+	_viewport.Bind();
+	_rayMarchView.Render();
 }
 }

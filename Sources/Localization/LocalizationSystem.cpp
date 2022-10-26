@@ -32,7 +32,7 @@ std::shared_ptr<LocalizationConfig> config;
 
 LocalizationSystem::LocalizationSystem()
 {
-    config = ConfigManager::Instance().Createconfigs<LocalizationConfig>();
+    config = ConfigManager::Instance().CreateConfigs<LocalizationConfig>();
 }
 
 LocalizationSystem &LocalizationSystem::Get()
@@ -43,7 +43,7 @@ LocalizationSystem &LocalizationSystem::Get()
 
 LocalizationSystem::~LocalizationSystem()
 {
-    ConfigManager::Instance().Saveconfig(config.get());
+    ConfigManager::Instance().SaveConfig(config.get());
 }
 
 std::string LocalizationSystem::GetDefaultText(const size_t& id)

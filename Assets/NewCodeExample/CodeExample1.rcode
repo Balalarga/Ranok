@@ -8,10 +8,8 @@ def s(se)
 
 def main(space[3])
 {
-    var s3 = s(space[1]);
-    k = -s3;
-    s2[] = {1, space[2], 3 + s3 * 2 + 2};
-    s5[3] = sa(k);
-    return space[2] & s5[1] | k;
+	r = 1;
+	res = r^2 - space[0]^2 - space[1]^2 - space[2]^2;
+    return res;
 }
 

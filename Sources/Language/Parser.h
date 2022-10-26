@@ -13,7 +13,7 @@ namespace Ranok
 class Parser
 {
 public:
-	Parser() = default;
+	Parser();
 	
 	ActionTree Parse(Lexer lexer);
 	
