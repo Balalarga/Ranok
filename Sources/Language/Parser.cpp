@@ -1,12 +1,9 @@
 ﻿#include "Parser.h"
 
-#include <ranges>
-#include <sstream>
 #include <fmt/format.h>
 
 #include "HardcodedConstructions.h"
 #include "LibraryStorage.h"
-
 #include "Utils/StringUtils.h"
 
 namespace Ranok
@@ -37,7 +34,7 @@ const std::map<Parser::ReservedFuncsTypes, std::string> Parser::_reservedFuncs
 
 Parser::Parser()
 {
-	for (const ActionNodeFactory& lib : LibraryStorage::GetLibs() | std::views::values)
+	for (const auto& [name, lib] : LibraryStorage::GetLibs())
 		AddGlobalData(lib);
 }
 

@@ -6,12 +6,10 @@
 #include "Config/IConfig.h"
 #include "Config/ConfigManager.h"
 #include "Utils/FileUtils.h"
-#include "Utils/WindowsUtils.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
-DEFINE_LOCTEXT(EditorFileMenu, "File")
 DEFINE_LOCTEXT(EditorModulesMenu, "Modules")
 DEFINE_LOCTEXT(EditorSettinsMenu, "Settings")
 
@@ -26,9 +24,12 @@ public:
 	void Serialize(JsonArchive& archive) override
 	{
 		archive.Serialize("DefaultLayoutIniPath", defaultLayoutIni);
+		archive.Serialize("WindowWidth", windowSize.x);
+		archive.Serialize("WindowHeight", windowSize.y);
 	}
 
 	std::string defaultLayoutIni;
+	glm::uvec2 windowSize{1280, 720};
 };
 std::shared_ptr<EditorConfigs> editorConfigs;
 
@@ -50,6 +51,7 @@ Editor::Editor()
 	editorConfigs = ConfigManager::Instance().CreateConfigs<EditorConfigs>();
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
+	Resize(editorConfigs->windowSize);
 }
 
 void Editor::GuiRender()
@@ -72,27 +74,7 @@ void Editor::GuiRender()
 	ImGui::PopStyleVar(3);
 	
 	if (ImGui::BeginMenuBar())
-	{
-		if (ImGui::BeginMenu(LOCTEXT(EditorFileMenu)))
-		{
-			if (ImGui::MenuItem("Open"))
-			{
-				std::string filepathStr = OpenFileDialog();
-				if (!filepathStr.empty())
-				{
-					bool bProcessed = false;
-					EditorSystem.EnumerateModules([&bProcessed, &filepathStr](IEditorModule* module)
-					{
-						if (!bProcessed)
-							bProcessed = module->bWorks && module->TryOpenFile(filepathStr);
-					});
-					if (!bProcessed)
-						Logger::Warning(fmt::format("No one module can open file: {}", filepathStr));
-				}
-			}
-			ImGui::EndMenu();
-		}
-		
+	{	
 		if (ImGui::BeginMenu(LOCTEXT(EditorSettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
@@ -118,7 +100,7 @@ void Editor::GuiRender()
 	ImGui::PopStyleColor();
 }
 
-void Editor::TryLoadDefaultLayout()
+void Editor::TryLoadDefaultLayout() const
 {
 	std::string path = Files::GetAssetPath(editorConfigs->defaultLayoutIni);
 	if (Files::IsFileExists(path))

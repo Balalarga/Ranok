@@ -36,6 +36,8 @@ public:
 
 	
 protected:
+	void RenderTextEditor();
+	
 	void CompileTab(int tabId);
 	void BuildTab(int tabId);
 
@@ -45,6 +47,7 @@ protected:
 private:
 	TextEditorConfigs _textEditorConfigs;
 	std::vector<TextEditorInfo> _textEditorTabs;
+	int currentActiveTab = -1;
 	RayMarchingView _viewport;
 	ImFont* _textEditorFont;
 	
