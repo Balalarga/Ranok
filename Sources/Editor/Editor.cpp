@@ -56,6 +56,7 @@ Editor::Editor()
 
 void Editor::GuiRender()
 {
+	static bool showStyleEditor = false;
 	ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImVec4(0.02f, 0.02f, 0.02f, 1.f));
 	
 	constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar |
@@ -82,6 +83,13 @@ void Editor::GuiRender()
 			ImGui::EndMenu();
 		}
 		
+		if (ImGui::BeginMenu("Editor Settings"))
+		{
+			if (ImGui::MenuItem("Style setup"))
+				showStyleEditor = true;
+			ImGui::EndMenu();
+		}
+		
 		if (ImGui::BeginMenu(LOCTEXT(EditorModulesMenu)))
 		{
 			EditorSystem.EnumerateModules([](IEditorModule* module)
@@ -93,6 +101,13 @@ void Editor::GuiRender()
 		ImGui::EndMenuBar();
 	}
 	
+	if (showStyleEditor)
+	{
+		ImGui::Begin("StyleEditor", &showStyleEditor);
+		ImGui::ShowStyleEditor();
+		ImGui::End();
+	}
+		
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
 	ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 	
