@@ -55,7 +55,7 @@ TextEditor::TextEditor()
 	, mShowWhitespaces(true)
 	, mStartTime(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count())
 {
-	SetPalette(GetDarkPalette());
+	SetPalette(GetGruvboxPalette());
 	SetLanguageDefinition(LanguageDefinition::HLSL());
 	mLines.push_back(Line());
 }
@@ -78,6 +78,35 @@ void TextEditor::SetLanguageDefinition(const LanguageDefinition & aLanguageDef)
 void TextEditor::SetPalette(const Palette & aValue)
 {
 	mPaletteBase = aValue;
+}
+
+const TextEditor::Palette& TextEditor::GetGruvboxPalette()
+{
+	const static Palette p = { {
+		ImGui::ColorConvertFloat4ToU32(ImVec4(234/255.f, 219/255.f, 178/255.f, 255/255.f)),	// Default (FG)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(254/255.f, 128/255.f, 25/255.f, 255/255.f)),	// Keyword (Light Orange)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(211/255.f, 133/255.f, 155/255.f, 255/255.f)),	// Number (Light Purple)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(184/255.f, 187/255.f, 38/255.f, 255/255.f)),	// String (Light Green)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(0/255.f, 0/255.f, 0/255.f, 0/255.f)), // Char literal (none)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(234/255.f, 219/255.f, 178/255.f, 255/255.f)), // Punctuation (Default)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(0/255.f, 0/255.f, 0/255.f, 0/255.f)),	// Preprocessor (none)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(234/255.f, 219/255.f, 178/255.f, 255/255.f)), // Identifier (Light Yellow)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(184/255.f, 187/255.f, 38/255.f, 255/255.f)), // Known identifier (same)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(0/255.f, 0/255.f, 0/255.f, 0/255.f)), // Preproc identifier (none)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(102/255.f, 92/255.f, 83/255.f, 255/255.f)), // Comment (single line) (bg2)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(102/255.f, 92/255.f, 83/255.f, 255/255.f)), // Comment (multi line) (same)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(28/255.f, 32/255.f, 33/255.f, 255/255.f)), // Background (BG)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(168/255.f, 153/255.f, 132/255.f, 255/255.f)), // Cursor (Gray)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(124/255.f, 112/255.f, 100/255.f, 255/255.f)), // Selection (bg4)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(204/255.f, 35/255.f, 28/255.f, 255/255.f)), // ErrorMarker (Dark Red)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(0/255.f, 0/255.f, 0/255.f, 0/255.f)), // Breakpoint (none)
+		ImGui::ColorConvertFloat4ToU32(ImVec4(234/255.f, 219/255.f, 178/255.f, 255/255.f)), // Line number (FG1)
+		0x40000000, // Current line fill
+		0x40808080, // Current line fill (inactive)
+		0x40a0a0a0, // Current line edge
+	} };
+
+	return p;
 }
 
 std::string TextEditor::GetText(const Coordinates & aStart, const Coordinates & aEnd) const
