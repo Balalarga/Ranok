@@ -1,19 +1,16 @@
 ﻿#include "SystemSettings.h"
 
-#include "Archives/Json/JsonArchive.h"
-
 namespace Ranok
 {
-SystemSettings::SystemSettings():
-	IConfig("SystemSettings", true)
-{
-}
-
-void SystemSettings::Serialize(JsonArchive& archive)
-{
-	archive.Serialize("resourcesDir", resourcesDir);
-	archive.Serialize("configsDir", configsDir);
-	archive.Serialize("defaultConfigsDir", defaultConfigsDir);
-	archive.Serialize("defaultLibrariesDir", defaultLibrariesDir);
-}
+#ifdef _DEBUG
+std::string SystemSettings::resourcesDir = PROJECT_SOURCE_DIR"\\Assets";
+std::string SystemSettings::configsDir = "..\\Config";
+std::string SystemSettings::defaultConfigsDir = PROJECT_SOURCE_DIR"\\Assets\\DefaultConfig";
+std::string SystemSettings::defaultLibrariesDir = PROJECT_SOURCE_DIR"\\Assets\\CodeLibrary";
+#else
+std::string SystemSettings::resourcesDir = ".\\Assets";
+std::string SystemSettings::configsDir = ".\\Config";
+std::string SystemSettings::defaultConfigsDir = ".\\Assets\\DefaultConfig";
+std::string SystemSettings::defaultLibrariesDir = ".\\Assets\\CodeLibrary";
+#endif
 }

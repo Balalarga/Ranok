@@ -82,13 +82,14 @@ void Editor::GuiRender()
 				ImGui::SaveIniSettingsToDisk(editorConfigs->defaultLayoutIni.c_str());
 			ImGui::EndMenu();
 		}
-		
+#ifdef DEBUG_MODE
 		if (ImGui::BeginMenu("Editor Settings"))
 		{
 			if (ImGui::MenuItem("Style setup"))
 				showStyleEditor = true;
 			ImGui::EndMenu();
 		}
+#endif
 		
 		if (ImGui::BeginMenu(LOCTEXT(EditorModulesMenu)))
 		{

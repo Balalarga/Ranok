@@ -1,17 +1,15 @@
 ﻿#pragma once
+
 #include "Config/IConfig.h"
 
 namespace Ranok
 {
-class SystemSettings: public IConfig
+class SystemSettings
 {
 public:
-	SystemSettings();
-	void Serialize(JsonArchive& archive) override;
-
-	const std::string resourcesDir;
-	const std::string configsDir;
-	const std::string defaultConfigsDir;
-	const std::string defaultLibrariesDir;
+	static std::string resourcesDir;
+	static std::string configsDir;
+	static std::string defaultConfigsDir;
+	static std::string defaultLibrariesDir;
 };
 }

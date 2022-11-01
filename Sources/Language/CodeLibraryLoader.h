@@ -34,7 +34,7 @@ inline std::map<std::string, ActionNodeFactory> LoadDefaultLibraries()
 {
 	namespace fs = std::filesystem;
 	std::map<std::string, ActionNodeFactory> libs;
-	for (const fs::directory_entry& entry : fs::recursive_directory_iterator(LIBRARIES_DIR))
+	for (const fs::directory_entry& entry : fs::recursive_directory_iterator(SystemSettings::defaultLibrariesDir))
 	{
 		if (!entry.is_directory() && entry.path().extension().compare(RANOK_CODE_EXTENSION) == 0)
 		{
@@ -46,6 +46,5 @@ inline std::map<std::string, ActionNodeFactory> LoadDefaultLibraries()
 		}
 	}
 	return libs;
-	// return 
 }
 }

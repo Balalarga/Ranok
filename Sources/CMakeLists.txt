@@ -68,6 +68,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_INCLUDE_DIRS})
 target_link_directories(${PROJECT_NAME} PRIVATE ${ADDITIONAL_LINK_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "DEBUG_MODE")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "PROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\"")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "OVERRIDE_DEFAULT_CONFIG=1")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RANOK_CODE_EXTENSION=\".rcode\"")
 set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${PROJECT_RESOURCES}")
