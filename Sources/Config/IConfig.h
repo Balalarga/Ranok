@@ -9,6 +9,7 @@ class IArchive;
 
 class IConfig: public ISerializable
 {
+	friend class ConfigManager;
 public:
 	IConfig(const std::string& filepath, bool bDefaultOnly = false);
 	~IConfig() override = default;

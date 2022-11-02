@@ -17,7 +17,7 @@ public:
 	
 	void GuiRender();
 	
-	void TryLoadDefaultLayout();
+	void TryLoadDefaultLayout() const;
 	
 private:
 	Editor();

@@ -1,3 +1,5 @@
 {
-    "DefaultLayoutIniPath": "DefaultConfig/Ini/DefaultLayout.ini"
+    "DefaultLayoutIniPath": "DefaultConfig/Ini/DefaultLayout.ini",
+    "WindowHeight": 720,
+    "WindowWidth": 1280
 }

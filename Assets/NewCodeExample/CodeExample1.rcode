@@ -1,6 +1,5 @@
 // asgqwegqaweg
 
-
 def s(se)
 {
 	return -se;
@@ -13,4 +12,3 @@ def main(space[3])
 	res = r^2 - space[0]^2 - space[1]^2 - space[2]^2;
 	return res;
 }
-

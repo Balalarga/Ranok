@@ -6,13 +6,14 @@
 #include <string>
 #include <fmt/format.h>
 
+#include "SystemSettings.h"
 #include "Log/Logger.h"
 
 namespace Ranok::Files
 {
 inline std::string GetAssetPath(const std::string& relativePath)
 {
-	return fmt::format("{}/{}", RESOURCE_DIR, relativePath);
+	return fmt::format("{}/{}", SystemSettings::resourcesDir, relativePath);
 }
 
 inline bool IsFileExists(const std::string& path)

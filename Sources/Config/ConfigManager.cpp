@@ -14,12 +14,12 @@ ConfigManager& ConfigManager::Instance()
 
 const std::string& ConfigManager::GetConfigDir()
 {
-	return CONFIG_DIR;
+	return SystemSettings::configsDir;
 }
 
 const std::string& ConfigManager::GetDefaultConfigDir()
 {
-	return CONFIG_DEFAULT_DIR;
+	return SystemSettings::defaultConfigsDir;
 }
 
 void ConfigManager::SaveConfig(IConfig* configs)
@@ -56,12 +56,12 @@ void ConfigManager::SaveAll()
 
 std::string ConfigManager::GetFullPath(IConfig* config)
 {
-	return CONFIG_DIR"/"+config->GetFilepath();
+	return GetConfigDir()+"/"+config->GetFilepath();
 }
 
 std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 {
-	return CONFIG_DEFAULT_DIR"/"+config->GetFilepath();
+	return GetDefaultConfigDir()+"/"+config->GetFilepath();
 }
 
 void ConfigManager::LoadConfig(ConfigData& configs)

@@ -1,9 +1,13 @@
 ﻿#include "ModelingModule.h"
+
+#include "Config/ConfigManager.h"
+#include "Config/IConfig.h"
 #include "Executor/OpenclExecutor.h"
 #include "Language/Parser.h"
 #include "Localization/LocalizationSystem.h"
 #include "Utils/FileUtils.h"
 #include "Utils/WindowsUtils.h"
+#include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
@@ -16,14 +20,38 @@ DEFINE_LOCTEXT(ModelingCloseTabCloseText, "Close")
 DEFINE_LOCTEXT(ModelingCloseTabCancelText, "Cancel")
 DEFINE_LOCTEXT(ModelingCompile, "Compile")
 DEFINE_LOCTEXT(ModelingBuild, "Build")
+DEFINE_LOCTEXT(ModelingOpenFile, "Open")
+
+
+class ModelingModuleConfig: public IConfig
+{
+public:
+	ModelingModuleConfig(): IConfig("Modules/ModelingConfig")
+	{
+	}
+	
+	void Serialize(JsonArchive& archive) override
+	{
+		archive.Serialize("textEditorWidth", textEditorWidth);
+		archive.Serialize("textureSize.x", textureSize.x);
+		archive.Serialize("textureSize.y", textureSize.y);
+	}
+	float textEditorWidth = -1;
+	glm::uvec2 textureSize = {800, 600};
+	std::vector<std::string> openedFiles;
+};
+
+static std::shared_ptr<ModelingModuleConfig> config;
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
 	_viewport({800, 600})
 {
+	config = ConfigManager::Instance().CreateConfigs<ModelingModuleConfig>();
 	Opencl::Executor::Init();
 	
 	SetNoClosing(true);
+	_viewport.Resize(config->textureSize);
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
 	const std::string fontPath = Files::GetAssetPath(_textEditorConfigs.textFont);
@@ -37,135 +65,142 @@ ModelingModule::ModelingModule():
 
 void ModelingModule::RenderWindowContent()
 {
-	static int currentActiveTab = -1;
+	if (config->textEditorWidth < 1)
+		config->textEditorWidth = ImGui::GetWindowContentRegionMax().x/3.f;
 	
-	ImGui::BeginChild("mainContainer");
-	static float w = ImGui::GetWindowContentRegionMax().x / 3.f;
-	const float trueH = ImGui::GetWindowContentRegionMax().y;
-	const float trueW = w >= 0 ? w : 1;
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
-	if (!_textEditorTabs.empty())
-	{
-		ImGui::BeginTabBar("##textEditorTabs");
-		for (size_t i = 0; i < _textEditorTabs.size(); ++i)
+	ImGui::BeginGroup();
+		if (ImGui::Button(LOCTEXT(ModelingOpenFile)))
 		{
-			bool bOpen = true;
-			if (_textEditorTabs[i].editor.IsTextChanged())
-				OnTextChanged(_textEditorTabs[i]);
-			
-			ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
-			if (_textEditorTabs[i].editor.CanUndo())
-				flags |= ImGuiTabItemFlags_UnsavedDocument;
-			
-			if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags))
+			const std::string filepathStr = OpenFileDialog();
+			if (!filepathStr.empty())
+				TryOpenFile(filepathStr);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(LOCTEXT(ModelingCompile)))
+			CompileTab(currentActiveTab);
+		ImGui::SameLine();
+		if (ImGui::Button(LOCTEXT(ModelingBuild)))
+			BuildTab(currentActiveTab);
+	ImGui::EndGroup();
+	
+	ImGui::BeginChild("WorkingChild");
+		ImGui::BeginChild("TextEditorChild", ImVec2(config->textEditorWidth, 0));
+			RenderTextEditor();
+		ImGui::EndChild();
+	
+		ImGui::SameLine();
+		ImGui::InvisibleButton("vsplitter", ImVec2(5.0f, ImGui::GetWindowContentRegionMax().y));
+		const bool bIsActive = ImGui::IsItemActive();
+		const bool bIsHovered = ImGui::IsItemHovered();
+		if (bIsActive)
+			config->textEditorWidth += ImGui::GetIO().MouseDelta.x;
+		if (bIsActive || bIsHovered)
+			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+		ImGui::SameLine();
+	
+		ImGui::BeginChild("ViewportChild");
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)_viewport.GetTextureId(),
+						 ImGui::GetWindowSize(),
+						 ImVec2(0, 1),
+						 ImVec2(1, 0));
+			ImGui::PopStyleVar(1);
+		ImGui::EndChild();
+	
+	ImGui::EndChild();
+}
+
+void ModelingModule::RenderTextEditor()
+{
+	if (_textEditorTabs.empty())
+		return;
+	
+	ImGui::BeginTabBar("##textEditorTabs");
+	for (size_t i = 0; i < _textEditorTabs.size(); ++i)
+	{
+		bool bOpen = true;
+		if (_textEditorTabs[i].editor.IsTextChanged())
+			OnTextChanged(_textEditorTabs[i]);
+		
+		ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+		if (_textEditorTabs[i].editor.CanUndo())
+			flags |= ImGuiTabItemFlags_UnsavedDocument;
+		
+		if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags))
+		{
+			currentActiveTab = static_cast<int>(i);
+			if (ImGui::IsItemHovered())
 			{
-				currentActiveTab = static_cast<int>(i);
-				if (ImGui::IsItemHovered())
-				{
-					ImGui::BeginTooltip();
-					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-					ImGui::TextUnformatted(_textEditorTabs[i].filepath.c_str());
-					ImGui::PopTextWrapPos();
-					ImGui::EndTooltip();
-				}
-				ImGui::SetWindowFontScale(_textEditorConfigs.fontSize / _textEditorConfigs.renderFontSize);
-				ImGui::PushFont(_textEditorFont);
-				_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
-				ImGui::PopFont();
-				ImGui::EndTabItem();
-				ImGui::SetWindowFontScale(1.f);
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(_textEditorTabs[i].filepath.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
 			}
-			if (!bOpen)
+			ImGui::SetWindowFontScale(_textEditorConfigs.fontSize / _textEditorConfigs.renderFontSize);
+			ImGui::PushFont(_textEditorFont);
+			_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
+			ImGui::PopFont();
+			ImGui::EndTabItem();
+			ImGui::SetWindowFontScale(1.f);
+		}
+		if (!bOpen)
+		{
+			if (_textEditorTabs[i].editor.CanUndo())
 			{
-				if (_textEditorTabs[i].editor.CanUndo())
-				{
-					ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
-					break;
-				}
+				ImGui::OpenPopup(LOCTEXT(ModelingCloseTabTitle));
+				break;
+			}
+			_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
+			--i;
+		}
+	}
+	
+	if (ImGui::BeginPopupModal(LOCTEXT(ModelingCloseTabTitle)))
+	{
+		ImGui::Text(LOCTEXT(ModelingCloseTabText));
+		ImGui::Text("\n");
+		ImGui::Separator();
+		
+		if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveText)))
+		{
+			TextEditorInfo& currentTab = _textEditorTabs[currentActiveTab];
+			if (!currentTab.filepath.empty() &&
+				Files::WriteToFile(currentTab.filepath, currentTab.editor.GetText()))
+			{
+				Logger::Log(fmt::format("RCode saved to {}", currentTab.filepath));
 				_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
-				--i;
+				ImGui::CloseCurrentPopup();
 			}
 		}
 		
-		if (ImGui::BeginPopupModal(LOCTEXT(ModelingCloseTabTitle)))
+		ImGui::SameLine();
+		if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveAsText)))
 		{
-			ImGui::Text(LOCTEXT(ModelingCloseTabText));
-			ImGui::Text("\n");
-			ImGui::Separator();
-			
-			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveText)))
+			std::string toSave = SaveFileDialog();
+			if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[currentActiveTab].editor.GetText()))
 			{
-				TextEditorInfo& currentTab = _textEditorTabs[currentActiveTab];
-				if (!currentTab.filepath.empty() &&
-					Files::WriteToFile(currentTab.filepath, currentTab.editor.GetText()))
-				{
-					Logger::Log(fmt::format("RCode saved to {}", currentTab.filepath));
-					_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
-					ImGui::CloseCurrentPopup();
-				}
-			}
-			
-			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(ModelingCloseTabSaveAsText)))
-			{
-				std::string toSave = SaveFileDialog();
-				if (!toSave.empty() && Files::WriteToFile(toSave, _textEditorTabs[currentActiveTab].editor.GetText()))
-				{
-					_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
-					Logger::Log(fmt::format("RCode saved to {}", toSave));
-					ImGui::CloseCurrentPopup();
-				}
-			}
-			
-			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(ModelingCloseTabCloseText)))
-			{
-				ImGui::CloseCurrentPopup();
 				_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
-			}
-			
-			ImGui::SameLine();
-			if (ImGui::Button(LOCTEXT(ModelingCloseTabCancelText)))
+				Logger::Log(fmt::format("RCode saved to {}", toSave));
 				ImGui::CloseCurrentPopup();
-			
-			ImGui::EndPopup();
+			}
 		}
-		ImGui::EndTabBar();
+		
+		ImGui::SameLine();
+		if (ImGui::Button(LOCTEXT(ModelingCloseTabCloseText)))
+		{
+			ImGui::CloseCurrentPopup();
+			_textEditorTabs.erase(_textEditorTabs.begin() + currentActiveTab);
+		}
+		
+		ImGui::SameLine();
+		if (ImGui::Button(LOCTEXT(ModelingCloseTabCancelText)))
+			ImGui::CloseCurrentPopup();
+		
+		ImGui::EndPopup();
 	}
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 10));
-	ImGui::BeginGroup();
-	if (ImGui::Button(LOCTEXT(ModelingCompile)))
-	{
-		CompileTab(currentActiveTab);
-	}
-	ImGui::SameLine();
-	if (ImGui::Button(LOCTEXT(ModelingBuild)))
-	{
-		BuildTab(currentActiveTab);
-	}
-	ImGui::PopStyleVar();
-	ImGui::EndGroup();
-	ImGui::EndChild();
-	
-	ImGui::SameLine();
-	ImGui::InvisibleButton("vSplitter", ImVec2(8.0f, trueH));
-	const bool bIsActive = ImGui::IsItemActive();
-	const bool bIsHovered = ImGui::IsItemHovered();
-	if (bIsActive)
-		w += ImGui::GetIO().MouseDelta.x;
-	if (bIsActive || bIsHovered)
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-	ImGui::SameLine();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::BeginChild("child2", ImVec2(0, trueH), true);
-	ImGui::Image((void*)(intptr_t)_viewport.GetTextureId(),
-				 ImGui::GetWindowSize(),
-				 ImVec2(0, 1),
-				 ImVec2(1, 0));
-	ImGui::EndChild();
-	ImGui::PopStyleVar(2);
-	ImGui::EndChild();
+
+	ImGui::EndTabBar();
 }
 
 void ModelingModule::PostRender()

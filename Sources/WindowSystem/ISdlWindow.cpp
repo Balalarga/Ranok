@@ -145,3 +145,10 @@ void ISdlWindow::PostRenderImGui()
 {
     ImGui::Render();
 }
+
+void ISdlWindow::Resize(glm::uvec2 size)
+{
+    _params.width = size.x;
+    _params.height = size.y;
+    SDL_SetWindowSize(_sdlWindow, size.x, size.y);
+}

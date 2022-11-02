@@ -11,7 +11,6 @@ public:
     OpenglWindow(const ISdlWindowParams& params = ISdlWindowParams());
     ~OpenglWindow() override;
 
-
     void SetBackgroundColor(const glm::vec4& newColor) override;
     void Render() override;
     void PostRender() override;

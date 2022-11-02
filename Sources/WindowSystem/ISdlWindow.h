@@ -55,6 +55,7 @@ public:
     SDL_Window* GetSdlWindow() const { return _sdlWindow; }
     const ISdlWindowParams& GetParams() const { return _params; }
 
+    void Resize(glm::uvec2 size);
 
 private:
     ISdlWindowParams _params;
