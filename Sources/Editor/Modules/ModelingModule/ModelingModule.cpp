@@ -250,8 +250,13 @@ void ModelingModule::CompileTab(int tabId)
 	ActionTree tree = parser.Parse(lexer);
 	if (parser.HasErrors())
 	{
-		for (const std::string& error : parser.Errors())
-			Logger::Error(error);
+		TextEditor::ErrorMarkers markers;
+		for (const Parser::Error& error : parser.Errors())
+		{
+			markers[error.line] = error.text; 
+			Logger::Error(error.text);
+		}
+		currentTab.editor.SetErrorMarkers(markers);
 		return;
 	}
 	
@@ -278,8 +283,13 @@ void ModelingModule::BuildTab(int tabId)
 	ActionTree tree = parser.Parse(lexer);
 	if (parser.HasErrors())
 	{
-		for (const std::string& error : parser.Errors())
-			Logger::Error(error);
+		TextEditor::ErrorMarkers markers;
+		for (const Parser::Error& error : parser.Errors())
+		{
+			markers[error.line] = error.text; 
+			Logger::Error(error.text);
+		}
+		currentTab.editor.SetErrorMarkers(markers);
 		return;
 	}
 	
@@ -318,6 +328,9 @@ void ModelingModule::OnTextChanged(TextEditorInfo& info)
 		id.mDeclaration = FunctionDeclarationNode::GetDescription(func.second);
 		info.editor.EditLanguageDefinition().mIdentifiers.insert(std::make_pair(func.first, id));
 	}
+	
+	if (!info.editor.GetErrorMarkers().empty())
+		info.editor.SetErrorMarkers({});
 }
 
 void ModelingModule::UpdateViewport(ActionTree& tree)

@@ -128,8 +128,7 @@ void LoadAssets()
 		else
 			Logger::Log(fmt::format("Loaded texture \"{}\" from {} ", tag, fullPath));
 	};
-	// TryToLoadTexture("FileIcon", "Icons/FileIcon.png");
-	// TryToLoadTexture("DirIcon", "Icons/DirIcon.png");
+	TryToLoadTexture("LoadingImage", "Images/Loading.png");
 }
 
 void Init()

@@ -13,11 +13,17 @@ namespace Ranok
 class Parser
 {
 public:
+	struct Error
+	{
+		int line, column;
+		std::string text;
+	};
+	
 	Parser();
 	
 	ActionTree Parse(Lexer lexer);
 	
-	const std::vector<std::string>& Errors() const { return _errors; }
+	const std::vector<Error>& Errors() const { return _errors; }
 	bool HasErrors() const { return !_errors.empty(); }
 	
 	void AddGlobalData(const ActionNodeFactory& factory);
@@ -74,6 +80,6 @@ private:
 	bool bAllowInnerFunctionDeclarations = false;
 	const std::string _unnamePrefix = "__unnamedVar__";
 	long _unnamedCounter = 0;
-	std::vector<std::string> _errors;
+	std::vector<Error> _errors;
 };
 }

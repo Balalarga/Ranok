@@ -22,8 +22,8 @@ inline std::optional<ActionNodeFactory> LoadLibrary(const std::string& path)
 		std::stringstream errorText;
 		errorText << "----------------------------------------\n";
 		errorText << path << std::endl;
-		for(const std::string& err : parser.Errors())
-			errorText << err << std::endl;
+		for(const auto& err : parser.Errors())
+			errorText << err.text << std::endl;
 		errorText << "----------------------------------------\n";
 		Logger::Error(errorText.str());
 	}

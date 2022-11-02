@@ -70,7 +70,7 @@ ActionTree Parser::Parse(Lexer lexer)
 	}
 	factoryStack.pop_front();
 	if (!factoryStack.empty())
-		_errors.push_back("Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size()));
+		_errors.push_back({0, 0, "Scope nesting mismatch: expected 0, have " + std::to_string(factoryStack.size())});
 	
 	if (FunctionDeclarationNode* mainFunc = tree.GlobalFactory().FindFunction(_reservedFuncs.at(ReservedFuncsTypes::MainFunc)))
 		tree.SetRoot(mainFunc);
@@ -129,7 +129,7 @@ std::set<std::string> Parser::GetReservedFuncwords()
 
 void Parser::DumpTokenError(const std::string& errFormat, const Token& token)
 {
-	_errors.push_back(fmt::format(fmt::runtime(errFormat), fmt::arg("name", token.string), fmt::arg("line", token.line), fmt::arg("column", token.column)));
+	_errors.push_back({token.line, token.column, fmt::format(fmt::runtime(errFormat), fmt::arg("name", token.string), fmt::arg("line", token.line), fmt::arg("column", token.column))});
 }
 
 void Parser::AddGlobalData(const ActionNodeFactory& factory)
