@@ -31,6 +31,8 @@ ModelingModule::ModelingModule():
 		_textEditorConfigs.renderFontSize,
 		nullptr,
 		io.Fonts->GetGlyphRangesCyrillic());
+	
+	RenderViewport();
 }
 
 void ModelingModule::RenderWindowContent()
@@ -43,19 +45,6 @@ void ModelingModule::RenderWindowContent()
 	const float trueW = w >= 0 ? w : 1;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 10));
-	ImGui::BeginGroup();
-	if (ImGui::Button(LOCTEXT(ModelingCompile)))
-	{
-		CompileTab(currentActiveTab);
-	}
-	ImGui::SameLine();
-	if (ImGui::Button(LOCTEXT(ModelingBuild)))
-	{
-		BuildTab(currentActiveTab);
-	}
-	ImGui::PopStyleVar();
-	ImGui::EndGroup();
 	if (!_textEditorTabs.empty())
 	{
 		ImGui::BeginTabBar("##textEditorTabs");
@@ -144,10 +133,23 @@ void ModelingModule::RenderWindowContent()
 		}
 		ImGui::EndTabBar();
 	}
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 10));
+	ImGui::BeginGroup();
+	if (ImGui::Button(LOCTEXT(ModelingCompile)))
+	{
+		CompileTab(currentActiveTab);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button(LOCTEXT(ModelingBuild)))
+	{
+		BuildTab(currentActiveTab);
+	}
+	ImGui::PopStyleVar();
+	ImGui::EndGroup();
 	ImGui::EndChild();
 	
 	ImGui::SameLine();
-	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));
+	ImGui::InvisibleButton("vSplitter", ImVec2(8.0f, trueH));
 	const bool bIsActive = ImGui::IsItemActive();
 	const bool bIsHovered = ImGui::IsItemHovered();
 	if (bIsActive)
@@ -179,7 +181,7 @@ bool ModelingModule::TryOpenFile(const std::string& filepath)
 	if (!data.has_value())
 		return false;
 
-	size_t nameStart = filepath.find_last_of("\\")+1;
+	size_t nameStart = filepath.find_last_of('\\')+1;
 	auto existsItem = std::ranges::find_if(_textEditorTabs,
 	                                       [&filepath, &nameStart](const TextEditorInfo& info)
 	                                       {
@@ -224,6 +226,8 @@ void ModelingModule::CompileTab(int tabId)
 		return;
 	}
 	UpdateViewport(tree);
+	
+	Logger::Log("Success");
 }
 
 void ModelingModule::BuildTab(int tabId)
@@ -291,6 +295,11 @@ void ModelingModule::UpdateViewport(ActionTree& tree)
 	}
 	
 	Logger::Verbose(fmt::format("{}", code.value()));
+	RenderViewport();
+}
+
+void ModelingModule::RenderViewport()
+{
 	_viewport.Bind();
 	_viewport.Render();
 	_viewport.Release();

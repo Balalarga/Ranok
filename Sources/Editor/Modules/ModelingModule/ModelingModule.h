@@ -41,6 +41,7 @@ protected:
 
 	void OnTextChanged(TextEditorInfo& info);
 	void UpdateViewport(ActionTree& tree);
+	void RenderViewport();
 	
 private:
 	TextEditorConfigs _textEditorConfigs;

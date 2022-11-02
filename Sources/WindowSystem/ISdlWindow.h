@@ -17,8 +17,8 @@ struct ISdlWindowParams
     std::string title;
     unsigned x = SDL_WINDOWPOS_CENTERED;
     unsigned y = SDL_WINDOWPOS_CENTERED;
-    unsigned width = 800;
-    unsigned height = 600;
+    unsigned width = 1280;
+    unsigned height = 720;
     unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
 
     bool vsync = false;

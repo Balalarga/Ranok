@@ -33,6 +33,7 @@ public:
 	RayMarchingView(glm::uvec2 size);
 	std::optional<std::string> SetProgram(ActionTree& tree);
 
+	void Bind() override;
 
 private:
 	RaymarchingMaterial _material;

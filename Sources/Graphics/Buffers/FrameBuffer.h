@@ -7,13 +7,13 @@ class FrameBuffer
 {
 public:
 	FrameBuffer(glm::uvec2 size);
-	~FrameBuffer();
+	virtual ~FrameBuffer();
 
 	void Resize(glm::uvec2 size);
     
 	unsigned Create();
 
-	void Bind();
+	virtual void Bind();
 	void Release();
 
 	unsigned GetTextureId() const { return _texture.GetId(); }

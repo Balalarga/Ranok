@@ -229,7 +229,7 @@ void main()
 )";
 
 std::string RayMarchingView::defaultFragmentShader = shaderHeader + R"(
-float _resultFunc(float s[3])
+float _main(float s[3])
 {
     return 1 - s[0]*s[0] - s[1]*s[1] - s[2]*s[2];
 }
@@ -281,5 +281,13 @@ std::optional<std::string> RayMarchingView::SetProgram(ActionTree& tree)
     if (!status)
         Logger::Error("Shader compilation error");
     return fullCode;
+}
+
+void RayMarchingView::Bind()
+{
+    std::shared_ptr<Shader> shader = _material.GetShader().lock();
+    if (!shader->IsCompiled())
+        shader->Compile();
+    FrameBuffer::Bind();
 }
 }

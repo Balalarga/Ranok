@@ -27,6 +27,8 @@ public:
 
 	void SetUniform(const std::string& name, const UniformValue& value, bool bUnbind = false);
 
+	bool IsCompiled() const { return _glHandler != 0; }
+	
 protected:
 	int GetUniformLocation(const std::string& name);
 
