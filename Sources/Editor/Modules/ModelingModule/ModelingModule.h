@@ -32,7 +32,7 @@ public:
 	void RenderWindowContent() override;
 	void PostRender() override;
 	
-	bool TryOpenFile(const std::string& filepath) override;
+	bool TryOpenFile(const std::string& filepath);
 
 	
 protected:

@@ -41,13 +41,12 @@ public:
 	std::vector<std::string> openedFiles;
 };
 
-static std::shared_ptr<ModelingModuleConfig> config;
+static std::shared_ptr<ModelingModuleConfig> config = ConfigManager::Instance().CreateConfigs<ModelingModuleConfig>();
 
 ModelingModule::ModelingModule():
 	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
 	_viewport({800, 600})
 {
-	config = ConfigManager::Instance().CreateConfigs<ModelingModuleConfig>();
 	Opencl::Executor::Init();
 	
 	SetNoClosing(true);
@@ -114,7 +113,7 @@ void ModelingModule::RenderTextEditor()
 {
 	if (_textEditorTabs.empty())
 		return;
-	
+
 	ImGui::BeginTabBar("##textEditorTabs");
 	for (size_t i = 0; i < _textEditorTabs.size(); ++i)
 	{
@@ -126,17 +125,14 @@ void ModelingModule::RenderTextEditor()
 		if (_textEditorTabs[i].editor.CanUndo())
 			flags |= ImGuiTabItemFlags_UnsavedDocument;
 		
-		if (ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags))
+		// ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 40);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10)); // default 10, 4
+		// Logger::Log(fmt::format("{}, {}", ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y));
+		const bool tabOpened = ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags);
+		ImGui::PopStyleVar();
+		if (tabOpened)
 		{
 			currentActiveTab = static_cast<int>(i);
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-				ImGui::TextUnformatted(_textEditorTabs[i].filepath.c_str());
-				ImGui::PopTextWrapPos();
-				ImGui::EndTooltip();
-			}
 			ImGui::SetWindowFontScale(_textEditorConfigs.fontSize / _textEditorConfigs.renderFontSize);
 			ImGui::PushFont(_textEditorFont);
 			_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
@@ -144,6 +140,7 @@ void ModelingModule::RenderTextEditor()
 			ImGui::EndTabItem();
 			ImGui::SetWindowFontScale(1.f);
 		}
+		
 		if (!bOpen)
 		{
 			if (_textEditorTabs[i].editor.CanUndo())

@@ -101,6 +101,8 @@ void ISdlWindow::HandleEvents(SDL_Event& event)
         case SDL_WINDOWEVENT:
             if (event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(_sdlWindow))
                 _bShouldClose = true;
+            else if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                OnResize(glm::uvec2(event.window.data1, event.window.data2));
             break;
         case SDL_KEYDOWN:
             Input.OnStateChange(event.key.keysym.scancode,
@@ -148,7 +150,12 @@ void ISdlWindow::PostRenderImGui()
 
 void ISdlWindow::Resize(glm::uvec2 size)
 {
+    SDL_SetWindowSize(_sdlWindow, size.x, size.y);
+    OnResize(size);
+}
+
+void ISdlWindow::OnResize(glm::uvec2 size)
+{
     _params.width = size.x;
     _params.height = size.y;
-    SDL_SetWindowSize(_sdlWindow, size.x, size.y);
 }

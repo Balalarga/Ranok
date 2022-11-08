@@ -13,7 +13,12 @@ namespace Ranok::Files
 {
 inline std::string GetAssetPath(const std::string& relativePath)
 {
-	return fmt::format("{}/{}", SystemSettings::resourcesDir, relativePath);
+	
+#ifdef _DEBUG
+	return fmt::format("{}/{}", PROJECT_SOURCE_DIR"\\Assets", relativePath);
+#else
+	return fmt::format("{}/{}", ".\\Assets", relativePath);
+#endif
 }
 
 inline bool IsFileExists(const std::string& path)

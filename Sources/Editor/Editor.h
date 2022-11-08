@@ -13,11 +13,11 @@ public:
     static ModuleSystem<IEditorModule> EditorSystem;
 	static Editor& Instance();
 	
-	~Editor();
-	
 	void GuiRender();
 	
 	void TryLoadDefaultLayout() const;
+
+    void OnResize(glm::uvec2 size) override;
 	
 private:
 	Editor();

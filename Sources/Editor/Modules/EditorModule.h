@@ -14,11 +14,13 @@ public:
 		moduleName(inModuleName),
 		flags(inFlags)
 	{
+		ImGui::GetStyle().WindowMenuButtonPosition = ImGuiDir_None;
+
 		Editor::Instance().AddGuiLayer({[this]
 		{
 			if (!bWorks)
 				return;
-			
+
 			if (bNotClosing)
 			{
 				if (ImGui::Begin(moduleName.c_str(), nullptr, flags))
@@ -39,9 +41,6 @@ public:
 	virtual void PostRender() {}
 	virtual void RenderWindowContent() = 0;
 	void SetNoClosing(bool bClose) { bNotClosing = bClose; }
-
-	// Use for On OpenFile execution for yours module
-	virtual bool TryOpenFile(const std::string& filepath) { return false; }
 	
 	std::string moduleName;
 	bool bWorks = false;

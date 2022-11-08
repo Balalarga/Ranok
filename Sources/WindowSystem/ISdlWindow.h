@@ -57,6 +57,9 @@ public:
 
     void Resize(glm::uvec2 size);
 
+protected:
+    virtual void OnResize(glm::uvec2 size);
+    
 private:
     ISdlWindowParams _params;
     SDL_Window* _sdlWindow;

@@ -19,7 +19,12 @@ const std::string& ConfigManager::GetConfigDir()
 
 const std::string& ConfigManager::GetDefaultConfigDir()
 {
-	return SystemSettings::defaultConfigsDir;
+	
+#ifdef _DEBUG
+	return PROJECT_SOURCE_DIR"\\Assets\\DefaultConfig";
+#else
+	return ".\\Assets\\DefaultConfig";
+#endif
 }
 
 void ConfigManager::SaveConfig(IConfig* configs)
@@ -61,7 +66,12 @@ std::string ConfigManager::GetFullPath(IConfig* config)
 
 std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 {
-	return GetDefaultConfigDir()+"/"+config->GetFilepath();
+	
+#ifdef _DEBUG
+	return PROJECT_SOURCE_DIR"\\Assets\\DefaultConfig\\"+config->GetFilepath();
+#else
+	return ".\\Assets\\DefaultConfig\\"+config->GetFilepath();
+#endif
 }
 
 void ConfigManager::LoadConfig(ConfigData& configs)

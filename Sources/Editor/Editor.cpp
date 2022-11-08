@@ -31,8 +31,7 @@ public:
 	std::string defaultLayoutIni;
 	glm::uvec2 windowSize{1280, 720};
 };
-std::shared_ptr<EditorConfigs> editorConfigs;
-
+std::shared_ptr<EditorConfigs> editorConfigs = ConfigManager::Instance().CreateConfigs<EditorConfigs>();
 
 ModuleSystem<IEditorModule> Editor::EditorSystem;
 
@@ -42,16 +41,12 @@ Editor& Editor::Instance()
     return editor;
 }
 
-Editor::~Editor()
-{
-}
-
 Editor::Editor()
 {
-	editorConfigs = ConfigManager::Instance().CreateConfigs<EditorConfigs>();
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 	Resize(editorConfigs->windowSize);
+	SDL_SetWindowPosition(GetSdlWindow(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
 void Editor::GuiRender()
@@ -79,7 +74,7 @@ void Editor::GuiRender()
 		if (ImGui::BeginMenu(LOCTEXT(EditorSettinsMenu)))
 		{
 			if (ImGui::MenuItem("Save as default layout"))
-				ImGui::SaveIniSettingsToDisk(editorConfigs->defaultLayoutIni.c_str());
+				ImGui::SaveIniSettingsToDisk(Files::GetAssetPath(editorConfigs->defaultLayoutIni).c_str());
 			ImGui::EndMenu();
 		}
 #ifdef DEBUG_MODE
@@ -108,7 +103,7 @@ void Editor::GuiRender()
 		ImGui::ShowStyleEditor();
 		ImGui::End();
 	}
-		
+	
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
 	ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 	
@@ -128,6 +123,12 @@ void Editor::TryLoadDefaultLayout() const
 	{
 		Logger::Error(fmt::format("Couldn't load default layout from {}", path));
 	}
+}
+
+void Editor::OnResize(glm::uvec2 size)
+{
+	OpenglWindow::OnResize(size);
+	editorConfigs->windowSize = size;
 }
 }
  
