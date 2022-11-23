@@ -30,11 +30,12 @@ public:
 		return std::static_pointer_cast<T>(configData.userConfig);
 	}
 
-	static const std::string& GetConfigDir();
-	static const std::string& GetDefaultConfigDir();
+	static std::string GetConfigDir();
+	static std::string GetDefaultConfigDir();
 
-	void SaveConfig(IConfig* configs);
 	void SaveAll();
+	
+	std::map<std::string, std::shared_ptr<IConfig>> GetConfigs();
 
 	
 private:
@@ -49,10 +50,10 @@ private:
 	static std::string GetFullPath(IConfig* config);
 	static std::string GetFullDefaultPath(IConfig* config);
 	
-	void LoadConfig(ConfigData& configs);
-	void LoadDefaultConfig(std::shared_ptr<IConfig>& configs);
+	void LoadConfig(ConfigData& configs) const;
+	void LoadDefaultConfig(std::shared_ptr<IConfig>& configs) const;
 	
-	void SaveConfig(ConfigData& configs);
-	void SaveDefaultConfig(std::shared_ptr<IConfig>& configs);
+	void SaveConfig(ConfigData& configs) const;
+	void SaveDefaultConfig(std::shared_ptr<IConfig>& configs) const;
 };
 }

@@ -6,7 +6,6 @@
 #include <string>
 #include <fmt/format.h>
 
-#include "SystemSettings.h"
 #include "Log/Logger.h"
 
 namespace Ranok::Files

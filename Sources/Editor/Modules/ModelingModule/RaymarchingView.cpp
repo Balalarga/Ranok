@@ -2,12 +2,67 @@
 
 #include <sstream>
 
+#include "Config/ConfigManager.h"
+#include "Config/IConfig.h"
 #include "Graphics/Shading/ShaderPart.h"
 
 #include "Log/Logger.h"
+#include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
 {
+
+class RaymarchingConfig: public IConfig
+{
+public:
+    RaymarchingConfig(): IConfig("Modules/RayMarchingViewConfig")
+    {
+        
+    }
+	
+    void Serialize(JsonArchive& archive) override
+    {
+        archive.Serialize("resolution", resolution);
+        archive.Serialize("shininess", shininess);
+        archive.Serialize("gradStep", gradStep);
+        archive.Serialize("light_pos1", light_pos1);
+        archive.Serialize("light_color1", light_color1);
+        archive.Serialize("light_pos2", light_pos2);
+        archive.Serialize("light_color2", light_color2);
+        archive.Serialize("targetColor", targetColor);
+        archive.Serialize("backgroundColor", backgroundColor);
+        archive.Serialize("cameraPosition", cameraPosition);
+        archive.Serialize("cameraRotation", cameraRotation);
+    }
+    bool operator!=(const IConfig& oth) override
+    {
+        const auto casted = dynamic_cast<const RaymarchingConfig*>(&oth);
+        return casted && 
+            casted->light_pos1 != light_pos1 &&
+            casted->light_color1 != light_color1 &&
+            casted->light_pos2 != light_pos2 &&
+            casted->light_color2 != light_color2 &&
+            casted->targetColor != targetColor &&
+            casted->backgroundColor != backgroundColor &&
+            casted->resolution != resolution &&
+            casted->cameraPosition != cameraPosition &&
+            casted->cameraRotation != cameraRotation;
+    }
+    
+    float shininess = 16.0f;
+    float gradStep = 0.02f;
+    glm::vec3 light_pos1   = glm::vec3( 20.0, 20.0, 20.0 );
+    glm::vec3 light_color1 = glm::vec3( 1.0, 0.7, 0.7 );
+    glm::vec3 light_pos2   = glm::vec3( -20.0, -20.0, -30.0 );
+    glm::vec3 light_color2 = glm::vec3( 0.5, 0.7, 1.0 );
+    glm::vec3 targetColor = glm::vec3(0.2, 0.1, 0.1);
+    glm::vec3 backgroundColor = glm::vec3(0.8, 0.8, 0.8);
+    glm::vec2 resolution = glm::vec2(800, 600);
+    glm::vec3 cameraPosition = glm::vec3(0, 0, 5);
+    glm::vec2 cameraRotation = glm::vec2(0, 0);
+};
+static std::shared_ptr<RaymarchingConfig> rayMarchConfig = ConfigManager::Instance().CreateConfigs<RaymarchingConfig>();
+
 glm::fvec2 RayMarchingView::vertices[6] = {
     //   x    y
     {-1, -1},
@@ -23,6 +78,13 @@ std::string RayMarchingView::shaderHeader = R"(
 
 out vec4 color;
 
+uniform float shininess = 16.0;
+uniform vec3 light_pos1  = vec3( 20.0, 20.0, 20.0 );
+uniform vec3 light_color1 = vec3( 1.0, 0.7, 0.7 );
+uniform vec3 light_pos2  = vec3( -20.0, -20.0, -30.0 );
+uniform vec3 light_color2 = vec3( 0.5, 0.7, 1.0 );
+uniform vec3 targetColor = vec3(0.2, 0.1, 0.1);
+uniform vec3 backgroundColor = vec3(0.8, 0.8, 0.8);
 uniform float gradStep = 0.02;
 uniform vec2 resolution = vec2(800, 600);
 uniform vec3 cameraPosition = vec3(0, 0, 5);
@@ -68,8 +130,6 @@ vec3 fresnel( vec3 F0, vec3 h, vec3 l ) {
 vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
     // ...add lights here...
 
-    float shininess = 16.0;
-
     vec3 final = vec3( 0.0 );
 
     vec3 ref = reflect( dir, n );
@@ -79,10 +139,7 @@ vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
 
     // light 0
     {
-        vec3 light_pos   = vec3( 20.0, 20.0, 20.0 );
-        vec3 light_color = vec3( 1.0, 0.7, 0.7 );
-
-        vec3 vl = normalize( light_pos - v );
+        vec3 vl = normalize( light_pos1 - v );
 
         vec3 diffuse  = Kd * vec3( max( 0.0, dot( vl, n ) ) );
         vec3 specular = vec3( max( 0.0, dot( vl, ref ) ) );
@@ -90,15 +147,12 @@ vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
         vec3 F = fresnel( Ks, normalize( vl - dir ), vl );
         specular = pow( specular, vec3( shininess ) );
 
-        final += light_color * mix( diffuse, specular, F );
+        final += light_color1 * mix( diffuse, specular, F );
     }
 
     // light 1
     {
-        vec3 light_pos   = vec3( -20.0, -20.0, -30.0 );
-        vec3 light_color = vec3( 0.5, 0.7, 1.0 );
-
-        vec3 vl = normalize( light_pos - v );
+        vec3 vl = normalize( light_pos2 - v );
 
         vec3 diffuse  = Kd * vec3( max( 0.0, dot( vl, n ) ) );
         vec3 specular = vec3( max( 0.0, dot( vl, ref ) ) );
@@ -106,10 +160,10 @@ vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
         vec3 F = fresnel( Ks, normalize( vl - dir ), vl );
         specular = pow( specular, vec3( shininess ) );
 
-        final += light_color * mix( diffuse, specular, F );
+        final += light_color2 * mix( diffuse, specular, F );
     }
 
-    final += vec3(0.2, 0.1, 0.1) * fresnel( Ks, n, -dir );
+    final += targetColor * fresnel( Ks, n, -dir );
 
     return final;
 }
@@ -206,7 +260,7 @@ void main()
     float depth = clip_far;
     vec3 n = vec3( 0.0 );
     if ( !ray_marching( eye, dir, depth, n ) ) {
-        color = vec4(0.8, 0.8, 0.8, 1.0);
+        color = vec4(backgroundColor, 1.0);
         return;
     }
 
@@ -251,14 +305,21 @@ RaymarchingMaterial::RaymarchingMaterial(const std::shared_ptr<Shader>& shader):
 
 void RaymarchingMaterial::SetupUniforms()
 {
-    SetUniform("gradStep", gradStep);
-    SetUniform("resolution", resolution);
-    SetUniform("cameraPosition", cameraPosition);
-    SetUniform("cameraRotation", cameraRotation);
+    SetUniform("shininess", rayMarchConfig->shininess);
+    SetUniform("light_pos1", rayMarchConfig->light_pos1);
+    SetUniform("light_color1", rayMarchConfig->light_color1);
+    SetUniform("light_pos2", rayMarchConfig->light_pos2);
+    SetUniform("light_color2", rayMarchConfig->light_color2);
+    SetUniform("targetColor", rayMarchConfig->targetColor);
+    SetUniform("backgroundColor", rayMarchConfig->backgroundColor);
+    SetUniform("gradStep", rayMarchConfig->gradStep);
+    SetUniform("resolution", rayMarchConfig->resolution);
+    SetUniform("cameraPosition", rayMarchConfig->cameraPosition);
+    SetUniform("cameraRotation", rayMarchConfig->cameraRotation);
 }
 
-RayMarchingView::RayMarchingView(glm::uvec2 size):
-    FrameBuffer(size),
+RayMarchingView::RayMarchingView():
+    FrameBuffer(rayMarchConfig->resolution),
     Object(bufferInfo, nullptr),
     _material(_defaultShader)
 {

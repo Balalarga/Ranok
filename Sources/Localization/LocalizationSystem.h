@@ -18,8 +18,6 @@ public:
     using LocalesMap = std::map<std::string, std::vector<std::string>>;
     static LocalizationSystem& Get();
 
-    ~LocalizationSystem();
-
     bool AddLocale(const std::string& name);
     bool EnableLocale(const std::string& name);
 

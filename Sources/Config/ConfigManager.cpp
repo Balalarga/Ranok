@@ -12,51 +12,54 @@ ConfigManager& ConfigManager::Instance()
 	return manager;
 }
 
-const std::string& ConfigManager::GetConfigDir()
+std::string ConfigManager::GetConfigDir()
 {
-	return SystemSettings::configsDir;
-}
-
-const std::string& ConfigManager::GetDefaultConfigDir()
-{
-	
-#ifdef _DEBUG
-	return PROJECT_SOURCE_DIR"\\Assets\\DefaultConfig";
+#if defined(_DEBUG) || defined(DEBUG)
+	return "../Config";
 #else
-	return ".\\Assets\\DefaultConfig";
+	return "./Config";
 #endif
 }
 
-void ConfigManager::SaveConfig(IConfig* configs)
+std::string ConfigManager::GetDefaultConfigDir()
 {
-	auto it = _configs.find(configs->GetFilepath());
-	if (it == _configs.end())
-	{
-		Logger::Warning(fmt::format("Try to save configs {} with out adding to ConfigManager", configs->GetFilepath()));
-		return;
-	}
-	if (!configs->IsDefaultOnly() && configs != it->second.defaultConfig.get())
-	{
-		SaveConfig(configs);
-	}
-#if OVERRIDE_DEFAULT_CONFIG
-	SaveDefaultConfig(it->second.defaultConfig);
+#if defined(_DEBUG) || defined(DEBUG)
+	return PROJECT_SOURCE_DIR"/Assets/DefaultConfig";
+#else
+	return "Assets/DefaultConfig";
 #endif
 }
 
 void ConfigManager::SaveAll()
 {
-	for (auto& [_, config]: _configs)
+	for (auto& config : _configs | std::views::values)
 	{
-		if (!config.defaultConfig->IsDefaultOnly() &&
-			config.userConfig.get() != config.defaultConfig.get())
-		{
+		if (!config.defaultConfig->IsDefaultOnly() && *config.defaultConfig != *config.userConfig)
 			SaveConfig(config);
-		}
-#if OVERRIDE_DEFAULT_CONFIG
+#if defined(_DEBUG) || defined(DEBUG) 
 		SaveDefaultConfig(config.defaultConfig);
 #endif
 	}
+}
+
+std::map<std::string, std::shared_ptr<IConfig>> ConfigManager::GetConfigs()
+{
+	std::map<std::string, std::shared_ptr<IConfig>> result;
+	for (auto& [path, config] : _configs)
+	{
+		size_t nameStart = path.find_last_of('/');
+		if (nameStart ==  std::string::npos)
+			nameStart = path.find_last_of('\\');
+		if (nameStart ==  std::string::npos)
+			nameStart = 0;
+		
+		const std::string name = path.substr(nameStart);
+		if (config.defaultConfig->IsDefaultOnly())
+			result.insert({name, config.defaultConfig});
+		else
+			result.insert({name, config.userConfig});
+	}
+	return result;
 }
 
 std::string ConfigManager::GetFullPath(IConfig* config)
@@ -66,15 +69,14 @@ std::string ConfigManager::GetFullPath(IConfig* config)
 
 std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 {
-	
 #ifdef _DEBUG
-	return PROJECT_SOURCE_DIR"\\Assets\\DefaultConfig\\"+config->GetFilepath();
+	return PROJECT_SOURCE_DIR"/Assets/DefaultConfig/"+config->GetFilepath();
 #else
-	return ".\\Assets\\DefaultConfig\\"+config->GetFilepath();
+	return "Assets/DefaultConfig/"+config->GetFilepath();
 #endif
 }
 
-void ConfigManager::LoadConfig(ConfigData& configs)
+void ConfigManager::LoadConfig(ConfigData& configs) const
 {
 	LoadDefaultConfig(configs.defaultConfig);
 	if (configs.defaultConfig->IsDefaultOnly())
@@ -91,7 +93,7 @@ void ConfigManager::LoadConfig(ConfigData& configs)
 	}
 }
 
-void ConfigManager::LoadDefaultConfig(std::shared_ptr<IConfig>& config)
+void ConfigManager::LoadDefaultConfig(std::shared_ptr<IConfig>& config) const
 {
 	std::string path = GetFullDefaultPath(config.get());
 	if (Files::IsFileExists(path))
@@ -104,7 +106,7 @@ void ConfigManager::LoadDefaultConfig(std::shared_ptr<IConfig>& config)
 	}
 }
 
-void ConfigManager::SaveConfig(ConfigData& config)
+void ConfigManager::SaveConfig(ConfigData& config) const
 {
 	std::string path = GetFullPath(config.userConfig.get());
 	JsonArchive serializer(path, ArchiveMode::Write);
@@ -114,7 +116,7 @@ void ConfigManager::SaveConfig(ConfigData& config)
 		Logger::Error(fmt::format("Couldn't open {}", path));
 }
 
-void ConfigManager::SaveDefaultConfig(std::shared_ptr<IConfig>& config)
+void ConfigManager::SaveDefaultConfig(std::shared_ptr<IConfig>& config) const
 {
 	std::string path = GetFullDefaultPath(config.get());
 	JsonArchive serializer(path, ArchiveMode::Write);

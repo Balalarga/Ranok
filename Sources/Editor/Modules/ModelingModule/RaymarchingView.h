@@ -18,19 +18,13 @@ class RaymarchingMaterial: public IMaterial
 public:
 	RaymarchingMaterial(const std::shared_ptr<Shader>& shader);
 	void SetupUniforms() override;
-
-	float gradStep = 0.02f;
-	glm::vec2 resolution{800, 600};
-	glm::vec3 cameraPosition{0, 0, 5};
-	glm::vec2 cameraRotation{0, 0};
-
 };
 
 
 class RayMarchingView: public FrameBuffer, public Object
 {
 public:
-	RayMarchingView(glm::uvec2 size);
+	RayMarchingView();
 	std::optional<std::string> SetProgram(ActionTree& tree);
 
 	void Bind() override;

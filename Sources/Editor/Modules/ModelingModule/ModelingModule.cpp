@@ -33,24 +33,26 @@ public:
 	void Serialize(JsonArchive& archive) override
 	{
 		archive.Serialize("textEditorWidth", textEditorWidth);
-		archive.Serialize("textureSize.x", textureSize.x);
-		archive.Serialize("textureSize.y", textureSize.y);
 	}
+	bool operator!=(const IConfig& oth) override
+	{
+		const auto casted = dynamic_cast<const ModelingModuleConfig*>(&oth);
+		return casted &&
+			casted->textEditorWidth != textEditorWidth;
+	}
+	
 	float textEditorWidth = -1;
-	glm::uvec2 textureSize = {800, 600};
 	std::vector<std::string> openedFiles;
 };
 
 static std::shared_ptr<ModelingModuleConfig> config = ConfigManager::Instance().CreateConfigs<ModelingModuleConfig>();
 
 ModelingModule::ModelingModule():
-	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse),
-	_viewport({800, 600})
+	IEditorModule(LOCTEXTSTR(ModelingModuleName), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse)
 {
 	Opencl::Executor::Init();
 	
 	SetNoClosing(true);
-	_viewport.Resize(config->textureSize);
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
 	const std::string fontPath = Files::GetAssetPath(_textEditorConfigs.textFont);

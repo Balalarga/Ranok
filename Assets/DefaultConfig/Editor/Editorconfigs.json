@@ -1,5 +1,7 @@
 {
     "DefaultLayoutIniPath": "",
-    "WindowHeight": 971,
-    "WindowWidth": 1616
+    "WindowSize": [
+        1418,
+        881
+    ]
 }

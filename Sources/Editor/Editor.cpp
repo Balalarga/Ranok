@@ -12,6 +12,7 @@ namespace Ranok
 {
 DEFINE_LOCTEXT(EditorModulesMenu, "Modules")
 DEFINE_LOCTEXT(EditorSettinsMenu, "Settings")
+DEFINE_LOCTEXT(EditorPreferences, "Preferences")
 
 
 class EditorConfigs: public IConfig
@@ -24,8 +25,14 @@ public:
 	void Serialize(JsonArchive& archive) override
 	{
 		archive.Serialize("DefaultLayoutIniPath", defaultLayoutIni);
-		archive.Serialize("WindowWidth", windowSize.x);
-		archive.Serialize("WindowHeight", windowSize.y);
+		archive.Serialize("WindowSize", windowSize);
+	}
+	bool operator!=(const IConfig& oth) override
+	{
+		const auto casted = dynamic_cast<const EditorConfigs*>(&oth);
+		return casted && 
+			casted->windowSize != windowSize &&
+			casted->defaultLayoutIni != defaultLayoutIni;
 	}
 
 	std::string defaultLayoutIni;
@@ -75,6 +82,8 @@ void Editor::GuiRender()
 		{
 			if (ImGui::MenuItem("Save as default layout"))
 				ImGui::SaveIniSettingsToDisk(Files::GetAssetPath(editorConfigs->defaultLayoutIni).c_str());
+			if (ImGui::MenuItem("EditorPreferences"))
+				ImGui::OpenPopup(LOCTEXT(EditorPreferences));
 			ImGui::EndMenu();
 		}
 #ifdef DEBUG_MODE
@@ -85,7 +94,6 @@ void Editor::GuiRender()
 			ImGui::EndMenu();
 		}
 #endif
-		
 		if (ImGui::BeginMenu(LOCTEXT(EditorModulesMenu)))
 		{
 			EditorSystem.EnumerateModules([](IEditorModule* module)
@@ -102,6 +110,13 @@ void Editor::GuiRender()
 		ImGui::Begin("StyleEditor", &showStyleEditor);
 		ImGui::ShowStyleEditor();
 		ImGui::End();
+	}
+
+	ImGui::ShowDemoWindow();
+	if (ImGui::BeginPopupModal(LOCTEXT(EditorPreferences)))
+	{
+		ShowPreferencesWindow();
+		ImGui::EndPopup();
 	}
 	
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
@@ -130,5 +145,31 @@ void Editor::OnResize(glm::uvec2 size)
 	OpenglWindow::OnResize(size);
 	editorConfigs->windowSize = size;
 }
+
+void Editor::ShowPreferencesWindow()
+{
+	std::map<std::string, std::shared_ptr<IConfig>> configs = ConfigManager::Instance().GetConfigs();
+	static int selectedItem = -1;
+	ImGui::BeginChild("#settingsNames", ImVec2(ImGui::GetWindowWidth()/3, 0));
+	ImGui::BeginListBox("#names");
+	int counter = 0;
+	for (const auto& [name, config] : configs)
+	{
+		const bool is_selected = selectedItem == counter;
+		// if (config->HaveGui() && ImGui::Selectable(name.c_str(), is_selected))
+		if (ImGui::Selectable(name.c_str(), is_selected))
+			selectedItem = counter;
+
+		if (is_selected)
+			ImGui::SetItemDefaultFocus();
+		
+		++counter;
+	}
+	ImGui::EndListBox();
+	ImGui::EndChild();
+
+	ImGui::BeginChild("#settingContent");
+	ImGui::EndChild();
 }
- 
+
+}

@@ -20,6 +20,11 @@ public:
         // archive.Serialize("activeLocaleName", localeName);
         // archive.Serialize("locales", locales);
     }
+    bool operator!=(const IConfig& oth) override
+    {
+        const auto casted = dynamic_cast<const LocalizationConfig*>(&oth);
+        return casted;
+    }
     
     const std::string defaultLocaleName = "en";
     
@@ -28,7 +33,7 @@ public:
     LocalizationSystem::LocalesMap locales{{defaultLocaleName, {}}};
 };
 
-std::shared_ptr<LocalizationConfig> config;
+static std::shared_ptr<LocalizationConfig> config;
 
 LocalizationSystem::LocalizationSystem()
 {
@@ -39,11 +44,6 @@ LocalizationSystem &LocalizationSystem::Get()
 {
     static LocalizationSystem self;
     return self;
-}
-
-LocalizationSystem::~LocalizationSystem()
-{
-    ConfigManager::Instance().SaveConfig(config.get());
 }
 
 std::string LocalizationSystem::GetDefaultText(const size_t& id)

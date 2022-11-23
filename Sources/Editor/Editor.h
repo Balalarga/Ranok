@@ -21,5 +21,7 @@ public:
 	
 private:
 	Editor();
+	
+	void ShowPreferencesWindow();
 };
 }
