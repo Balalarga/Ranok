@@ -12,7 +12,7 @@ namespace Ranok
 {
 DEFINE_LOCTEXT(EditorModulesMenu, "Modules")
 DEFINE_LOCTEXT(EditorSettinsMenu, "Settings")
-DEFINE_LOCTEXT(EditorPreferences, "Preferences")
+DEFINE_LOCTEXT(EditorPreferences, "Settings")
 
 
 class EditorConfigs: public IConfig
@@ -30,8 +30,9 @@ public:
 	bool operator!=(const IConfig& oth) override
 	{
 		const auto casted = dynamic_cast<const EditorConfigs*>(&oth);
-		return casted && 
-			casted->windowSize != windowSize &&
+        assert(casted);
+		return
+			casted->windowSize != windowSize ||
 			casted->defaultLayoutIni != defaultLayoutIni;
 	}
 
@@ -56,9 +57,54 @@ Editor::Editor()
 	SDL_SetWindowPosition(GetSdlWindow(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 }
 
+void Editor::ShowPreferencesWindow()
+{
+	std::vector<std::shared_ptr<IConfig>> configs = ConfigManager::Instance().GetConfigs();
+	static auto namesSize = ImVec2(ImGui::GetWindowWidth()/3, 0);
+	static int item_current_idx = -1;
+	if (ImGui::BeginChild("#settingsNames", namesSize, true))
+	{
+		ImGui::BeginListBox("##empty", namesSize);
+		{
+			for (int n = 0; n < configs.size(); ++n)
+			{
+				if (!configs[n]->HaveGui())
+					continue;
+			
+				const bool is_selected = item_current_idx == n;
+				if (ImGui::Selectable(configs[n]->GetName().c_str(), is_selected))
+					item_current_idx = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndListBox();
+	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	
+	ImGui::InvisibleButton("SettingsVsplitter", ImVec2(5.0f, ImGui::GetWindowContentRegionMax().y));
+	const bool bIsActive = ImGui::IsItemActive();
+	const bool bIsHovered = ImGui::IsItemHovered();
+	if (bIsActive)
+		namesSize.x += ImGui::GetIO().MouseDelta.x;
+	if (bIsActive || bIsHovered)
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	ImGui::SameLine();
+	
+	if (ImGui::BeginChild("#settingContent", {0, 0}, true))
+	{
+		if (item_current_idx >= 0)
+			configs[item_current_idx]->ShowWidgets();
+	}
+	ImGui::EndChild();
+}
+
 void Editor::GuiRender()
 {
 	static bool showStyleEditor = false;
+	static bool showSettingsWindow = false;
 	ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImVec4(0.02f, 0.02f, 0.02f, 1.f));
 	
 	constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar |
@@ -82,8 +128,8 @@ void Editor::GuiRender()
 		{
 			if (ImGui::MenuItem("Save as default layout"))
 				ImGui::SaveIniSettingsToDisk(Files::GetAssetPath(editorConfigs->defaultLayoutIni).c_str());
-			if (ImGui::MenuItem("EditorPreferences"))
-				ImGui::OpenPopup(LOCTEXT(EditorPreferences));
+			if (ImGui::MenuItem(LOCTEXT(EditorPreferences)))
+				showSettingsWindow = true;
 			ImGui::EndMenu();
 		}
 #ifdef DEBUG_MODE
@@ -112,11 +158,10 @@ void Editor::GuiRender()
 		ImGui::End();
 	}
 
-	ImGui::ShowDemoWindow();
-	if (ImGui::BeginPopupModal(LOCTEXT(EditorPreferences)))
+	if (showSettingsWindow && ImGui::Begin(LOCTEXT(EditorPreferences), &showSettingsWindow, ImGuiWindowFlags_NoDocking))
 	{
 		ShowPreferencesWindow();
-		ImGui::EndPopup();
+		ImGui::End();
 	}
 	
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
@@ -144,32 +189,6 @@ void Editor::OnResize(glm::uvec2 size)
 {
 	OpenglWindow::OnResize(size);
 	editorConfigs->windowSize = size;
-}
-
-void Editor::ShowPreferencesWindow()
-{
-	std::map<std::string, std::shared_ptr<IConfig>> configs = ConfigManager::Instance().GetConfigs();
-	static int selectedItem = -1;
-	ImGui::BeginChild("#settingsNames", ImVec2(ImGui::GetWindowWidth()/3, 0));
-	ImGui::BeginListBox("#names");
-	int counter = 0;
-	for (const auto& [name, config] : configs)
-	{
-		const bool is_selected = selectedItem == counter;
-		// if (config->HaveGui() && ImGui::Selectable(name.c_str(), is_selected))
-		if (ImGui::Selectable(name.c_str(), is_selected))
-			selectedItem = counter;
-
-		if (is_selected)
-			ImGui::SetItemDefaultFocus();
-		
-		++counter;
-	}
-	ImGui::EndListBox();
-	ImGui::EndChild();
-
-	ImGui::BeginChild("#settingContent");
-	ImGui::EndChild();
 }
 
 }

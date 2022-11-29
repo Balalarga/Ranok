@@ -19,6 +19,17 @@ public:
 	~IConfig() override = default;
 	
 	const std::string& GetFilepath() const { return _filepath; }
+	std::string GetName() const
+	{
+		size_t nameStart = _filepath.find_last_of('/')+1;
+		if (nameStart ==  std::string::npos)
+			nameStart = _filepath.find_last_of('\\')+1;
+		if (nameStart ==  std::string::npos)
+			nameStart = 0;
+		
+		return _filepath.substr(nameStart,_filepath.length()-nameStart-5); // .json removing
+	}
+	
 	bool IsDefaultOnly() const { return _bDefaultOnly; }
 	bool HaveGui() const { return _bHaveGui; }
 	
@@ -28,11 +39,16 @@ public:
 	virtual bool operator!=(const IConfig& oth) { return false; }
 
 	virtual void ShowWidgets() {}
+	void OnSettingsChangedCallback(const std::function<void()>& func) { _onSettingsChanged = func; }
+
+protected:
+	void SettingsChanged() const { if (_onSettingsChanged) _onSettingsChanged(); }
 	
 private:
 	std::string _filepath;
 	const bool _bDefaultOnly;
 	const bool _bHaveGui;
+	std::function<void()> _onSettingsChanged;
 };
 
 }

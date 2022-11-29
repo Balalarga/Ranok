@@ -6,6 +6,7 @@
 #include "Language/Parser.h"
 #include "Localization/LocalizationSystem.h"
 #include "Utils/FileUtils.h"
+#include "Utils/Math.h"
 #include "Utils/WindowsUtils.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
@@ -33,16 +34,27 @@ public:
 	void Serialize(JsonArchive& archive) override
 	{
 		archive.Serialize("textEditorWidth", textEditorWidth);
+		archive.Serialize("fontSize", fontSize);
+		archive.Serialize("textFont", textFont);
+		archive.Serialize("renderFontSize", renderFontSize);
 	}
 	bool operator!=(const IConfig& oth) override
 	{
 		const auto casted = dynamic_cast<const ModelingModuleConfig*>(&oth);
-		return casted &&
-			casted->textEditorWidth != textEditorWidth;
+        assert(casted);
+		return
+			Math::Equals(casted->textEditorWidth, textEditorWidth) ||
+			Math::Equals(casted->fontSize, fontSize) ||
+			Math::Equals(casted->renderFontSize, renderFontSize) ||
+			casted->textFont != textFont;
 	}
 	
 	float textEditorWidth = -1;
 	std::vector<std::string> openedFiles;
+	
+	std::string textFont = "Fonts/UbuntuMono/UbuntuMono-Regular.ttf";
+	float fontSize = 16.f;
+	float renderFontSize = 50.f;
 };
 
 static std::shared_ptr<ModelingModuleConfig> config = ConfigManager::Instance().CreateConfigs<ModelingModuleConfig>();
@@ -55,13 +67,13 @@ ModelingModule::ModelingModule():
 	SetNoClosing(true);
 	_viewport.Create();
 	const ImGuiIO& io = ImGui::GetIO();
-	const std::string fontPath = Files::GetAssetPath(_textEditorConfigs.textFont);
+	const std::string fontPath = Files::GetAssetPath(config->textFont);
 	_textEditorFont = io.Fonts->AddFontFromFileTTF(fontPath.c_str(),
-		_textEditorConfigs.renderFontSize,
+		config->renderFontSize,
 		nullptr,
 		io.Fonts->GetGlyphRangesCyrillic());
 	
-	RenderViewport();
+	_viewport.UpdateImage();
 }
 
 void ModelingModule::RenderWindowContent()
@@ -85,7 +97,7 @@ void ModelingModule::RenderWindowContent()
 	ImGui::EndGroup();
 	
 	ImGui::BeginChild("WorkingChild");
-		ImGui::BeginChild("TextEditorChild", ImVec2(config->textEditorWidth, 0));
+		ImGui::BeginChild("TextEditorChild", ImVec2(config->textEditorWidth, 0), true);
 			RenderTextEditor();
 		ImGui::EndChild();
 	
@@ -98,15 +110,25 @@ void ModelingModule::RenderWindowContent()
 		if (bIsActive || bIsHovered)
 			ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 		ImGui::SameLine();
-	
-		ImGui::BeginChild("ViewportChild");
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-			ImGui::Image((void*)(intptr_t)_viewport.GetTextureId(),
-						 ImGui::GetWindowSize(),
-						 ImVec2(0, 1),
-						 ImVec2(1, 0));
-			ImGui::PopStyleVar(1);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
+		ImGui::BeginChild("ViewportChild", ImGui::GetContentRegionAvail(), true);
+			_viewport.Resize({ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y});
+			_viewport.RenderByImGui(ImGui::GetWindowSize());
+			if (ImGui::IsItemHovered())
+			{
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+				{
+					ImVec2 mouseDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
+					_viewport.MouseMoved(mouseDelta);
+					if (!Math::IsZero(mouseDelta.x) || !Math::IsZero(mouseDelta.y))
+						ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);
+				}
+				if (!Math::IsZero(ImGui::GetIO().MouseWheel))
+					_viewport.Zoom(ImGui::GetIO().MouseWheel * (ImGui::IsKeyDown(ImGuiKey_LeftShift) ? 5.f : .5f));
+			}
 		ImGui::EndChild();
+		ImGui::PopStyleVar(1);
 	
 	ImGui::EndChild();
 }
@@ -127,15 +149,13 @@ void ModelingModule::RenderTextEditor()
 		if (_textEditorTabs[i].editor.CanUndo())
 			flags |= ImGuiTabItemFlags_UnsavedDocument;
 		
-		// ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 40);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10)); // default 10, 4
-		// Logger::Log(fmt::format("{}, {}", ImGui::GetStyle().FramePadding.x, ImGui::GetStyle().FramePadding.y));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 		const bool tabOpened = ImGui::BeginTabItem(_textEditorTabs[i].filename.c_str(), &bOpen, flags);
 		ImGui::PopStyleVar();
 		if (tabOpened)
 		{
 			currentActiveTab = static_cast<int>(i);
-			ImGui::SetWindowFontScale(_textEditorConfigs.fontSize / _textEditorConfigs.renderFontSize);
+			ImGui::SetWindowFontScale(config->fontSize / config->renderFontSize);
 			ImGui::PushFont(_textEditorFont);
 			_textEditorTabs[i].editor.Render(_textEditorTabs[i].filename.c_str());
 			ImGui::PopFont();
@@ -342,13 +362,6 @@ void ModelingModule::UpdateViewport(ActionTree& tree)
 	}
 	
 	Logger::Verbose(fmt::format("{}", code.value()));
-	RenderViewport();
-}
-
-void ModelingModule::RenderViewport()
-{
-	_viewport.Bind();
-	_viewport.Render();
-	_viewport.Release();
+	_viewport.UpdateImage();
 }
 }

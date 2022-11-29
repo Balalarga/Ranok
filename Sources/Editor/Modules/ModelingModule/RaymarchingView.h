@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <imgui.h>
+
 #include <glm/glm.hpp>
 
 #include "Graphics/Buffers/Buffer.h"
@@ -27,7 +29,15 @@ public:
 	RayMarchingView();
 	std::optional<std::string> SetProgram(ActionTree& tree);
 
+	void Resize(glm::uvec2 size) override;
+
+	void Render() const override;
+	
 	void Bind() override;
+	void RenderByImGui(ImVec2 size);
+	void UpdateImage();
+	void MouseMoved(const ImVec2& mouseDelta);
+	void Zoom(float value);
 
 private:
 	RaymarchingMaterial _material;

@@ -35,7 +35,7 @@ public:
 
 	void SaveAll();
 	
-	std::map<std::string, std::shared_ptr<IConfig>> GetConfigs();
+	std::vector<std::shared_ptr<IConfig>> GetConfigs();
 
 	
 private:

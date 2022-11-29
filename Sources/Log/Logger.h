@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-
+#include "fmt/format.h"
 
 namespace Ranok
 {
@@ -34,7 +34,7 @@ public:
     static void Log(const std::string& text);
     static void Warning(const std::string& text);
     static void Error(const std::string& text);
-    static void Verbose(const std::string&& text);
+    static void Verbose(const std::string& text);
 
 private:
     Logger();

@@ -146,7 +146,7 @@ void Init()
 	modeling.bWorks = true;
 	
 	Editor::EditorSystem.Init();
-	Logger::Log("Editor module system inited");
+	Logger::Verbose("Editor module system inited");
 }
 
 void PreDestroy()

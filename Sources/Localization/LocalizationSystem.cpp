@@ -23,6 +23,7 @@ public:
     bool operator!=(const IConfig& oth) override
     {
         const auto casted = dynamic_cast<const LocalizationConfig*>(&oth);
+        assert(casted);
         return casted;
     }
     

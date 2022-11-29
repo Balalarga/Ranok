@@ -22,8 +22,6 @@ void MImageComputeModule::RenderWindowContent()
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
 	
-	
-	
 	ImGui::EndChild();
 	ImGui::SameLine();
 	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));

@@ -1,3 +1,6 @@
 {
-    "textEditorWidth": 464.0
+    "fontSize": 16.0,
+    "renderFontSize": 50.0,
+    "textEditorWidth": 464.0,
+    "textFont": "Fonts/UbuntuMono/UbuntuMono-Regular.ttf"
 }

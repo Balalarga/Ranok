@@ -9,6 +9,7 @@ public:
     virtual ~Texture();
 
     void Resize(glm::uvec2 size);
+    void Recreate(glm::uvec2 size);
 
     void Bind();
     void Release();

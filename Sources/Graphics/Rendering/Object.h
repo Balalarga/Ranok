@@ -12,7 +12,7 @@ public:
 	void SetMaterial(IMaterial* material);
 	IMaterial* GetMaterial() { return _material; }
 	
-	void Render() const;
+	virtual void Render() const;
 	
 private:
 	unsigned _glHandler;

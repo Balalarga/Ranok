@@ -42,22 +42,15 @@ void ConfigManager::SaveAll()
 	}
 }
 
-std::map<std::string, std::shared_ptr<IConfig>> ConfigManager::GetConfigs()
+std::vector<std::shared_ptr<IConfig>> ConfigManager::GetConfigs()
 {
-	std::map<std::string, std::shared_ptr<IConfig>> result;
-	for (auto& [path, config] : _configs)
+	std::vector<std::shared_ptr<IConfig>> result;
+	for (auto& config : _configs | std::views::values)
 	{
-		size_t nameStart = path.find_last_of('/');
-		if (nameStart ==  std::string::npos)
-			nameStart = path.find_last_of('\\');
-		if (nameStart ==  std::string::npos)
-			nameStart = 0;
-		
-		const std::string name = path.substr(nameStart);
 		if (config.defaultConfig->IsDefaultOnly())
-			result.insert({name, config.defaultConfig});
+			result.push_back(config.defaultConfig);
 		else
-			result.insert({name, config.userConfig});
+			result.push_back(config.userConfig);
 	}
 	return result;
 }

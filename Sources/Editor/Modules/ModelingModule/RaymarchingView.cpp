@@ -1,12 +1,17 @@
 ﻿#include "RaymarchingView.h"
 
+#include <imgui.h>
 #include <sstream>
+
+#include <GL/glew.h>
 
 #include "Config/ConfigManager.h"
 #include "Config/IConfig.h"
 #include "Graphics/Shading/ShaderPart.h"
 
 #include "Log/Logger.h"
+
+#include "Utils/Math.h"
 #include "Utils/Archives/Json/JsonArchive.h"
 
 namespace Ranok
@@ -15,7 +20,7 @@ namespace Ranok
 class RaymarchingConfig: public IConfig
 {
 public:
-    RaymarchingConfig(): IConfig("Modules/RayMarchingViewConfig")
+    RaymarchingConfig(): IConfig("Modules/RayMarchingViewConfig", false, true)
     {
         
     }
@@ -26,40 +31,69 @@ public:
         archive.Serialize("shininess", shininess);
         archive.Serialize("gradStep", gradStep);
         archive.Serialize("light_pos1", light_pos1);
-        archive.Serialize("light_color1", light_color1);
+        archive.Serialize("light_color", light_color);
         archive.Serialize("light_pos2", light_pos2);
-        archive.Serialize("light_color2", light_color2);
         archive.Serialize("targetColor", targetColor);
         archive.Serialize("backgroundColor", backgroundColor);
         archive.Serialize("cameraPosition", cameraPosition);
         archive.Serialize("cameraRotation", cameraRotation);
     }
+    
     bool operator!=(const IConfig& oth) override
     {
         const auto casted = dynamic_cast<const RaymarchingConfig*>(&oth);
-        return casted && 
-            casted->light_pos1 != light_pos1 &&
-            casted->light_color1 != light_color1 &&
-            casted->light_pos2 != light_pos2 &&
-            casted->light_color2 != light_color2 &&
-            casted->targetColor != targetColor &&
-            casted->backgroundColor != backgroundColor &&
-            casted->resolution != resolution &&
-            casted->cameraPosition != cameraPosition &&
-            casted->cameraRotation != cameraRotation;
+        assert(casted);
+        return
+            casted->light_pos1 != light_pos1 ||
+            casted->light_color != light_color ||
+            casted->light_pos2 != light_pos2 ||
+            casted->targetColor != targetColor ||
+            casted->backgroundColor != backgroundColor ||
+            casted->resolution != resolution ||
+            casted->cameraPosition != cameraPosition ||
+            casted->cameraRotation != cameraRotation ||
+            casted->bUseSecondLight != bUseSecondLight;
+    }
+    
+    void ShowWidgets() override
+    {
+        bool bChanged = false;
+
+        ImGui::BeginGroup();
+        bChanged |= ImGui::ColorEdit3("Model Color", &targetColor.x);
+        bChanged |= ImGui::ColorEdit3("Background Color", &backgroundColor.x);
+        ImGui::EndGroup();
+        ImGui::Separator();
+        ImGui::BeginGroup();
+        bChanged |= ImGui::SliderFloat3("Light 1 position", &light_pos1.x, -100, 100);
+        bChanged |= ImGui::Checkbox("Use second Light Source", &bUseSecondLight);
+        bChanged |= ImGui::SliderFloat3("Light 2 position", &light_pos2.x, -100, 100, "%.3f", bUseSecondLight ? ImGuiSliderFlags_None : ImGuiSliderFlags_NoInput);
+        ImGui::EndGroup();
+        ImGui::Separator();
+        ImGui::BeginGroup();
+        bChanged |= ImGui::ColorEdit3("Light Color", &light_color.x);
+        ImGui::EndGroup();
+        ImGui::Separator();
+        ImGui::BeginGroup();
+        bChanged |= ImGui::InputScalarN("Image Resolution", ImGuiDataType_U32, &resolution.x, 2);
+        ImGui::EndGroup();
+        ImGui::Separator();
+
+        if (bChanged)
+            SettingsChanged();
     }
     
     float shininess = 16.0f;
     float gradStep = 0.02f;
-    glm::vec3 light_pos1   = glm::vec3( 20.0, 20.0, 20.0 );
-    glm::vec3 light_color1 = glm::vec3( 1.0, 0.7, 0.7 );
-    glm::vec3 light_pos2   = glm::vec3( -20.0, -20.0, -30.0 );
-    glm::vec3 light_color2 = glm::vec3( 0.5, 0.7, 1.0 );
+    glm::vec3 light_pos1  = glm::vec3( 20.0, 20.0, 20.0 );
+    glm::vec3 light_color = glm::vec3( 1.0, 0.7, 0.7 );
+    glm::vec3 light_pos2 = glm::vec3( -20.0, -20.0, -30.0 );
     glm::vec3 targetColor = glm::vec3(0.2, 0.1, 0.1);
     glm::vec3 backgroundColor = glm::vec3(0.8, 0.8, 0.8);
-    glm::vec2 resolution = glm::vec2(800, 600);
+    glm::uvec2 resolution = glm::uvec2(800, 600);
     glm::vec3 cameraPosition = glm::vec3(0, 0, 5);
     glm::vec2 cameraRotation = glm::vec2(0, 0);
+    bool bUseSecondLight = true;
 };
 static std::shared_ptr<RaymarchingConfig> rayMarchConfig = ConfigManager::Instance().CreateConfigs<RaymarchingConfig>();
 
@@ -80,9 +114,9 @@ out vec4 color;
 
 uniform float shininess = 16.0;
 uniform vec3 light_pos1  = vec3( 20.0, 20.0, 20.0 );
-uniform vec3 light_color1 = vec3( 1.0, 0.7, 0.7 );
+uniform vec3 light_color = vec3( 1.0, 0.7, 0.7 );
 uniform vec3 light_pos2  = vec3( -20.0, -20.0, -30.0 );
-uniform vec3 light_color2 = vec3( 0.5, 0.7, 1.0 );
+uniform bool useSecondLight = true;
 uniform vec3 targetColor = vec3(0.2, 0.1, 0.1);
 uniform vec3 backgroundColor = vec3(0.8, 0.8, 0.8);
 uniform float gradStep = 0.02;
@@ -147,10 +181,11 @@ vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
         vec3 F = fresnel( Ks, normalize( vl - dir ), vl );
         specular = pow( specular, vec3( shininess ) );
 
-        final += light_color1 * mix( diffuse, specular, F );
+        final += light_color * mix( diffuse, specular, F );
     }
 
     // light 1
+    if (useSecondLight)
     {
         vec3 vl = normalize( light_pos2 - v );
 
@@ -160,7 +195,7 @@ vec3 shading( vec3 v, vec3 n, vec3 dir, vec3 eye ) {
         vec3 F = fresnel( Ks, normalize( vl - dir ), vl );
         specular = pow( specular, vec3( shininess ) );
 
-        final += light_color2 * mix( diffuse, specular, F );
+        final += light_color * mix( diffuse, specular, F );
     }
 
     final += targetColor * fresnel( Ks, n, -dir );
@@ -215,8 +250,6 @@ bool ray_marching( vec3 o, vec3 dir, inout float depth, inout vec3 n ) {
 
     depth = t;
     n = normalize( gradient( o + dir * t ) );
-    return true;
-
     return true;
 }
 
@@ -300,22 +333,21 @@ std::shared_ptr<Shader> RayMarchingView::_defaultShader = std::make_shared<Shade
 RaymarchingMaterial::RaymarchingMaterial(const std::shared_ptr<Shader>& shader):
     IMaterial(shader)
 {
-    
 }
 
 void RaymarchingMaterial::SetupUniforms()
 {
     SetUniform("shininess", rayMarchConfig->shininess);
     SetUniform("light_pos1", rayMarchConfig->light_pos1);
-    SetUniform("light_color1", rayMarchConfig->light_color1);
+    SetUniform("light_color", rayMarchConfig->light_color);
     SetUniform("light_pos2", rayMarchConfig->light_pos2);
-    SetUniform("light_color2", rayMarchConfig->light_color2);
     SetUniform("targetColor", rayMarchConfig->targetColor);
     SetUniform("backgroundColor", rayMarchConfig->backgroundColor);
     SetUniform("gradStep", rayMarchConfig->gradStep);
     SetUniform("resolution", rayMarchConfig->resolution);
     SetUniform("cameraPosition", rayMarchConfig->cameraPosition);
     SetUniform("cameraRotation", rayMarchConfig->cameraRotation);
+    SetUniform("useSecondLight", rayMarchConfig->bUseSecondLight);
 }
 
 RayMarchingView::RayMarchingView():
@@ -323,6 +355,10 @@ RayMarchingView::RayMarchingView():
     Object(bufferInfo, nullptr),
     _material(_defaultShader)
 {
+    rayMarchConfig->OnSettingsChangedCallback([this]()
+    {
+        UpdateImage();
+    });
     SetMaterial(&_material);
 }
 
@@ -344,11 +380,58 @@ std::optional<std::string> RayMarchingView::SetProgram(ActionTree& tree)
     return fullCode;
 }
 
+void RayMarchingView::Resize(glm::uvec2 size)
+{
+    if (size == rayMarchConfig->resolution)
+        return;
+    
+    rayMarchConfig->resolution = size;
+    // RecreateTexture(size);
+}
+
+void RayMarchingView::Render() const
+{
+    glViewport(0, 0, GetTextureSize().x, GetTextureSize().y);
+    Object::Render();
+}
+
 void RayMarchingView::Bind()
 {
     std::shared_ptr<Shader> shader = _material.GetShader().lock();
     if (!shader->IsCompiled())
         shader->Compile();
     FrameBuffer::Bind();
+}
+
+void RayMarchingView::RenderByImGui(ImVec2 size)
+{
+    ImGui::Image((void*)(intptr_t)GetTextureId(),
+                 size,
+                 ImVec2(0, 1),
+                 ImVec2(1, 0));
+}
+
+void RayMarchingView::UpdateImage()
+{
+    Bind();
+    Render();
+    Release();
+}
+
+void RayMarchingView::MouseMoved(const ImVec2& mouseDelta)
+{
+    rayMarchConfig->cameraRotation.x -= mouseDelta.y/200.f;
+    rayMarchConfig->cameraRotation.y -= mouseDelta.x/200.f;
+    if (!Math::IsZero(mouseDelta.x) || !Math::IsZero(mouseDelta.y))
+    {
+        UpdateImage();
+    }
+}
+
+void RayMarchingView::Zoom(float value)
+{
+    rayMarchConfig->cameraPosition.z -= value;
+    if (!Math::IsZero(value))
+        UpdateImage();
 }
 }

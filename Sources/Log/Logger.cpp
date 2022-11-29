@@ -1,6 +1,5 @@
 #include "Logger.h"
 #include "LogOutputDevice.h"
-#include "fmt/format.h"
 
 namespace Ranok
 {
@@ -77,7 +76,7 @@ void Logger::Error(const std::string& text)
 	Instance().Print(LogLevel::Error, text.c_str());
 }
 
-void Logger::Verbose(const std::string&& text)
+void Logger::Verbose(const std::string& text)
 {
 	Instance().Print(LogLevel::Verbose, text.c_str());
 }

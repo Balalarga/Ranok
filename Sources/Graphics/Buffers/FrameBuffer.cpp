@@ -33,6 +33,14 @@ unsigned FrameBuffer::Create()
 	return _fboId;
 }
 
+void FrameBuffer::RecreateTexture(glm::uvec2 size)
+{
+	_texture.Recreate(size);
+	glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _texture.GetId(), 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void FrameBuffer::Bind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, _fboId);

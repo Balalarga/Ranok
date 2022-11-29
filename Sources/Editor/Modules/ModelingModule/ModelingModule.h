@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "RaymarchingView.h"
 #include "TextEditor.h"
-#include "TextEditorSettings.h"
 #include "Editor/Modules/EditorModule.h"
 #include "Language/Generators/OpenclGenerator.h"
 
@@ -43,10 +42,8 @@ protected:
 
 	void OnTextChanged(TextEditorInfo& info);
 	void UpdateViewport(ActionTree& tree);
-	void RenderViewport();
 	
 private:
-	TextEditorConfigs _textEditorConfigs;
 	std::vector<TextEditorInfo> _textEditorTabs;
 	int currentActiveTab = -1;
 	RayMarchingView _viewport;

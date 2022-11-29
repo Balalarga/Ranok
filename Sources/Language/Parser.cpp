@@ -163,7 +163,10 @@ ActionNode* Parser::ParseBinary(ActionNode* lhs, Lexer& lexer, std::deque<Action
 		ActionNode* rhs = ParsePrimary(lexer, factories);
 		
 		if (!rhs)
+		{
+			DumpTokenError("Couldn't get operand ({line}: {column})", lexer.Peek());
 			return nullptr;
+		}
 		
 		if (ActionNode::IsArray(rhs))
 		{
