@@ -19,9 +19,9 @@ public:
 	void SetShader(std::shared_ptr<Shader> shader);
 	
 protected:
-    void SetUniform(const std::string& name, const UniformValue& value, bool bUnbind = false) const
+    bool SetUniform(const std::string& name, const UniformValue& value, bool bUnbind = false) const
     {
-    	_shader->SetUniform(name, value, bUnbind);
+    	return _shader->SetUniform(name, value, bUnbind);
     }
 	
 private:

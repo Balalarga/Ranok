@@ -2,8 +2,8 @@
 
 #include <GL/glew.h>
 
-FrameBuffer::FrameBuffer(glm::uvec2 size):
-	_texture(size)
+FrameBuffer::FrameBuffer(glm::uvec2 size, int channelsMode):
+	_texture(size, channelsMode)
 {
 
 }

@@ -10,7 +10,8 @@ def main(space[3])
 	r = 1;
 	res = r^2 - space[0]^2 - space[1]^2 - space[2]^2;
 	res2 = r^2 - space[0]^2 - space[1]^2 - (space[2]-2)^2;
-	return res || res2;
+	return res | res2;
 }
+
 
 

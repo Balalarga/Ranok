@@ -3,7 +3,7 @@
 #include <vector>
 #include <GL/glew.h>
 
-ShaderPart::ShaderPart(Type type, const std::string& code):
+ShaderPart::ShaderPart(ShaderType type, const std::string& code):
 	_type(type),
 	_code(code)
 {
@@ -14,7 +14,7 @@ ShaderPart::~ShaderPart()
 	Destroy();
 }
 
-void ShaderPart::Setup(Type type, const std::string& code)
+void ShaderPart::Setup(ShaderType type, const std::string& code)
 {
 	_type = type;
 	_code = code;
@@ -70,15 +70,15 @@ bool ShaderPart::HasError()
 	return false;
 }
 
-unsigned ShaderPart::GetGLType(Type type)
+unsigned ShaderPart::GetGLType(ShaderType type)
 {
 	switch (type)
 	{
-	case Type::Vertex:
+	case ShaderType::Vertex:
 		return GL_VERTEX_SHADER;
-	case Type::Fragment:
+	case ShaderType::Fragment:
 		return GL_FRAGMENT_SHADER;
-	case Type::Geometry:
+	case ShaderType::Geometry:
 		return GL_GEOMETRY_SHADER;
 	}
 	return 0;

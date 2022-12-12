@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 
+#include "BoundingView.h"
+
 #include "Graphics/Buffers/Buffer.h"
 #include "Graphics/Buffers/FrameBuffer.h"
 #include "Graphics/Materials/IMaterial.h"
@@ -41,6 +43,7 @@ public:
 
 private:
 	RaymarchingMaterial _material;
+	BoundingView _boundingView;
 	
 	static glm::fvec2 vertices[6];
 	static Buffer bufferInfo;

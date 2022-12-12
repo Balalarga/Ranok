@@ -31,6 +31,7 @@ public:
 	}
 	
 	bool IsDefaultOnly() const { return _bDefaultOnly; }
+	bool IsNotLoadable() const { return _bNotLoadable; }
 	bool HaveGui() const { return _bHaveGui; }
 	
 	void Serialize(IArchive& archive) override {}
@@ -40,17 +41,21 @@ public:
 
 	virtual void ShowWidgets() {}
 	void OnSettingsChangedCallback(const std::function<void()>& func) { _onSettingsChanged = func; }
-
+	
+	
 protected:
 	void SettingsChanged() const { if (_onSettingsChanged) _onSettingsChanged(); }
+
+	void SetNotLoadable(bool state) { _bNotLoadable = state; }
+	
 	
 private:
 	std::string _filepath;
 	const bool _bDefaultOnly;
 	const bool _bHaveGui;
+	bool _bNotLoadable;
 	std::function<void()> _onSettingsChanged;
 };
-
 }
 
 
@@ -78,5 +83,18 @@ void from_json(const nlohmann::json& j, vec<3, T, Q>& p)
 	j.at(0).get_to(p.x);
 	j.at(1).get_to(p.y);
 	j.at(2).get_to(p.z);
+}
+template<typename T, qualifier Q>
+void to_json(nlohmann::json& j, const vec<4, T, Q>& p)
+{
+	j = nlohmann::detail::make_array<T>(p.x, p.y, p.z, p.w);
+}
+template<typename T, qualifier Q>
+void from_json(const nlohmann::json& j, vec<4, T, Q>& p)
+{
+	j.at(0).get_to(p.x);
+	j.at(1).get_to(p.y);
+	j.at(2).get_to(p.z);
+	j.at(3).get_to(p.w);
 }
 }

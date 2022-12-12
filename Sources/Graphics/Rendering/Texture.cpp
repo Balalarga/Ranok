@@ -4,18 +4,19 @@
 
 #include "Log/Logger.h"
 
-Texture::Texture(glm::uvec2 size):
-    _size(size)
+Texture::Texture(glm::uvec2 size, int channelsMode):
+    _size(size),
+    _channelsMode(channelsMode)
 {
     glGenTextures(1, &_textureId);
     glBindTexture(GL_TEXTURE_2D, _textureId);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  _size.x,
                  _size.y,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  GL_FLOAT,
                  0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -40,11 +41,11 @@ void Texture::Resize(glm::uvec2 size)
     glBindTexture(GL_TEXTURE_2D, _textureId);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  _size.x,
                  _size.y,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  GL_FLOAT,
                  NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -66,11 +67,11 @@ void Texture::Recreate(glm::uvec2 size)
     glBindTexture(GL_TEXTURE_2D, _textureId);
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  _size.x,
                  _size.y,
                  0,
-                 GL_RGB,
+                 _channelsMode,
                  GL_FLOAT,
                  0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

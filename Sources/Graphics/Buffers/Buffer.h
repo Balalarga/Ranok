@@ -1,5 +1,7 @@
 #pragma once
 
+#include <GL/glew.h>
+
 #include "BufferLayout.h"
 
 
@@ -24,7 +26,7 @@ struct DataPtr
 
 struct Buffer
 {
-    Buffer(const DataPtr& data = {}, const BufferLayout& layout = BufferLayout());
+    Buffer(const DataPtr& data = {}, const BufferLayout& layout = BufferLayout(), unsigned DrawType = GL_TRIANGLES);
 
     DataPtr Data;
     BufferLayout Layout;

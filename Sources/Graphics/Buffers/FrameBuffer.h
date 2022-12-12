@@ -6,7 +6,7 @@
 class FrameBuffer
 {
 public:
-	FrameBuffer(glm::uvec2 size);
+	FrameBuffer(glm::uvec2 size, int channelsMode = GL_RGB);
 	virtual ~FrameBuffer();
 
 	virtual void Resize(glm::uvec2 size);

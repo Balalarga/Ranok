@@ -329,7 +329,7 @@ void ModelingModule::BuildTab(int tabId)
 	int result = exec.Compile(res.value());
 	if (result != CL_SUCCESS)
 	{
-		Logger::Error(fmt::format("OpenCL compilation error: {}", result));
+		Logger::Error(fmt::format("OpenCL compilation error: {}\n{}", result, res.value()));
 		return;
 	}
 	

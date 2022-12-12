@@ -13,6 +13,8 @@
 #include "Executor/OpenclExecutor.h"
 #include "Config/ConfigManager.h"
 
+#include "Graphics/Shading/ShaderStorage.h"
+
 #include "Language/CodeLibraryLoader.h"
 #include "Language/LibraryStorage.h"
 #include "Utils/TextureManager.h"
@@ -113,6 +115,7 @@ void CustomStyle()
 void Preinit()
 {
 	LibraryStorage::LoadDefaults();
+	ShaderStorage::Instance().Preloading();
 }
 
 void LoadAssets()
@@ -129,6 +132,8 @@ void LoadAssets()
 			Logger::Log(fmt::format("Loaded texture \"{}\" from {} ", tag, fullPath));
 	};
 	TryToLoadTexture("LoadingImage", "Images/Loading.png");
+	
+	ShaderStorage::Instance().CompileAll();
 }
 
 void Init()
@@ -139,7 +144,7 @@ void Init()
 	
 	auto& logger = Editor::EditorSystem.AddModule<LoggerModule>("Log");
 	logger.bWorks = true;
-
+	
 	auto& mimageCompute = Editor::EditorSystem.AddModule<MImageComputeModule>();
 	
 	auto& modeling = Editor::EditorSystem.AddModule<ModelingModule>();

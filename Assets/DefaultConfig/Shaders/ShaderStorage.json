@@ -1,0 +1,14 @@
+{
+    "preloadingShaders": [
+        {
+            "assetFilepath": "Shaders/BaseMaterial.vert",
+            "tag": "baseMatVert",
+            "type": 0
+        },
+        {
+            "assetFilepath": "Shaders/BaseMaterial.frag",
+            "tag": "baseMatFrag",
+            "type": 1
+        }
+    ]
+}

@@ -71,6 +71,9 @@ std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 
 void ConfigManager::LoadConfig(ConfigData& configs) const
 {
+	if (configs.defaultConfig->IsNotLoadable())
+		return;
+	
 	LoadDefaultConfig(configs.defaultConfig);
 	if (configs.defaultConfig->IsDefaultOnly())
 		return;

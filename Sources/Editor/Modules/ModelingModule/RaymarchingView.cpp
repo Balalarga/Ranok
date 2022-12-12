@@ -61,7 +61,7 @@ public:
 
         ImGui::BeginGroup();
         bChanged |= ImGui::ColorEdit3("Model Color", &targetColor.x);
-        bChanged |= ImGui::ColorEdit3("Background Color", &backgroundColor.x);
+        bChanged |= ImGui::ColorEdit4("Background Color", &backgroundColor.x);
         ImGui::EndGroup();
         ImGui::Separator();
         ImGui::BeginGroup();
@@ -89,7 +89,7 @@ public:
     glm::vec3 light_color = glm::vec3( 1.0, 0.7, 0.7 );
     glm::vec3 light_pos2 = glm::vec3( -20.0, -20.0, -30.0 );
     glm::vec3 targetColor = glm::vec3(0.2, 0.1, 0.1);
-    glm::vec3 backgroundColor = glm::vec3(0.8, 0.8, 0.8);
+    glm::vec4 backgroundColor = glm::vec4(0.8, 0.8, 0.8, 1.0);
     glm::uvec2 resolution = glm::uvec2(800, 600);
     glm::vec3 cameraPosition = glm::vec3(0, 0, 5);
     glm::vec2 cameraRotation = glm::vec2(0, 0);
@@ -118,7 +118,7 @@ uniform vec3 light_color = vec3( 1.0, 0.7, 0.7 );
 uniform vec3 light_pos2  = vec3( -20.0, -20.0, -30.0 );
 uniform bool useSecondLight = true;
 uniform vec3 targetColor = vec3(0.2, 0.1, 0.1);
-uniform vec3 backgroundColor = vec3(0.8, 0.8, 0.8);
+uniform vec4 backgroundColor = vec4(0.8, 0.8, 0.8, 1.0);
 uniform float gradStep = 0.02;
 uniform vec2 resolution = vec2(800, 600);
 uniform vec3 cameraPosition = vec3(0, 0, 5);
@@ -293,7 +293,7 @@ void main()
     float depth = clip_far;
     vec3 n = vec3( 0.0 );
     if ( !ray_marching( eye, dir, depth, n ) ) {
-        color = vec4(backgroundColor, 1.0);
+        color = backgroundColor;
         return;
     }
 
@@ -326,8 +326,8 @@ Buffer RayMarchingView::bufferInfo(DataPtr(vertices, std::size(vertices), sizeof
 
 ShaderGenerator RayMarchingView::_codeGenerator;
 
-std::shared_ptr<ShaderPart> RayMarchingView::_defaultVShader = std::make_shared<ShaderPart>(ShaderPart::Type::Vertex, defaultVertexShader);
-std::shared_ptr<ShaderPart> RayMarchingView::_defaultFShader = std::make_shared<ShaderPart>(ShaderPart::Type::Fragment, defaultFragmentShader);
+std::shared_ptr<ShaderPart> RayMarchingView::_defaultVShader = std::make_shared<ShaderPart>(ShaderType::Vertex, defaultVertexShader);
+std::shared_ptr<ShaderPart> RayMarchingView::_defaultFShader = std::make_shared<ShaderPart>(ShaderType::Fragment, defaultFragmentShader);
 std::shared_ptr<Shader> RayMarchingView::_defaultShader = std::make_shared<Shader>(_defaultVShader, _defaultFShader);
 
 RaymarchingMaterial::RaymarchingMaterial(const std::shared_ptr<Shader>& shader):
@@ -351,7 +351,7 @@ void RaymarchingMaterial::SetupUniforms()
 }
 
 RayMarchingView::RayMarchingView():
-    FrameBuffer(rayMarchConfig->resolution),
+    FrameBuffer(rayMarchConfig->resolution, GL_RGBA),
     Object(bufferInfo, nullptr),
     _material(_defaultShader)
 {
@@ -374,7 +374,7 @@ std::optional<std::string> RayMarchingView::SetProgram(ActionTree& tree)
     stream << shaderFooter;
     std::string fullCode = stream.str();
     
-    bool status = GetMaterial()->GetShader().lock()->UpdateShaderPart(std::make_shared<ShaderPart>(ShaderPart::Type::Fragment, fullCode));
+    bool status = GetMaterial()->GetShader().lock()->UpdateShaderPart(std::make_shared<ShaderPart>(ShaderType::Fragment, fullCode));
     if (!status)
         Logger::Error("Shader compilation error");
     return fullCode;
@@ -391,7 +391,7 @@ void RayMarchingView::Resize(glm::uvec2 size)
 
 void RayMarchingView::Render() const
 {
-    glViewport(0, 0, GetTextureSize().x, GetTextureSize().y);
+    _boundingView.Render();
     Object::Render();
 }
 

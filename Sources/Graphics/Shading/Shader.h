@@ -22,10 +22,10 @@ public:
 
 	bool UpdateShaderPart(std::shared_ptr<ShaderPart> part);
 	
-	void Bind() const;
+	void Bind();
 	static void Release();
 
-	void SetUniform(const std::string& name, const UniformValue& value, bool bUnbind = false);
+	bool SetUniform(const std::string& name, const UniformValue& value, bool bUnbind = false);
 
 	bool IsCompiled() const { return _glHandler != 0; }
 	

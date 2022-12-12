@@ -1,11 +1,12 @@
 #pragma once
 
+#include <GL/glew.h>
 #include "glm/glm.hpp"
 
 class Texture
 {
 public:
-    Texture(glm::uvec2 size);
+    Texture(glm::uvec2 size, int channelsMode = GL_RGB);
     virtual ~Texture();
 
     void Resize(glm::uvec2 size);
@@ -20,5 +21,6 @@ public:
 
 private:
     unsigned _textureId;
+    int _channelsMode;
     glm::uvec2 _size;
 };

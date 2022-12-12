@@ -18,11 +18,13 @@ bool HasErrors(unsigned shaderId)
 	{
 		GLint maxLength = 0;
 		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
-
-		std::vector<GLchar> errorLog(maxLength);
-		glGetShaderInfoLog(shaderId, maxLength, &maxLength, &errorLog[0]);
-		Ranok::Logger::Error(fmt::format("{}", fmt::join(errorLog, "")));
-
+		if (maxLength > 0)
+		{
+			std::vector<GLchar> errorLog(maxLength);
+			glGetShaderInfoLog(shaderId, maxLength, &maxLength, &errorLog[0]);
+			Ranok::Logger::Error(fmt::format("{}", fmt::join(errorLog, "")));
+		}
+		Ranok::Logger::Error(fmt::format("Shader compilation error {}", isCompiled));
 		return true;
 	}
 	return false;
@@ -64,8 +66,10 @@ bool Shader::Compile()
 	return attachedShaders.size() == parts.size();
 }
 
-void Shader::Bind() const
+void Shader::Bind()
 {
+	if (_glHandler == 0)
+		Compile();
 	glUseProgram(_glHandler);
 }
 
@@ -74,12 +78,12 @@ void Shader::Release()
 	glUseProgram(0);
 }
 
-void Shader::SetUniform(const std::string& name, const UniformValue& value, bool bUnbind)
+bool Shader::SetUniform(const std::string& name, const UniformValue& value, bool bUnbind)
 {
 	Bind();
 	int loc = GetUniformLocation(name);
 	if (loc < 0)
-		return;
+		return false;
 
 	std::visit([&](auto&& arg)
 		{
@@ -107,6 +111,8 @@ void Shader::SetUniform(const std::string& name, const UniformValue& value, bool
 
 	if (bUnbind)
 		Release();
+	
+	return true;
 }
 
 int Shader::GetUniformLocation(const std::string& name)
@@ -141,9 +147,9 @@ void Shader::Destroy()
 bool Shader::UpdateShaderPart(std::shared_ptr<ShaderPart> part)
 {
 	std::shared_ptr<ShaderPart>* targetPart = &_parts.gShader;
-	if (part->GetType() == ShaderPart::Type::Vertex)
+	if (part->GetType() == ShaderType::Vertex)
 		targetPart = &_parts.vShader;
-	else if (part->GetType() == ShaderPart::Type::Fragment)
+	else if (part->GetType() == ShaderType::Fragment)
 		targetPart = &_parts.fShader;
 	
 	Destroy();

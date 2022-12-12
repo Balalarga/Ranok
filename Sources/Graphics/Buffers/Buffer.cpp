@@ -17,14 +17,11 @@ DataPtr::DataPtr(void* ptr, unsigned count, unsigned itemSize):
 {
 
 }
-unsigned DrawType = GL_TRIANGLES;
-unsigned Type = GL_ARRAY_BUFFER;
-unsigned Mode = GL_STATIC_DRAW;
 
-Buffer::Buffer(const DataPtr& data, const BufferLayout& layout):
+Buffer::Buffer(const DataPtr& data, const BufferLayout& layout, unsigned DrawType):
     Data(data),
     Layout(layout),
-    DrawType(GL_TRIANGLES),
+    DrawType(DrawType),
     Type(GL_ARRAY_BUFFER),
     Mode(GL_STATIC_DRAW)
 {
