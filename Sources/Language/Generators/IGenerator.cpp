@@ -17,7 +17,6 @@ std::optional<std::string> IGenerator::Generate(const ActionTree& tree)
 	}
 	
 	std::stringstream code;
-	
 	Predefines(code);
 	
 	std::queue<const std::vector<ActionNode*>*> declarationOrder({&tree.GlobalFactory().DeclarationOrder()});
@@ -27,10 +26,16 @@ std::optional<std::string> IGenerator::Generate(const ActionTree& tree)
 			Process(code, node);
 		declarationOrder.pop();
 	}
+
+	Postprocess(code);
 	return code.str();
 }
 
 void IGenerator::Predefines(std::stringstream& outCode)
+{
+}
+
+void IGenerator::Postprocess(std::stringstream& outCode)
 {
 }
 

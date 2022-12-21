@@ -7,7 +7,7 @@ namespace Ranok
 class FileArchive: public IArchive
 {
 public:
-	FileArchive(std::string filepath, ArchiveMode mode);
+	FileArchive(std::string filepath, ArchiveMode mode, bool binary = false);
 	~FileArchive() override;
 	
 	bool Open() override;
@@ -46,10 +46,8 @@ public:
 			Write(val);
 	}
 	
-protected:
 	std::fstream& GetStdStream() { return _stream; }
-	
-	
+
 private:
 	const std::string _filepath;
 	std::_Iosb<int>::_Openmode _stdFlags{};

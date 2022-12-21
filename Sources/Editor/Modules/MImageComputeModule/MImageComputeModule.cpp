@@ -4,43 +4,78 @@
 
 namespace Ranok
 {
-DEFINE_LOCTEXT(MimageComputeModuleName, "Mimage Compute")
+DEFINE_LOCTEXT(MimageComputeModuleName, "MimageCompute")
+DEFINE_LOCTEXT(MImageOpenFile, "Open")
 
 MImageComputeModule::MImageComputeModule():
 	IEditorModule(LOCTEXTSTR(MimageComputeModuleName)),
     _viewport({800, 600})
 {
+	SetNoClosing(true);
+	bWorks = true;
 	_viewport.Create();
 }
 
 void MImageComputeModule::RenderWindowContent()
 {
-	ImGui::BeginChild("mainContainer");
+	ImGui::BeginGroup();
+	if (ImGui::Button(LOCTEXT(MImageOpenFile)))
+	{
+		// const std::string filepathStr = OpenFileDialog();
+		// if (!filepathStr.empty())
+			// TryOpenFile(filepathStr);
+	}
+	// ImGui::SameLine();
+	// if (ImGui::Button(LOCTEXT(ModelingCompile)))
+		// CompileTab(currentActiveTab);
+	// ImGui::SameLine();
+	// if (ImGui::Button(LOCTEXT(ModelingBuild)))
+		// BuildTab(currentActiveTab);
+	ImGui::EndGroup();
+
 	static float w = ImGui::GetWindowContentRegionMax().x / 3.f;
 	float trueH = ImGui::GetWindowContentRegionMax().y;
 	float trueW = w >= 0 ? w : 1;
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-	ImGui::BeginChild("child1", ImVec2(trueW, trueH), true);
-	
+
+	ImGui::BeginChild("WorkingChild");
+	ImGui::BeginChild("TextEditorChild", ImVec2(w, 0), true);
+
+
 	ImGui::EndChild();
+
 	ImGui::SameLine();
-	ImGui::InvisibleButton("vsplitter", ImVec2(8.0f, trueH));
-	bool bIsActive = ImGui::IsItemActive();
-	bool bIsHovered = ImGui::IsItemHovered();
+	ImGui::InvisibleButton("vsplitter", ImVec2(5.0f, ImGui::GetWindowContentRegionMax().y));
+	const bool bIsActive = ImGui::IsItemActive();
+	const bool bIsHovered = ImGui::IsItemHovered();
 	if (bIsActive)
 		w += ImGui::GetIO().MouseDelta.x;
 	if (bIsActive || bIsHovered)
 		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 	ImGui::SameLine();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::BeginChild("child2", ImVec2(0, trueH), true);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
+	ImGui::BeginChild("ViewportChild", ImGui::GetContentRegionAvail(), true);
+	_viewport.Resize({ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y});
+
 	ImGui::Image((void*)(intptr_t)_viewport.GetTextureId(),
 				 ImGui::GetWindowSize(),
 				 ImVec2(0, 1),
 				 ImVec2(1, 0));
+	if (ImGui::IsItemHovered())
+	{
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+		{
+			ImVec2 mouseDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
+			// _viewport.MouseMoved(mouseDelta);
+			// if (!Math::IsZero(mouseDelta.x) || !Math::IsZero(mouseDelta.y))
+				// ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);
+		}
+		// if (!Math::IsZero(ImGui::GetIO().MouseWheel))
+			// _viewport.Zoom(ImGui::GetIO().MouseWheel * (ImGui::IsKeyDown(ImGuiKey_LeftShift) ? 5.f : .5f));
+	}
 	ImGui::EndChild();
-	ImGui::PopStyleVar();
-	ImGui::PopStyleVar();
+	ImGui::PopStyleVar(1);
+
 	ImGui::EndChild();
 }
 }

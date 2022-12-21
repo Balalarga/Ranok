@@ -5,9 +5,8 @@ namespace Ranok
 {
 #if _WINDOWS
 #include <windows.h>
-std::string OpenFileDialog(const std::string& filters)
+std::string OpenFileDialog(const LPCSTR& filters)
 {
-	auto path = std::filesystem::current_path(); //getting path
 	std::string result;
 	OPENFILENAME ofn = {sizeof(ofn)};
 	char szFile[300];
@@ -16,8 +15,7 @@ std::string OpenFileDialog(const std::string& filters)
 	ofn.lpstrFile = szFile;
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof( szFile );
-	const char * filter = filters.c_str();
-	ofn.lpstrFilter = filter;
+	ofn.lpstrFilter = filters;
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -26,14 +24,11 @@ std::string OpenFileDialog(const std::string& filters)
 	
 	if(GetOpenFileNameA(&ofn))
 		result = ofn.lpstrFile;
-	
-	std::filesystem::current_path(path); //config path
 	return result;
 }
 
-std::string SaveFileDialog(const std::string& filters)
+std::string SaveFileDialog(const LPCSTR& filters)
 {
-	auto path = std::filesystem::current_path(); //getting path
 	std::string result;
 	OPENFILENAME ofn = {sizeof(ofn)};
 	char szFile[300];
@@ -42,8 +37,7 @@ std::string SaveFileDialog(const std::string& filters)
 	ofn.lpstrFile = szFile;
 	ofn.lpstrFile[0] = '\0';
 	ofn.nMaxFile = sizeof( szFile );
-	const char * filter = filters.c_str();
-	ofn.lpstrFilter = filter;
+	ofn.lpstrFilter = filters;
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
@@ -52,8 +46,6 @@ std::string SaveFileDialog(const std::string& filters)
 	
 	if(GetSaveFileNameA(&ofn))
 		result = ofn.lpstrFile;
-	
-	std::filesystem::current_path(path); //config path
 	return result;
 }
 #endif

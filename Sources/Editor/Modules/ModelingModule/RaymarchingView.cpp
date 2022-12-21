@@ -282,7 +282,6 @@ void main()
 
     // default ray origin
     vec3 eye = cameraPosition;
-    //vec3 eye = vec3(0, 0, 5);
 
     // rotate camera
     mat3 rot = rotationXY( cameraRotation );

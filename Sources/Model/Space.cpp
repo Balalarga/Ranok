@@ -27,6 +27,38 @@ Space3D::Space3D(const std::vector<double>& centerPoint,
 	_startPoint.resize(centerPoint.size());
 	UpdateStartPoint();
 }
+
+Space3D::Space3D(const std::vector<float>& centerPoint, const std::vector<float>& size, const size_t& recursiveDepth)
+{
+	assert(centerPoint.size() == size.size());
+
+	for (const float& val : size)
+		_size.push_back(static_cast<double>(val));
+
+	for (const float& val : centerPoint)
+		_centerPoint.push_back(static_cast<double>(val));
+	_partition.resize(centerPoint.size(), std::pow(2, recursiveDepth));
+	_startPoint.resize(centerPoint.size());
+	UpdateStartPoint();
+}
+
+Space3D::Space3D(const std::vector<float>& centerPoint,
+	const std::vector<float>& size,
+	const std::vector<size_t>& partition)
+{
+	assert(centerPoint.size() == size.size());
+	assert(partition.size() == size.size());
+
+	for (const float& val : size)
+		_size.push_back(static_cast<double>(val));
+
+	for (const float& val : centerPoint)
+		_centerPoint.push_back(static_cast<double>(val));
+	_partition = partition;
+	_startPoint.resize(centerPoint.size());
+	UpdateStartPoint();
+}
+
 std::vector<double> Space3D::GetUnitSize() const
 {
 	std::vector<double> unitSizes(_size.size());

@@ -1,7 +1,7 @@
 {
-    "DefaultLayoutIniPath": "",
+    "DefaultLayoutIniPath": "DefaultConfig/Ini/DefaultLayout.ini",
     "WindowSize": [
-        1418,
-        987
+        1441,
+        945
     ]
 }

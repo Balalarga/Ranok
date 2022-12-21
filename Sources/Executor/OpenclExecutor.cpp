@@ -1,5 +1,7 @@
 #include "OpenclExecutor.h"
 
+#include "Log/Logger.h"
+
 namespace Ranok::Opencl
 {
 int Executor::Init()
@@ -151,7 +153,7 @@ int Executor::Compile(const std::string& code)
 	if (code.empty())
 		return false;
 	
-	if(GetDeviceInfo().program != 0)
+	if (GetDeviceInfo().program != 0)
 		GetDeviceInfo().ret = clReleaseProgram(GetDeviceInfo().program);
 	
 	if (GetDeviceInfo().kernel != 0)
@@ -174,16 +176,15 @@ int Executor::Compile(const std::string& code)
 									 NULL);
 	if (GetDeviceInfo().ret != CL_SUCCESS)
 	{
-		// size_t len;
-		// char buffer[2048];
-		// std::cout << "Failed to build program executable!\n";
-		// clGetProgramBuildInfo(GetDeviceInfo().program,
-		// 					  GetDeviceInfo().device_id,
-		// 					  CL_PROGRAM_BUILD_LOG,
-		// 					  sizeof(buffer),
-		// 					  buffer,
-		// 					  &len);
-		// std::cout << buffer << "\n";
+		size_t len;
+		char buffer[2048];
+		clGetProgramBuildInfo(GetDeviceInfo().program,
+							  GetDeviceInfo().device_id,
+							  CL_PROGRAM_BUILD_LOG,
+							  sizeof(buffer),
+							  buffer,
+							  &len);
+		Logger::Error(fmt::format("Failed to build program executable!\n{}", buffer));
 		clReleaseProgram(GetDeviceInfo().program);
 		GetDeviceInfo().program = 0;
 		return GetDeviceInfo().ret;

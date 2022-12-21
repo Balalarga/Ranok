@@ -15,6 +15,7 @@ public:
 	
 	std::optional<std::string> Generate(const ActionTree& tree);
 	virtual void Predefines(std::stringstream& outCode);
+	virtual void Postprocess(std::stringstream& outCode);
 	
 	
 protected:

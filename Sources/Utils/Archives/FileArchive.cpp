@@ -20,10 +20,12 @@ void FileArchive::StreamRead(T& val)
 		_stream >> val;
 }
 
-FileArchive::FileArchive(std::string filepath, ArchiveMode mode):
+FileArchive::FileArchive(std::string filepath, ArchiveMode mode, bool bIsBinary):
 	IArchive(mode),
 	_filepath(std::move(filepath))
 {
+	if (bIsBinary)
+		_stdFlags = static_cast<std::_Iosb<int>::_Openmode>(_stdFlags | std::ios_base::binary);
 }
 
 FileArchive::~FileArchive()

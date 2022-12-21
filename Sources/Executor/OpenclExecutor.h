@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <string>
 #include <vector>
 #include <CL/cl.h>
@@ -51,7 +52,7 @@ public:
 	static void Destroy();
 	static DeviceInfo& GetDeviceInfo();
 	
-	bool IsOk() const { return GetDeviceInfo().context != 0; };
+	bool IsOk() const { return GetDeviceInfo().context != 0; }
 	
 	int ExecuteCurrentKernel(const std::string& functionName, const KernelArguments& args);
 	int Compile(const std::string& code);

@@ -5,7 +5,9 @@
 #include "Executor/OpenclExecutor.h"
 #include "Language/Parser.h"
 #include "Localization/LocalizationSystem.h"
+#include "Model/Space.h"
 #include "Utils/FileUtils.h"
+#include "Utils/FlatArray.h"
 #include "Utils/Math.h"
 #include "Utils/WindowsUtils.h"
 #include "Utils/Archives/Json/JsonArchive.h"
@@ -22,6 +24,12 @@ DEFINE_LOCTEXT(ModelingCloseTabCancelText, "Cancel")
 DEFINE_LOCTEXT(ModelingCompile, "Compile")
 DEFINE_LOCTEXT(ModelingBuild, "Build")
 DEFINE_LOCTEXT(ModelingOpenFile, "Open")
+
+
+namespace ModelingModule_Local
+{
+static FlatArray<MImage3D> imageBuffer;
+}
 
 
 class ModelingModuleConfig: public IConfig
@@ -93,7 +101,7 @@ void ModelingModule::RenderWindowContent()
 			CompileTab(currentActiveTab);
 		ImGui::SameLine();
 		if (ImGui::Button(LOCTEXT(ModelingBuild)))
-			BuildTab(currentActiveTab);
+			ImGui::OpenPopup("BuildTabParamsSelection");
 	ImGui::EndGroup();
 	
 	ImGui::BeginChild("WorkingChild");
@@ -131,6 +139,62 @@ void ModelingModule::RenderWindowContent()
 		ImGui::PopStyleVar(1);
 	
 	ImGui::EndChild();
+
+	bool unused_open;
+	if (ImGui::BeginPopupModal("BuildTabParamsSelection", &unused_open, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::BeginChild("PathContainer", ImVec2(0, 40));
+		static BuildTabParams params;
+		ImGui::InputText("##resPath1", params.saveFilepath.data(), params.filepathLen, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::SameLine();
+		if (ImGui::Button("Select"))
+		{
+			std::string filepath = SaveFileDialog("Binary(.bin)\0*.bin\0\0");
+			if (!filepath.empty())
+			{
+				params.saveFilepath = filepath;
+				if (!filepath.ends_with(".bin"))
+					params.saveFilepath += ".bin";
+			}
+			Logger::Log(params.saveFilepath);
+		}
+		ImGui::EndChild();
+
+		std::string depthLabel = std::to_string(static_cast<int>(pow(2, params.recursions))) + " (voxels per axis)";
+		if (ImGui::InputInt(depthLabel.c_str(), &params.recursions, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+		{
+			if (params.recursions > params.maxDepth)
+				params.recursions = params.maxDepth;
+			else if(params.recursions < params.minDepth)
+				params.recursions = params.minDepth;
+		}
+        ImGui::Checkbox("Enable batching", &params.batching);
+
+		if (params.batching)
+		{
+			std::string batchLabel = std::to_string((pow(2, params.batchSize) * sizeof(MImage3D)) / 1024. / 1024. / 1024.) + " GB memory";
+			if (ImGui::InputInt(batchLabel.c_str(), &params.batchSize, 1, 100, ImGuiInputTextFlags_AlwaysInsertMode))
+			{
+				if (params.batchSize < params.batchMin)
+					params.batchSize = params.batchMin;
+			}
+		}
+
+		ImGui::DragFloat3("Space center", params.spaceCenter.data(), 0.1f, 0.001f, 0, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+		if (ImGui::DragFloat3("Space size", params.spaceSize.data(), 0.05f, 0.1f, 0, "%.2f", ImGuiSliderFlags_AlwaysClamp))
+		{
+			if (params.spaceSize[0] < 0.1f) params.spaceSize[0] = 0.1f;
+			if (params.spaceSize[1] < 0.1f) params.spaceSize[1] = 0.1f;
+			if (params.spaceSize[2] < 0.1f) params.spaceSize[2] = 0.1f;
+		}
+
+		if (ImGui::Button("Start"))
+		{
+			BuildTab(currentActiveTab, params);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void ModelingModule::RenderTextEditor()
@@ -289,7 +353,7 @@ void ModelingModule::CompileTab(int tabId)
 	Logger::Log("Success");
 }
 
-void ModelingModule::BuildTab(int tabId)
+void ModelingModule::BuildTab(int tabId, const BuildTabParams& params)
 {
 	if (tabId < 0 || tabId >= _textEditorTabs.size())
 		return;
@@ -318,22 +382,91 @@ void ModelingModule::BuildTab(int tabId)
 		return;
 	}
 	
-	std::optional<std::string> res = _openclGenerator.Generate(tree);
-	if (!res)
+	std::optional<std::string> clCode = _openclGenerator.Generate(tree);
+	if (!clCode)
 	{
 		Logger::Error("Generation failed");
 		return;
 	}
-	
-	Opencl::Executor exec;
-	int result = exec.Compile(res.value());
-	if (result != CL_SUCCESS)
+
+	if (true)
 	{
-		Logger::Error(fmt::format("OpenCL compilation error: {}\n{}", result, res.value()));
-		return;
+		using namespace ModelingModule_Local;
+
+		Opencl::Executor exec;
+		int res = exec.Compile(clCode.value());
+		if (res != CL_SUCCESS)
+		{
+			Logger::Error(fmt::format("OpenCL compilation error: {}\n{}", res, clCode.value()));
+			return;
+		}
+		Space3D space(params.spaceCenter, params.spaceSize, params.recursions);
+		std::string pathToSave = "Test.bin";
+		std::ofstream file(pathToSave, std::ios_base::binary);
+		auto calculateCallback = [this, &file](size_t start, size_t count)
+		{
+			if (!imageBuffer.WritePart(file, count))
+				Logger::Error("File writing failed");
+		};
+
+		size_t batchSize = 0;
+		if (file)
+		{
+			file << space;
+
+			cl_int startId = 0;
+			cl_uint3 spaceSize = {static_cast<unsigned>(space.GetPartition()[0]),
+								  static_cast<unsigned>(space.GetPartition()[1]),
+								  static_cast<unsigned>(space.GetPartition()[2])};
+
+			cl_double3 startPoint = {space.GetStartPoint()[0], space.GetStartPoint()[1], space.GetStartPoint()[2]};
+			cl_double3 pointSize = {space.GetUnitSize()[0], space.GetUnitSize()[1], space.GetUnitSize()[2]};
+			cl_double3 halfSize = {pointSize.x / 2., pointSize.y / 2., pointSize.z / 2.};
+
+			size_t spaceFlatSize = space.GetTotalPartition();
+			size_t bufferSize;
+			if (batchSize != 0 && batchSize < spaceFlatSize)
+				bufferSize = batchSize;
+			else
+				bufferSize = spaceFlatSize;
+
+			imageBuffer.Resize(bufferSize);
+			// for (size_t i = 0; i < bufferSize; ++i)
+			// imageBuffer[i] = {0, 0, 0, 0, 0};
+
+			std::vector<Opencl::KernelArguments::Argument> opt
+			{
+		        {&startId, sizeof(cl_int)},
+				{&spaceSize, sizeof(cl_uint3)},
+				{&startPoint, sizeof(cl_double3)},
+				{&pointSize, sizeof(cl_double3)},
+				{&halfSize, sizeof(cl_double3)},
+			};
+
+			Opencl::KernelArguments::Argument result(&imageBuffer[0], sizeof(imageBuffer[0]), imageBuffer.Size());
+
+			int retCode = CL_SUCCESS;
+			for (size_t mStartId = 0; mStartId < spaceFlatSize; mStartId += bufferSize)
+			{
+				retCode = exec.ExecuteCurrentKernel(OpenclGenerator::sKernelProgram, Opencl::KernelArguments(result, opt));
+
+				if (retCode != CL_SUCCESS)
+					break;
+
+				if (mStartId + bufferSize > spaceFlatSize)
+					bufferSize = spaceFlatSize - mStartId;
+
+				calculateCallback(mStartId, bufferSize);
+			}
+
+			if (retCode == CL_SUCCESS)
+				Logger::Log("MImage build succeed");
+			else
+				Logger::Error(fmt::format("MImage build failed: {}", retCode));
+
+			file.close();
+		}
 	}
-	
-	Logger::Log("Success");
 }
 
 void ModelingModule::OnTextChanged(TextEditorInfo& info)

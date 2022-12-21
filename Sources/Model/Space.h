@@ -23,9 +23,12 @@ PACK(struct MImage3D
 
 class Space3D
 {
+public:
 	Space3D() = default;
     Space3D(const std::vector<double> &centerPoint, const std::vector<double> &size, const size_t& recursiveDepth);
     Space3D(const std::vector<double>& centerPoint, const std::vector<double>& size, const std::vector<size_t>& partition);
+    Space3D(const std::vector<float> &centerPoint, const std::vector<float> &size, const size_t& recursiveDepth);
+    Space3D(const std::vector<float>& centerPoint, const std::vector<float>& size, const std::vector<size_t>& partition);
     Space3D(const Space3D &oth) = default;
     virtual ~Space3D() = default;
 

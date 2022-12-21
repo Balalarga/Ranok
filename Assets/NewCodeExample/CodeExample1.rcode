@@ -13,5 +13,3 @@ def main(space[3])
 	return res | res2;
 }
 
-
-
