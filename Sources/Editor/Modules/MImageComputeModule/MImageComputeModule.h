@@ -2,6 +2,11 @@
 #include "Editor/Modules/EditorModule.h"
 #include "Graphics/Buffers/FrameBuffer.h"
 
+#include "Model/LinearGradient.h"
+#include "Model/Space.h"
+
+#include "Utils/FlatArray.h"
+
 namespace Ranok
 {
 class MImageComputeModule: public IEditorModule
@@ -12,5 +17,8 @@ public:
 	
 private:
 	FrameBuffer _viewport;
+	LinearGradient _imageGradient;
+	FlatArray<MImage3D> _imageData;
+    Space3D _space;
 };
 }

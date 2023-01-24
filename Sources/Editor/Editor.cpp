@@ -51,6 +51,7 @@ Editor& Editor::Instance()
 
 Editor::Editor()
 {
+	ImGui::GetIO().WantSaveIniSettings = false;
     AddGuiLayer(GuiLayer([this] { GuiRender(); }));
 	TryLoadDefaultLayout();
 	Resize(editorConfigs->windowSize);

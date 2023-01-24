@@ -92,7 +92,7 @@ void ModelingModule::RenderWindowContent()
 	ImGui::BeginGroup();
 		if (ImGui::Button(LOCTEXT(ModelingOpenFile)))
 		{
-			const std::string filepathStr = OpenFileDialog();
+			const std::string filepathStr = OpenFileDialog("*.rcode\0\0");
 			if (!filepathStr.empty())
 				TryOpenFile(filepathStr);
 		}
@@ -121,7 +121,6 @@ void ModelingModule::RenderWindowContent()
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2());
 		ImGui::BeginChild("ViewportChild", ImGui::GetContentRegionAvail(), true);
-			_viewport.Resize({ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y});
 			_viewport.RenderByImGui(ImGui::GetWindowSize());
 			if (ImGui::IsItemHovered())
 			{
@@ -188,10 +187,11 @@ void ModelingModule::RenderWindowContent()
 			if (params.spaceSize[2] < 0.1f) params.spaceSize[2] = 0.1f;
 		}
 
-		if (ImGui::Button("Start"))
+		if (ImGui::Button("Start") && !params.saveFilepath.empty())
 		{
 			BuildTab(currentActiveTab, params);
 			ImGui::CloseCurrentPopup();
+			params.saveFilepath.clear();
 		}
 		ImGui::EndPopup();
 	}
@@ -401,8 +401,7 @@ void ModelingModule::BuildTab(int tabId, const BuildTabParams& params)
 			return;
 		}
 		Space3D space(params.spaceCenter, params.spaceSize, params.recursions);
-		std::string pathToSave = "Test.bin";
-		std::ofstream file(pathToSave, std::ios_base::binary);
+		std::ofstream file(params.saveFilepath, std::ios_base::binary);
 		auto calculateCallback = [this, &file](size_t start, size_t count)
 		{
 			if (!imageBuffer.WritePart(file, count))

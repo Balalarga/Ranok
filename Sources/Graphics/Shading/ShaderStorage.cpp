@@ -53,7 +53,12 @@ public:
 	}
 	std::vector<ShaderStorageConfigItemData> preloadingShaders;
 };
-static std::shared_ptr<ShaderStorageConfig> config = ConfigManager::Instance().CreateConfigs<ShaderStorageConfig>();
+
+static std::shared_ptr<ShaderStorageConfig> GetConfig()
+{
+	static std::shared_ptr<ShaderStorageConfig> config = ConfigManager::Instance().CreateConfigs<ShaderStorageConfig>();
+	return config;
+}
 
 ShaderStorage& ShaderStorage::Instance()
 {
@@ -104,18 +109,18 @@ std::vector<ShaderInfo*> ShaderStorage::CompileAll()
 void ShaderStorage::Preloading()
 {
 	// for (ShaderStorageConfigItemData& item : config->preloadingShaders)
-	// 	LoadShader({item.tag, item.type, Files::GetAssetPath(item.assetFilepath)});
+		// LoadShader({item.tag, item.type, Files::GetAssetPath(item.assetFilepath)});
 }
 
 bool ShaderStorage::AddCppShaderPreloading(const std::string& tag, const ShaderType& type, const std::string& filepath)
 {
-	for (ShaderStorageConfigItemData& item : config->preloadingShaders)
+	for (ShaderStorageConfigItemData& item : GetConfig()->preloadingShaders)
 	{
 		if (item.tag == tag)
 			return false;
 	}
 	
-	config->preloadingShaders.push_back({tag, type, filepath});
+	GetConfig()->preloadingShaders.push_back({tag, type, filepath});
 	return true;
 }
 }

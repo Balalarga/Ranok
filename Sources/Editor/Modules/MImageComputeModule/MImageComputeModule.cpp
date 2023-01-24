@@ -2,6 +2,9 @@
 
 #include "Localization/LocalizationSystem.h"
 
+#include "Utils/FileUtils.h"
+#include "Utils/WindowsUtils.h"
+
 namespace Ranok
 {
 DEFINE_LOCTEXT(MimageComputeModuleName, "MimageCompute")
@@ -21,16 +24,20 @@ void MImageComputeModule::RenderWindowContent()
 	ImGui::BeginGroup();
 	if (ImGui::Button(LOCTEXT(MImageOpenFile)))
 	{
-		// const std::string filepathStr = OpenFileDialog();
-		// if (!filepathStr.empty())
-			// TryOpenFile(filepathStr);
+		const std::string filepathStr = OpenFileDialog("*.bin\0");
+		if (!filepathStr.empty())
+		{
+            _imageData.Clear();
+            std::ifstream file(filepathStr, std::ios_base::binary);
+			file >> _space;
+			size_t dataSize = _space.GetTotalPartition();
+			_imageData.Resize(dataSize);
+			_imageData.ReadSome(file, dataSize);
+			file.close();
+
+
+		}
 	}
-	// ImGui::SameLine();
-	// if (ImGui::Button(LOCTEXT(ModelingCompile)))
-		// CompileTab(currentActiveTab);
-	// ImGui::SameLine();
-	// if (ImGui::Button(LOCTEXT(ModelingBuild)))
-		// BuildTab(currentActiveTab);
 	ImGui::EndGroup();
 
 	static float w = ImGui::GetWindowContentRegionMax().x / 3.f;

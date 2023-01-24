@@ -381,11 +381,7 @@ std::optional<std::string> RayMarchingView::SetProgram(ActionTree& tree)
 
 void RayMarchingView::Resize(glm::uvec2 size)
 {
-    if (size == rayMarchConfig->resolution)
-        return;
-    
     rayMarchConfig->resolution = size;
-    // RecreateTexture(size);
 }
 
 void RayMarchingView::Render() const

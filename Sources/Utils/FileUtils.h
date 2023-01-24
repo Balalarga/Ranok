@@ -48,9 +48,9 @@ inline void CreateAsset(const std::string& relativePath)
 	CreateFile(GetAssetPath(relativePath));
 }
 
-inline std::optional<std::string> ReadFile(const std::string& path)
+inline std::optional<std::string> ReadFile(const std::string& path, bool bBinary = false)
 {
-	std::ifstream file(path);
+	std::ifstream file(path, bBinary ? std::ios_base::binary : std::ios_base::_Default_open_prot);
 	if (!file)
 	{
 		Logger::Error(fmt::format("Couldn't open {}  for reading", path));
