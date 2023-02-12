@@ -65,7 +65,7 @@ public:
 
 private:
     bool bAutoInit = true;
-    bool bWasInited;
+    bool bWasInited = false;
     std::vector<std::unique_ptr<ModuleType>> _modules;
 };
 }

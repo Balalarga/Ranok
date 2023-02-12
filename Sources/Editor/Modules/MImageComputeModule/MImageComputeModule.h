@@ -9,6 +9,8 @@
 
 namespace Ranok
 {
+class VoxelModel;
+
 class MImageComputeModule: public IEditorModule
 {
 public:
@@ -20,5 +22,6 @@ private:
 	LinearGradient _imageGradient;
 	FlatArray<MImage3D> _imageData;
     Space3D _space;
+	std::unique_ptr<VoxelModel> _model;
 };
 }

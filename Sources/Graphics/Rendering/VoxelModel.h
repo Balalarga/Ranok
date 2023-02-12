@@ -21,10 +21,10 @@ public:
 class VoxelModel: public Object
 {
 public:
-	static VoxelModel Make(const Space3D& space,
-							 FlatArray<MImage3D> &image,
-							 LinearGradient& gradient,
-							 size_t activeImage);
+	static VoxelModel* Make(const Space3D& space,
+		FlatArray<MImage3D> &image,
+		LinearGradient& gradient,
+		size_t activeImage = 0);
 
 	VoxelModel(Buffer vbo);
 
@@ -34,9 +34,9 @@ public:
 
 
 private:
-	size_t _voxelsCount;
-	size_t _voxelFilled;
-	glm::fvec4 _modelColor;
+	size_t _voxelsCount{};
+	size_t _voxelFilled{};
+	glm::fvec4 _modelColor{};
 	VoxelMaterial _material;
 };
 }

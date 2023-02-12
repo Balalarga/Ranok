@@ -21,7 +21,7 @@ public:
     }
 
     FlatArray(const std::vector<size_t>& dims, float initValue):
-        FlatArray<Type>(dims)
+        FlatArray(dims)
     {
         for (Type& i : _data)
             i = initValue;

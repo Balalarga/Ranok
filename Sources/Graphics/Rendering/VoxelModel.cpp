@@ -1,5 +1,6 @@
 ﻿#include "VoxelModel.h"
 
+#include <utility>
 
 namespace Ranok
 {
@@ -124,10 +125,10 @@ void VoxelMaterial::SetupUniforms()
 
 }
 
-VoxelModel VoxelModel::Make(const Space3D& space,
-                             FlatArray<MImage3D>& image,
-                             LinearGradient& gradient,
-                             size_t activeImage)
+VoxelModel* VoxelModel::Make(const Space3D& space,
+                            FlatArray<MImage3D>& image,
+                            LinearGradient& gradient,
+                            size_t activeImage)
 {
     struct Vertex
     {
@@ -146,12 +147,12 @@ VoxelModel VoxelModel::Make(const Space3D& space,
     // return parent->AddObject<VoxelObject>(parent,
                                           // new Shader(vertexImageShader, fragmentImageShader),
                                           // vbo);
-    Buffer buffer({data}, BufferLayout().Float(3).Float(4), GL_POINTS);
-    return VoxelModel(buffer);
+    Buffer buffer(data, BufferLayout().Float(3).Float(4), GL_POINTS);
+    return new VoxelModel(buffer);
 }
 
 VoxelModel::VoxelModel(Buffer vbo):
-    Object(vbo, nullptr)
+    Object(std::move(vbo), nullptr)
 {
     SetMaterial(&_material);
 }

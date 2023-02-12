@@ -1,5 +1,7 @@
 ﻿#include "MImageComputeModule.h"
 
+#include "Graphics/Rendering/VoxelModel.h"
+
 #include "Localization/LocalizationSystem.h"
 
 #include "Utils/FileUtils.h"
@@ -12,7 +14,13 @@ DEFINE_LOCTEXT(MImageOpenFile, "Open")
 
 MImageComputeModule::MImageComputeModule():
 	IEditorModule(LOCTEXTSTR(MimageComputeModuleName)),
-    _viewport({800, 600})
+    _viewport({800, 600}),
+	_imageGradient({
+				   ColorFromUint(255, 255, 0,   20),
+				   ColorFromUint(0,   255, 162, 20),
+				   ColorFromUint(0,   0,   255, 20),
+				   ColorFromUint(255, 145, 0,   20),
+				   ColorFromUint(214, 0,   255, 20)})
 {
 	SetNoClosing(true);
 	bWorks = true;
@@ -30,12 +38,14 @@ void MImageComputeModule::RenderWindowContent()
             _imageData.Clear();
             std::ifstream file(filepathStr, std::ios_base::binary);
 			file >> _space;
-			size_t dataSize = _space.GetTotalPartition();
+			size_t totalDataSize = _space.GetTotalPartition();
+            const std::vector<size_t>& dataSize = _space.GetPartition();
 			_imageData.Resize(dataSize);
-			_imageData.ReadSome(file, dataSize);
+			_imageData.ReadSome(file, totalDataSize);
 			file.close();
 
-
+			Logger::Log(fmt::format("Mimage read ({} dims)", fmt::join(_imageData.GetDimensions(), ", ")));
+            _model.reset(VoxelModel::Make(_space, _imageData, _imageGradient));
 		}
 	}
 	ImGui::EndGroup();
@@ -46,7 +56,6 @@ void MImageComputeModule::RenderWindowContent()
 
 	ImGui::BeginChild("WorkingChild");
 	ImGui::BeginChild("TextEditorChild", ImVec2(w, 0), true);
-
 
 	ImGui::EndChild();
 
@@ -73,6 +82,16 @@ void MImageComputeModule::RenderWindowContent()
 		if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 		{
 			ImVec2 mouseDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
+			if (mouseDelta.x != 0 || mouseDelta.y != 0)
+			{
+				if (_model)
+				{
+					_viewport.Bind();
+					_model->Render();
+					_viewport.Release();
+				}
+
+			}
 			// _viewport.MouseMoved(mouseDelta);
 			// if (!Math::IsZero(mouseDelta.x) || !Math::IsZero(mouseDelta.y))
 				// ImGui::ResetMouseDragDelta(ImGuiMouseButton_Right);

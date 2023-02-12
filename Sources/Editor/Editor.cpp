@@ -65,7 +65,7 @@ void Editor::ShowPreferencesWindow()
 	static int item_current_idx = -1;
 	if (ImGui::BeginChild("#settingsNames", namesSize, true))
 	{
-		ImGui::BeginListBox("##empty", namesSize);
+		if (ImGui::BeginListBox("##empty", namesSize))
 		{
 			for (int n = 0; n < configs.size(); ++n)
 			{
@@ -79,8 +79,8 @@ void Editor::ShowPreferencesWindow()
 				if (is_selected)
 					ImGui::SetItemDefaultFocus();
 			}
+			ImGui::EndListBox();
 		}
-		ImGui::EndListBox();
 	}
 	ImGui::EndChild();
 	ImGui::SameLine();
