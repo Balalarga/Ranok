@@ -159,10 +159,15 @@ void Editor::GuiRender()
 		ImGui::End();
 	}
 
-	if (showSettingsWindow && ImGui::Begin(LOCTEXT(EditorPreferences), &showSettingsWindow, ImGuiWindowFlags_NoDocking))
+	if (showSettingsWindow)
 	{
-		ShowPreferencesWindow();
-		ImGui::End();
+		static ImVec2 settingsWindowSize = { viewport->WorkSize.x / 2.f, viewport->WorkSize.y / 2.f };
+		ImGui::SetNextWindowSize(settingsWindowSize);
+		if (ImGui::Begin(LOCTEXT(EditorPreferences), &showSettingsWindow, ImGuiWindowFlags_NoDocking))
+		{
+			ShowPreferencesWindow();
+			ImGui::End();
+		}
 	}
 	
 	static ImGuiID dockspaceId = ImGui::GetID("MainDockSpace");
