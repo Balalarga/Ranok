@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Editor/Modules/EditorModule.h"
+
+#include "Graphics/Camera.h"
 #include "Graphics/Buffers/FrameBuffer.h"
 
 #include "Model/LinearGradient.h"
@@ -23,5 +25,6 @@ private:
 	FlatArray<MImage3D> _imageData;
     Space3D _space;
 	std::unique_ptr<VoxelModel> _model;
+	Camera _camera;
 };
 }

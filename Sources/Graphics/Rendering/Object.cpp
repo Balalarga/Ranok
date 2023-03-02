@@ -1,6 +1,9 @@
 ﻿#include "Object.h"
 
 #include <cassert>
+#include <iostream>
+#include <ostream>
+
 #include <GL/glew.h>
 
 #include "Graphics/Materials/IMaterial.h"

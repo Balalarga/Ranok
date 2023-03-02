@@ -8,6 +8,8 @@
 
 #include "Utils/FlatArray.h"
 
+class Camera;
+
 namespace Ranok
 {
 class VoxelMaterial: public IMaterial
@@ -15,6 +17,11 @@ class VoxelMaterial: public IMaterial
 public:
 	VoxelMaterial();
 	void SetupUniforms() override;
+
+	void SetCameraMatrix(glm::mat4 mat);
+
+private:
+	glm::mat4 _cameraVPmatrix{1.f};
 };
 
 
@@ -31,6 +38,8 @@ public:
 	void Update(const Space3D& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage);
 
 	void Render() const override;
+
+	VoxelMaterial& Material() { return _material; }
 
 
 private:

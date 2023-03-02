@@ -5,42 +5,14 @@
 namespace Ranok
 {
 
-std::string vertexImageShader = R"(
-#version 330
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec4 color;
-
-uniform mat4 MVP;
-
-out vec4 vColor;
-
-void main(void)
-{
-    gl_Position = MVP * vec4(position, 1.0);
-    vColor = color;
-}
-)";
-
-std::string fragmentImageShader = R"(
-#version 330
-
-in vec4 vColor;
-
-void main(void)
-{
-    gl_FragColor = vColor;
-}
-)";
-
 std::string geometryShader = R"(
 #version 330
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
 
-uniform vec3 voxelSize = vec3(0.1, 0.1, 0.1);
-uniform mat4 MVP;
+uniform vec3 voxelSize = vec3(1, 1, 1);
+uniform mat4 MVP = mat4(1);
 
 in vec4 vColor[];
 out vec4 gColor;
@@ -80,36 +52,40 @@ std::string vertexModelShader = R"(
 #version 330
 
 layout(location = 0) in vec3 position;
+layout(location = 1) in vec4 color;
 
-uniform mat4 MVP;
+uniform mat4 MVP = mat4(1);
+
+out vec4 vColor;
 
 void main(void)
 {
     gl_Position = MVP * vec4(position, 1.0);
+    vColor = color;
 }
 )";
 
 std::string fragmentModelShader = R"(
 #version 330
 
-uniform vec4 Color;
+in vec4 vColor;
 
 void main(void)
 {
-    gl_FragColor = Color;
+    gl_FragColor = vColor;
 }
 )";
 
 static std::shared_ptr<Shader> GetDefaultShader()
 {
-    static std::shared_ptr<ShaderPart> vShader = std::make_shared<ShaderPart>(ShaderType::Vertex, vertexImageShader);
-    static std::shared_ptr<ShaderPart> fShader = std::make_shared<ShaderPart>(ShaderType::Fragment, fragmentImageShader);
-    // static std::shared_ptr<ShaderPart> gShader = std::make_shared<ShaderPart>(ShaderType::Geometry, geometryShader);
-    static std::shared_ptr<Shader> _defaultShader = std::make_shared<Shader>(vShader, fShader);
+    static std::shared_ptr<ShaderPart> vShader = std::make_shared<ShaderPart>(ShaderType::Vertex, vertexModelShader);
+    static std::shared_ptr<ShaderPart> fShader = std::make_shared<ShaderPart>(ShaderType::Fragment, fragmentModelShader);
+    static std::shared_ptr<ShaderPart> gShader;// = std::make_shared<ShaderPart>(ShaderType::Geometry, geometryShader);
+    static std::shared_ptr<Shader> _defaultShader = std::make_shared<Shader>(vShader, fShader, gShader);
     return _defaultShader;
 }
 
-static std::shared_ptr<VoxelMaterial> GetDefaultMaterial()
+static std::shared_ptr<VoxelMaterial> GetDefaultMaterial(const Camera& camera)
 {
     static std::shared_ptr material(std::make_shared<VoxelMaterial>());
     return material;
@@ -122,13 +98,18 @@ VoxelMaterial::VoxelMaterial():
 
 void VoxelMaterial::SetupUniforms()
 {
+    SetUniform("MVP", _cameraVPmatrix);
+}
 
+void VoxelMaterial::SetCameraMatrix(glm::mat4 mat)
+{
+    _cameraVPmatrix = mat;
 }
 
 VoxelModel* VoxelModel::Make(const Space3D& space,
-                            FlatArray<MImage3D>& image,
-                            LinearGradient& gradient,
-                            size_t activeImage)
+                             FlatArray<MImage3D>& image,
+                             LinearGradient& gradient,
+                             size_t activeImage)
 {
     struct Vertex
     {

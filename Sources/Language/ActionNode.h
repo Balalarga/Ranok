@@ -234,7 +234,7 @@ class FunctionSignature
 {
 public:
 	FunctionSignature(const Token& token, const std::vector<VariableDeclarationNode*>& args = {});
-	
+
 	const Token& GetToken() const { return _token; }
 	
 	std::vector<VariableDeclarationNode*>& Args() { return _arguments; }
