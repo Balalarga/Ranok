@@ -1,8 +1,7 @@
 #pragma once
-#include <cassert>
 #include <vector>
-#include <cmath>
 #include <fstream>
+#include <numeric>
 
 
 namespace Ranok
@@ -21,28 +20,22 @@ PACK(struct MImage3D
 	char zone;
 });
 
-class Space3D
+class MultiDimSpace
 {
 public:
-	Space3D() = default;
-    Space3D(const std::vector<double> &centerPoint, const std::vector<double> &size, const size_t& recursiveDepth);
-    Space3D(const std::vector<double>& centerPoint, const std::vector<double>& size, const std::vector<size_t>& partition);
-    Space3D(const std::vector<float> &centerPoint, const std::vector<float> &size, const size_t& recursiveDepth);
-    Space3D(const std::vector<float>& centerPoint, const std::vector<float>& size, const std::vector<size_t>& partition);
-    Space3D(const Space3D &oth) = default;
-    virtual ~Space3D() = default;
+	MultiDimSpace() = default;
+    MultiDimSpace(const std::vector<double> &centerPoint, const std::vector<double> &size, const size_t& recursiveDepth);
+    MultiDimSpace(const std::vector<double>& centerPoint, const std::vector<double>& size, const std::vector<size_t>& partition);
+    MultiDimSpace(const std::vector<float> &centerPoint, const std::vector<float> &size, const size_t& recursiveDepth);
+    MultiDimSpace(const std::vector<float>& centerPoint, const std::vector<float>& size, const std::vector<size_t>& partition);
+    MultiDimSpace(const MultiDimSpace &oth) = default;
+    virtual ~MultiDimSpace() = default;
 
     const std::vector<double>& GetSize() const { return _size; }
     const std::vector<double>& GetCentral() const { return _centerPoint; }
     const std::vector<size_t>& GetPartition() const { return _partition; }
     const std::vector<double>& GetStartPoint() const { return _startPoint; }
-    size_t GetTotalPartition() const
-    {
-        size_t total = 1;
-        for (auto& i: _partition)
-            total *= i;
-        return total;
-    }
+    size_t GetTotalPartition() const { return std::accumulate(_partition.begin(), _partition.end(), 1, std::multiplies()); }
 
 
     std::vector<double> GetUnitSize() const;
@@ -54,8 +47,8 @@ public:
     void SetStartPoint(const std::vector<double>& point);
     void SetCenterPoint(const std::vector<double>& point);
     
-    friend std::ofstream& operator << (std::ofstream &stream, Space3D& space);
-    friend std::ifstream& operator >> (std::ifstream& stream, Space3D &space);
+    friend std::ofstream& operator<<(std::ofstream &stream, MultiDimSpace& space);
+    friend std::ifstream& operator>>(std::ifstream& stream, MultiDimSpace &space);
     
     
 protected:

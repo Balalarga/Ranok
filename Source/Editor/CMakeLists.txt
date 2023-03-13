@@ -7,7 +7,7 @@ DefineFolderAppWithDeps(
     Graphics
     Localization
     Log
-    Model
+    VoxelCore
     Utils
     WindowSystem
 )

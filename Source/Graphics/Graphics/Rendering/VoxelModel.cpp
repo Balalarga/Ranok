@@ -106,7 +106,7 @@ void VoxelMaterial::SetCameraMatrix(glm::mat4 mat)
     _cameraVPmatrix = mat;
 }
 
-VoxelModel* VoxelModel::Make(const Space3D& space,
+VoxelModel* VoxelModel::Make(const MultiDimSpace& space,
                              FlatArray<MImage3D>& image,
                              LinearGradient& gradient,
                              size_t activeImage)
@@ -138,7 +138,7 @@ VoxelModel::VoxelModel(Buffer vbo):
     SetMaterial(&_material);
 }
 
-void VoxelModel::Update(const Space3D& space,
+void VoxelModel::Update(const MultiDimSpace& space,
                         FlatArray<std::array<double, 5>>& image,
                         LinearGradient& gradient,
                         size_t activeImage)

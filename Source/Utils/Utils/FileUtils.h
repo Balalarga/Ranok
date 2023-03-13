@@ -13,8 +13,8 @@ namespace Ranok::Files
 inline std::string GetAssetPath(const std::string& relativePath)
 {
 	
-#ifdef _DEBUG
-	return fmt::format("{}/{}", "\\Assets", relativePath);
+#if defined(_DEBUG) || defined(DEBUG)
+	return fmt::format(PROJECT_SOURCE_DIR"{}/{}", "\\Assets", relativePath);
 #else
 	return fmt::format("{}/{}", ".\\Assets", relativePath);
 #endif

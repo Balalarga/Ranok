@@ -28,7 +28,7 @@ std::map<std::string, ActionNodeFactory> LoadDefaultLibraries()
 {
 	static std::string defaultLibrariesDir = 
 #if defined(_DEBUG) || defined(DEBUG)
-	"/Assets/CodeLibrary";
+	PROJECT_SOURCE_DIR"/Assets/CodeLibrary";
 #else
 	"Assets/CodeLibrary";
 #endif

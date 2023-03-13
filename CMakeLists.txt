@@ -19,7 +19,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Libs
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Libs") # .so and .dylib
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}") # .exe and .dll
 
-add_compile_definitions("DEBUG_MODE")
 add_compile_definitions("PROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\"")
 add_compile_definitions("OVERRIDE_DEFAULT_CONFIG=1")
 add_compile_definitions("RANOK_CODE_EXTENSION=\".rcode\"")

@@ -133,7 +133,7 @@ void Editor::GuiRender()
 				showSettingsWindow = true;
 			ImGui::EndMenu();
 		}
-#ifdef DEBUG_MODE
+#if defined(_DEBUG) || defined(DEBUG)
 		if (ImGui::BeginMenu("Editor Settings"))
 		{
 			if (ImGui::MenuItem("Style setup"))

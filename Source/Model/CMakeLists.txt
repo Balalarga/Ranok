@@ -1,3 +1,0 @@
-include(ModularBuild/BuildSystem)
-
-DefineFolderLibraryWithDeps()

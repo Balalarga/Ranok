@@ -4,8 +4,8 @@
 #include "Graphics/Camera.h"
 #include "Graphics/Buffers/FrameBuffer.h"
 
-#include "Model/LinearGradient.h"
-#include "Model/Space.h"
+#include "Utils/LinearGradient.h"
+#include "VoxelCore/Space/MultiDimSpace.h"
 
 #include "Utils/FlatArray.h"
 
@@ -23,7 +23,7 @@ private:
 	FrameBuffer _viewport;
 	LinearGradient _imageGradient;
 	FlatArray<MImage3D> _imageData;
-    Space3D _space;
+    MultiDimSpace _space;
 	std::unique_ptr<VoxelModel> _model;
 	Camera _camera;
 };

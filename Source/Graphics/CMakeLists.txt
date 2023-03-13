@@ -1,3 +1,3 @@
 include(ModularBuild/BuildSystem)
 
-DefineFolderLibraryWithDeps(ThirdParty Log Config Model)
+DefineFolderLibraryWithDeps(ThirdParty Log Config VoxelCore Utils)

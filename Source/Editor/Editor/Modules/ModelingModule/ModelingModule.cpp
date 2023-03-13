@@ -5,7 +5,7 @@
 #include "Executor/OpenclExecutor.h"
 #include "Language/Parser.h"
 #include "Localization/LocalizationSystem.h"
-#include "Model/Space.h"
+#include "VoxelCore/Space/MultiDimSpace.h"
 #include "Utils/FileUtils.h"
 #include "Utils/FlatArray.h"
 #include "Utils/WindowsUtils.h"
@@ -399,7 +399,7 @@ void ModelingModule::BuildTab(int tabId, const BuildTabParams& params)
 			Logger::Error(fmt::format("OpenCL compilation error: {}\n{}", res, clCode.value()));
 			return;
 		}
-		Space3D space(params.spaceCenter, params.spaceSize, params.recursions);
+		MultiDimSpace space(params.spaceCenter, params.spaceSize, params.recursions);
 		std::ofstream file(params.saveFilepath, std::ios_base::binary);
 		auto calculateCallback = [this, &file](size_t start, size_t count)
 		{

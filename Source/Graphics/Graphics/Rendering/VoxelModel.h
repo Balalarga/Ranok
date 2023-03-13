@@ -3,8 +3,8 @@
 
 #include "Graphics/Materials/IMaterial.h"
 
-#include "Model/LinearGradient.h"
-#include "Model/Space.h"
+#include "Utils/LinearGradient.h"
+#include "VoxelCore/Space/MultiDimSpace.h"
 
 #include "Utils/FlatArray.h"
 
@@ -28,14 +28,14 @@ private:
 class VoxelModel: public Object
 {
 public:
-	static VoxelModel* Make(const Space3D& space,
+	static VoxelModel* Make(const MultiDimSpace& space,
 		FlatArray<MImage3D> &image,
 		LinearGradient& gradient,
 		size_t activeImage = 0);
 
 	VoxelModel(Buffer vbo);
 
-	void Update(const Space3D& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage);
+	void Update(const MultiDimSpace& space, FlatArray<std::array<double, 5>> &image, LinearGradient& gradient, size_t activeImage);
 
 	void Render() const override;
 

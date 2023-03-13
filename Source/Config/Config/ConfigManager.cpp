@@ -15,7 +15,7 @@ ConfigManager& ConfigManager::Instance()
 std::string ConfigManager::GetConfigDir()
 {
 #if defined(_DEBUG) || defined(DEBUG)
-	return "../Config";
+	return PROJECT_SOURCE_DIR"/Config";
 #else
 	return "./Config";
 #endif
@@ -24,7 +24,7 @@ std::string ConfigManager::GetConfigDir()
 std::string ConfigManager::GetDefaultConfigDir()
 {
 #if defined(_DEBUG) || defined(DEBUG)
-	return "/Assets/DefaultConfig";
+	return PROJECT_SOURCE_DIR"/Assets/DefaultConfig";
 #else
 	return "Assets/DefaultConfig";
 #endif
@@ -63,7 +63,7 @@ std::string ConfigManager::GetFullPath(IConfig* config)
 std::string ConfigManager::GetFullDefaultPath(IConfig* config)
 {
 #ifdef _DEBUG
-	return "/Assets/DefaultConfig/"+config->GetFilepath();
+	return PROJECT_SOURCE_DIR"/Assets/DefaultConfig/"+config->GetFilepath();
 #else
 	return "Assets/DefaultConfig/"+config->GetFilepath();
 #endif
