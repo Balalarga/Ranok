@@ -1,7 +1,7 @@
 @echo off
     mkdir VsProject
     cd VsProject
-    cmake ..
+    cmake -DCMAKE_BUILD_TYPE="Debug" ..
     cd ..
     pause
 @echo on

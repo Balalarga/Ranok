@@ -15,6 +15,15 @@ if (WIN32)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 endif()
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Libs") # .lib and .a
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Libs") # .so and .dylib
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}") # .exe and .dll
+
+add_compile_definitions("DEBUG_MODE")
+add_compile_definitions("PROJECT_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\"")
+add_compile_definitions("OVERRIDE_DEFAULT_CONFIG=1")
+add_compile_definitions("RANOK_CODE_EXTENSION=\".rcode\"")
+
 set(PROJECT_RESOURCE_DIR ${CMAKE_SOURCE_DIR}/Assets)
 file(GLOB_RECURSE PROJECT_RESOURCES ${PROJECT_RESOURCE_DIR}/*)
 set(THIRDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty)
@@ -23,6 +32,7 @@ add_subdirectory(${THIRDPARTY_DIR})
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE ThirdParty)
 target_link_libraries(${PROJECT_NAME} INTERFACE ThirdParty)
+set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${PROJECT_RESOURCES}")
 
 set(MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source)
 ListOfDirectChildDirectories(MODULES_LIST ${MODULES_DIR})
@@ -38,18 +48,8 @@ foreach(MODULE ${MODULES_LIST})
     endif()
 endforeach()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${PROJECT_RESOURCES}")
-
 # Copy dll files
 foreach(BINARY ${THIRDPARTY_BINARIES})
     file(GLOB_RECURSE FILES_TO_COPY ${BINARY}/*)
-    file(COPY ${FILES_TO_COPY} DESTINATION "${CMAKE_BINARY_DIR}/Bin/Debug")
-    message("${BINARY} DESTINATION ${CMAKE_BINARY_DIR}/Bin/Debug")
-
-    # add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            # COMMAND ${CMAKE_COMMAND} -E copy_directory
-            # ${BINARY} ${PROJECT_BINARY_DIR})
-    # add_custom_target(BINARY_COPY
-    #     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    #     ${BINARY} ${PROJECT_BINARY_DIR})
+    file(COPY ${FILES_TO_COPY} DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}")
 endforeach()
