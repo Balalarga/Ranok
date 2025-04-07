@@ -3,7 +3,7 @@
 	url = https://github.com/Balalarga/RanokCalculator.git
 [submodule "ThirdParty/NodeEditor"]
 	path = ThirdParty/NodeEditor
-	url = https://github.com/Balalarga/imgui-node-editor.git
+    url = https://github.com/thedmd/imgui-node-editor.git
 [submodule "ThirdParty/ImGui"]
 	path = ThirdParty/ImGui
 	url = https://github.com/thedmd/imgui.git
